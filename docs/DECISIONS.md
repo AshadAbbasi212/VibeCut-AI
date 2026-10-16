@@ -20,3 +20,8 @@
 - **Decision**: Ensure web fonts are awaited using `delayRender()` / `continueRender()` or `@remotion/google-fonts` before frame rendering.
 - **Why**: Prevents frame glitches and text jumping/shifting caused by asynchronous font loading during headless rendering.
 
+## 2026-10-16: Resilient Whisper device auto-selection and CPU fallback
+- **Decision**: When `device="auto"` or CUDA is requested, dynamically detect compute types and wrap initial model execution in a try/except that automatically falls back to `device="cpu", compute_type="int8"` if CUDA runtime libraries (such as `cublas64_12.dll`) are missing or incompatible.
+- **Why**: Prevents pipeline crashes on machines with NVIDIA GPUs where CUDA drivers exist but specific cuBLAS or cuDNN runtime DLLs are absent.
+
+
