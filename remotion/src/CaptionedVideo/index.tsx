@@ -7,7 +7,7 @@ import {
   staticFile,
 } from "remotion";
 import { Timeline, TimelineEvent } from "../types/timeline";
-import { PillWord } from "../styles/pill_word";
+import { getStyleComponent } from "../styles/registry";
 import { ensureFontsLoaded } from "../load-font";
 
 export type CaptionedVideoProps = {
@@ -157,6 +157,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
           1,
           Math.round((event.end - event.start) * fps)
         );
+        const Component = getStyleComponent(event.style);
 
         return (
           <Sequence
@@ -165,7 +166,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
             durationInFrames={durationInFrames}
           >
             <div style={getZoneStyle(event)}>
-              <PillWord
+              <Component
                 event={event}
                 words={timeline.words}
                 durationInFrames={durationInFrames}

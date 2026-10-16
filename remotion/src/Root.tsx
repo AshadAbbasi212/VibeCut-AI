@@ -38,6 +38,10 @@ const defaultTimeline: CaptionedVideoProps["timeline"] = {
   ],
 };
 
+import { StyleGallery, StyleGalleryProps } from "./StyleGallery";
+import { StyleShowcase } from "./StyleGallery/Showcase";
+import { Still } from "remotion";
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -52,6 +56,27 @@ export const RemotionRoot: React.FC = () => {
         height={1920}
         fps={30}
         durationInFrames={150}
+      />
+
+      <Composition<any, StyleGalleryProps>
+        id="StyleGallery"
+        component={StyleGallery}
+        width={1080}
+        height={1920}
+        fps={30}
+        durationInFrames={150}
+        defaultProps={{
+          styleId: "title3d",
+        }}
+      />
+
+      <Composition<any, Record<string, unknown>>
+        id="StyleShowcase"
+        component={StyleShowcase}
+        width={1080}
+        height={1920}
+        fps={30}
+        durationInFrames={540} // 9 styles * 60 frames = 18s
       />
     </>
   );

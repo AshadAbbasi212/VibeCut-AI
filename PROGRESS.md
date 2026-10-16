@@ -3,7 +3,7 @@
 - [x] Phase 1 Transcription
 - [x] Phase 2 Chunking
 - [x] Phase 3 Remotion baseline
-- [ ] Phase 4 Style library + gallery
+- [x] Phase 4 Style library + gallery
 - [ ] Phase 5 Planner & layout
 - [ ] Phase 6 Graphics, emoji, doodles
 - [ ] Phase 7 Backend API, runner, CLI
