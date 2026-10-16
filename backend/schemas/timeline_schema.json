@@ -1,0 +1,421 @@
+{
+  "$defs": {
+    "AnimationConfig": {
+      "properties": {
+        "in": {
+          "anyOf": [
+            {
+              "enum": [
+                "pop",
+                "slide_up",
+                "fade",
+                "typewriter",
+                "none"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "pop",
+          "title": "In"
+        },
+        "out": {
+          "anyOf": [
+            {
+              "enum": [
+                "fade",
+                "pop",
+                "none"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "fade",
+          "title": "Out"
+        },
+        "wordStagger": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 0.04,
+          "title": "Wordstagger"
+        }
+      },
+      "title": "AnimationConfig",
+      "type": "object"
+    },
+    "Graphic": {
+      "properties": {
+        "kind": {
+          "description": "Type of graphic",
+          "enum": [
+            "emoji",
+            "icon",
+            "image"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "description": "Emoji char, Lucide icon name, or image path",
+          "title": "Value",
+          "type": "string"
+        },
+        "position": {
+          "anyOf": [
+            {
+              "enum": [
+                "above",
+                "below",
+                "left",
+                "right"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "above",
+          "description": "Placement relative to text",
+          "title": "Position"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "Graphic",
+      "type": "object"
+    },
+    "Highlight": {
+      "properties": {
+        "wordIndex": {
+          "description": "Index of word to highlight",
+          "title": "Wordindex",
+          "type": "integer"
+        },
+        "kind": {
+          "default": "color",
+          "description": "Highlight treatment",
+          "enum": [
+            "color",
+            "italic",
+            "pill",
+            "underline",
+            "scale"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "description": "Color code or token",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "wordIndex",
+        "value"
+      ],
+      "title": "Highlight",
+      "type": "object"
+    },
+    "TimelineEvent": {
+      "properties": {
+        "id": {
+          "description": "Unique event id e.g. e1",
+          "title": "Id",
+          "type": "string"
+        },
+        "style": {
+          "description": "Style identifier from docs/04",
+          "title": "Style",
+          "type": "string"
+        },
+        "start": {
+          "description": "Event start in seconds",
+          "title": "Start",
+          "type": "number"
+        },
+        "end": {
+          "description": "Event end in seconds",
+          "title": "End",
+          "type": "number"
+        },
+        "zone": {
+          "default": "lower",
+          "enum": [
+            "upper",
+            "center",
+            "lower",
+            "free"
+          ],
+          "title": "Zone",
+          "type": "string"
+        },
+        "x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fractional x (0-1) for free zone",
+          "title": "X"
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fractional y (0-1) for free zone",
+          "title": "Y"
+        },
+        "layer": {
+          "default": 1,
+          "description": "Z-order layer (higher on top)",
+          "title": "Layer",
+          "type": "integer"
+        },
+        "wordRange": {
+          "description": "[firstIndex, lastIndex] inclusive",
+          "items": {
+            "type": "integer"
+          },
+          "title": "Wordrange",
+          "type": "array"
+        },
+        "text": {
+          "description": "Spoken text in this event",
+          "title": "Text",
+          "type": "string"
+        },
+        "lines": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pre-split lines for multi-line layout",
+          "title": "Lines"
+        },
+        "highlights": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Highlight"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Highlights"
+        },
+        "palette": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "sunset",
+          "title": "Palette"
+        },
+        "decorations": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decorations"
+        },
+        "graphic": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Graphic"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "animation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnimationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "variant": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional style variant e.g. 'glow' or 'frosted'",
+          "title": "Variant"
+        }
+      },
+      "required": [
+        "id",
+        "style",
+        "start",
+        "end",
+        "text"
+      ],
+      "title": "TimelineEvent",
+      "type": "object"
+    },
+    "TimelineVideo": {
+      "properties": {
+        "src": {
+          "description": "Path or relative URL to the video source",
+          "title": "Src",
+          "type": "string"
+        },
+        "width": {
+          "default": 1080,
+          "description": "Video width in pixels",
+          "title": "Width",
+          "type": "integer"
+        },
+        "height": {
+          "default": 1920,
+          "description": "Video height in pixels",
+          "title": "Height",
+          "type": "integer"
+        },
+        "fps": {
+          "default": 30.0,
+          "description": "Frames per second",
+          "title": "Fps",
+          "type": "number"
+        },
+        "durationSec": {
+          "description": "Total duration in seconds",
+          "title": "Durationsec",
+          "type": "number"
+        }
+      },
+      "required": [
+        "src",
+        "durationSec"
+      ],
+      "title": "TimelineVideo",
+      "type": "object"
+    },
+    "TimelineWord": {
+      "properties": {
+        "i": {
+          "description": "Global word index",
+          "title": "I",
+          "type": "integer"
+        },
+        "text": {
+          "description": "Word text",
+          "title": "Text",
+          "type": "string"
+        },
+        "start": {
+          "description": "Word start time in seconds",
+          "title": "Start",
+          "type": "number"
+        },
+        "end": {
+          "description": "Word end time in seconds",
+          "title": "End",
+          "type": "number"
+        }
+      },
+      "required": [
+        "i",
+        "text",
+        "start",
+        "end"
+      ],
+      "title": "TimelineWord",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "video": {
+      "$ref": "#/$defs/TimelineVideo"
+    },
+    "language": {
+      "default": "en",
+      "title": "Language",
+      "type": "string"
+    },
+    "words": {
+      "items": {
+        "$ref": "#/$defs/TimelineWord"
+      },
+      "title": "Words",
+      "type": "array"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/TimelineEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    }
+  },
+  "required": [
+    "video"
+  ],
+  "title": "Timeline",
+  "type": "object"
+}

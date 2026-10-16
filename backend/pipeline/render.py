@@ -86,6 +86,19 @@ def render(
         timeline_data = json.loads(timeline_path.read_text(encoding="utf-8"))
         timeline = Timeline.model_validate(timeline_data)
 
+    # Ensure video asset is accessible in remotion/public
+    if not (timeline.video.src.startswith("http://") or timeline.video.src.startswith("https://")):
+        remotion_public = remotion_dir / "public"
+        if not (remotion_public / timeline.video.src).exists():
+            candidate = Path(timeline.video.src)
+            if not candidate.is_absolute():
+                candidate = Path.cwd() / candidate
+            if candidate.exists():
+                public_rel = prepare_video_asset(candidate)
+                timeline = timeline.model_copy(
+                    update={"video": timeline.video.model_copy(update={"src": public_rel})}
+                )
+
     # Standardize props structure so both props.timeline and props.<field> exist
     props_payload = {
         "timeline": timeline.model_dump(),

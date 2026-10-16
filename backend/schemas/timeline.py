@@ -135,3 +135,20 @@ class Timeline(BaseModel):
                 raise ValueError(f"Zone collision at t={t:.2f}s: multiple events in {zones}")
 
         return self
+
+
+def export_json_schema(output_path: str = "backend/schemas/timeline_schema.json") -> str:
+    """Export Pydantic Timeline schema as JSON Schema file."""
+    import json
+    from pathlib import Path
+
+    schema_dict = Timeline.model_json_schema()
+    out = Path(output_path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(schema_dict, f, indent=2)
+    return str(out)
+
+
+if __name__ == "__main__":
+    export_json_schema()
