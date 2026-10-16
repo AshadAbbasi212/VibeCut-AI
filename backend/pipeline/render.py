@@ -55,6 +55,8 @@ def render(
     output_path: str | Path,
     frames: Optional[str] = None,
     concurrency: Optional[int] = None,
+    scale: Optional[float] = None,
+    draft: bool = False,
     progress_callback: Optional[Callable[[float], None]] = None,
 ) -> Path:
     """
@@ -65,6 +67,8 @@ def render(
         output_path: Target .mp4 file destination
         frames: Optional frame range string like '0-150'
         concurrency: Number of render threads
+        scale: Scaling factor (e.g. 0.5 for half resolution)
+        draft: Convenience flag to render at scale 0.5 for fast previews
         progress_callback: Optional callable receiving progress (0.0 to 1.0)
     
     Returns:
@@ -117,10 +121,15 @@ def render(
         "--props=./public/temp/render_props.json",
     ]
 
+    if draft and scale is None:
+        scale = 0.5
+
     if frames:
         cmd.append(f"--frames={frames}")
     if concurrency:
         cmd.append(f"--concurrency={concurrency}")
+    if scale:
+        cmd.append(f"--scale={scale}")
 
     # Remotion render command executed in remotion directory
     process = subprocess.Popen(
@@ -168,6 +177,8 @@ def main():
     ap.add_argument("-o", "--output", default="out/output.mp4", help="Path to output MP4")
     ap.add_argument("--frames", default=None, help="Frame range to render (e.g. 0-150)")
     ap.add_argument("--concurrency", type=int, default=None, help="Number of worker threads")
+    ap.add_argument("--scale", type=float, default=None, help="Scale factor (e.g. 0.5 for draft)")
+    ap.add_argument("--draft", action="store_true", help="Render at half-resolution (scale 0.5)")
     args = ap.parse_args()
 
     out_path = render(
@@ -175,6 +186,8 @@ def main():
         output_path=args.output,
         frames=args.frames,
         concurrency=args.concurrency,
+        scale=args.scale,
+        draft=args.draft,
     )
     print(f"Render complete -> {out_path}")
 

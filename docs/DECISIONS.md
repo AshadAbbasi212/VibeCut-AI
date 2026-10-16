@@ -39,3 +39,8 @@
 ## 2026-10-16: Zero-bundle FastAPI static SPA architecture
 - **Decision**: Implemented the frontend as a self-contained, dependency-free vanilla HTML5/CSS3/ES6 single-page app served directly by FastAPI via `StaticFiles(directory='frontend', html=True)`.
 - **Why**: Eliminates Node/Vite build steps and dev server port conflicts in production/Docker, loads instantly with native modern browser APIs (Drag and Drop, FormData, Fetch, Video), and presents a dark-mode glassmorphic interface matching modern creator tools.
+
+## 2026-10-16: Polish, Hardening, and Multi-Preset Tuning
+- **Decision**: Added orientation correction for rotated smartphone videos in ffprobe, audio-less video handling in transcribe to return empty transcripts without throwing ffmpeg errors, long-video duration warnings (> 300s), draft rendering flag (`--draft` sets `--scale=0.5`), render concurrency controls, and tuned 3 distinct planner presets (`bold_creator`, `calm_serif`, `minimal_pill`).
+- **Why**: Handles real-world smartphone clips of varying aspect ratios, rotation metadata, missing audio tracks, or silent segments gracefully without crashing. Presets give creators one-click control over aesthetic intensity (energetic 3D/stickers vs editorial serif vs minimalist TikTok).
+

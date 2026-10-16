@@ -116,7 +116,7 @@ class RulePlanner:
             feature_style: Optional[str] = None
             feature_zone = "upper"
             feature_variant: Optional[str] = None
-            feature_palette = "sunset"
+            feature_palette = "monochrome" if self.preset == "calm_serif" else "sunset"
             feature_decorations: list[str] = []
             feature_graphic: Optional[Graphic] = None
 
@@ -145,12 +145,18 @@ class RulePlanner:
                 feature_zone = "upper"
                 feature_decorations = ["ellipse"]
 
-            # Rule D: Definition / key takeaway / "everything that is" -> blob_card (glow)
+            # Rule D: Definition / key takeaway / "everything that is" -> blob_card
             elif "everything" in text_lower or "skill can be" in text_lower or "basically" in text_lower:
-                feature_style = "blob_card"
-                feature_variant = "glow"
-                feature_zone = "center"
-                feature_decorations = ["sparkles"]
+                if self.preset == "calm_serif":
+                    feature_style = "blob_card"
+                    feature_variant = "frosted"
+                    feature_zone = "center"
+                    feature_decorations = ["underline"]
+                else:
+                    feature_style = "blob_card"
+                    feature_variant = "glow"
+                    feature_zone = "center"
+                    feature_decorations = ["sparkles"]
 
             # Rule E: Negation / strong advice / warning -> blob_card (frosted)
             elif "ignore" in text_lower or "advice" in text_lower or ("not" in text_lower and "want" in text_lower):
@@ -158,21 +164,23 @@ class RulePlanner:
                 feature_variant = "frosted"
                 feature_zone = "upper"
 
-            # Rule F: Short letter sequence or list -> arc_letters
+            # Rule F: Short letter sequence or list -> arc_letters or serif_title
             elif len(p.words) in (3, 4) and all(len(w) <= 2 for w in words_in_phrase):
-                feature_style = "arc_letters"
+                feature_style = "serif_title" if self.preset == "calm_serif" else "arc_letters"
                 feature_zone = "center"
 
             # Rule G: Asides / lower energy -> handwritten
             elif "rather than" in text_lower or "luck" in text_lower or word_count <= 4:
                 feature_style = "handwritten"
                 feature_zone = "upper"
-                if "stop" in text_lower or "planning" in text_lower:
+                if self.preset == "calm_serif":
+                    feature_decorations = ["underline"]
+                elif "stop" in text_lower or "planning" in text_lower:
                     feature_decorations = ["arrow"]
 
             # Fallback for remaining phrases: occasional sticker or serif_title
             if not feature_style and (idx % 3 == 0) and word_count <= 6:
-                detected_graphic = detect_graphic_for_text(p.text)
+                detected_graphic = detect_graphic_for_text(p.text) if self.preset != "calm_serif" else None
                 if detected_graphic:
                     feature_style = "sticker"
                     feature_graphic = detected_graphic

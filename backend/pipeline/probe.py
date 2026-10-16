@@ -45,7 +45,7 @@ def probe_video(path: str | Path) -> VideoProbe:
     cmd = [
         ffprobe_bin,
         "-v", "error",
-        "-show_entries", "format=duration:stream=index,codec_type,width,height,r_frame_rate,avg_frame_rate,duration",
+        "-show_entries", "format=duration:stream=index,codec_type,width,height,r_frame_rate,avg_frame_rate,duration,tags,side_data_list",
         "-of", "json",
         str(path),
     ]
@@ -66,6 +66,25 @@ def probe_video(path: str | Path) -> VideoProbe:
 
     width = int(video_stream.get("width", 1080))
     height = int(video_stream.get("height", 1920))
+
+    # Detect phone video rotation (90 / 270 degrees)
+    rotation = 0
+    tags = video_stream.get("tags") or {}
+    if "rotate" in tags:
+        try:
+            rotation = int(tags["rotate"])
+        except ValueError:
+            pass
+    for side_data in video_stream.get("side_data_list", []):
+        if "rotation" in side_data:
+            try:
+                rotation = int(side_data["rotation"])
+            except ValueError:
+                pass
+
+    if abs(rotation) in (90, 270):
+        # Swap width and height for vertical phone display matrix
+        width, height = height, width
 
     fps_val = video_stream.get("avg_frame_rate") or video_stream.get("r_frame_rate") or "30/1"
     fps = parse_fps(fps_val)

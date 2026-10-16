@@ -37,6 +37,8 @@ def main():
     )
     parser.add_argument(
         "--preset",
+        "--style-preset",
+        dest="preset",
         type=str,
         choices=["bold_creator", "calm_serif", "minimal_pill"],
         default="bold_creator",
@@ -54,6 +56,41 @@ def main():
         type=str,
         default="en",
         help="Spoken language code (default: en)",
+    )
+    parser.add_argument(
+        "--whisper-model",
+        type=str,
+        default="small",
+        help="faster-whisper model size (default: small, options: tiny, base, small, medium)",
+    )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=None,
+        help="Remotion render concurrency worker count",
+    )
+    parser.add_argument(
+        "--draft",
+        action="store_true",
+        help="Render draft preview at half resolution (scale 0.5) for fast turnaround",
+    )
+    parser.add_argument(
+        "--start",
+        type=float,
+        default=None,
+        help="Start time in seconds to render a clip segment",
+    )
+    parser.add_argument(
+        "--end",
+        type=float,
+        default=None,
+        help="End time in seconds to render a clip segment",
+    )
+    parser.add_argument(
+        "--frames",
+        type=str,
+        default=None,
+        help="Remotion frame range (e.g. '0-150')",
     )
     parser.add_argument(
         "--timeline-out",
@@ -86,12 +123,15 @@ def main():
     # Step 1: Probe video
     print("\n[1/5] Probing video container...")
     probe = probe_video(input_path)
-    print(f"  ✓ {probe.width}x{probe.height} @ {probe.fps:.1f} fps, {probe.duration:.2f}s")
+    print(f"  ✓ {probe.width}x{probe.height} @ {probe.fps:.1f} fps, {probe.duration:.2f}s (audio: {probe.has_audio})")
+    if probe.duration > 300:
+        print(f"  ⚠️ Warning: Video duration is {probe.duration:.1f}s (> 300s). Rendering high-res video may take substantial time.")
 
     # Step 2: Transcribe
     print("\n[2/5] Transcribing speech with word-level alignment...")
     transcript = transcribe(
         path=input_path,
+        model=args.whisper_model,
         language=args.language if args.language != "auto" else None,
     )
     print(f"  ✓ Transcribed {len(transcript.words)} words (language: {transcript.language})")
@@ -151,8 +191,20 @@ def main():
         tl_out.write_text(json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2), encoding="utf-8")
         print(f"  ✓ Saved timeline to {tl_out}")
 
+    # Determine frame range if start/end specified
+    frames_range = args.frames
+    if not frames_range and (args.start is not None or args.end is not None):
+        start_sec = args.start if args.start is not None else 0.0
+        end_sec = args.end if args.end is not None else probe.duration
+        start_f = max(0, int(start_sec * probe.fps))
+        end_f = min(int(probe.duration * probe.fps), int(end_sec * probe.fps))
+        frames_range = f"{start_f}-{end_f}"
+        print(f"  ℹ️ Rendering clip frame range: {frames_range} ({start_sec:.2f}s - {end_sec:.2f}s)")
+
     # Step 5: Render final video with Remotion
     print("\n[5/5] Rendering final animated video composition via Remotion...")
+    if args.draft:
+        print("  ⚡ Draft mode enabled (rendering at scale 0.5)")
 
     def on_progress(pct: float):
         percent = int(pct * 100)
@@ -165,6 +217,9 @@ def main():
     render(
         timeline_input=timeline,
         output_path=output_path,
+        frames=frames_range,
+        concurrency=args.concurrency,
+        draft=args.draft,
         progress_callback=on_progress,
     )
     print(f"\n  ✓ Render complete -> {output_path}")

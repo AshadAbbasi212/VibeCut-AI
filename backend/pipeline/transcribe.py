@@ -135,6 +135,19 @@ def transcribe(
             # If cache is corrupted, proceed to recompute
             pass
 
+    # Probe media: if file has no audio stream, avoid ffmpeg errors and return empty transcript
+    try:
+        from backend.pipeline.probe import probe_video
+        probe = probe_video(media_path)
+        if not probe.has_audio:
+            print(f"Notice: Media file '{media_path.name}' has no audio stream. Skipping transcription.")
+            empty_transcript = Transcript(words=[], text="", language=language or "en", duration=probe.duration)
+            if use_cache:
+                cache_file.write_text(empty_transcript.model_dump_json(indent=2), encoding="utf-8")
+            return empty_transcript
+    except Exception:
+        pass
+
     from faster_whisper import WhisperModel
 
     raw_words = []
