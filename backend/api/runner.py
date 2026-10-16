@@ -1,0 +1,235 @@
+"""Background job runner for Dynamic Captions Studio pipeline."""
+import concurrent.futures
+import json
+import logging
+import os
+import shutil
+import time
+import uuid
+from pathlib import Path
+from typing import Optional, Literal
+from pydantic import BaseModel, Field
+
+from backend.pipeline.probe import probe_video
+from backend.pipeline.transcribe import transcribe
+from backend.pipeline.chunk import chunk_words, PhrasesDocument
+from backend.pipeline.plan_llm import get_planner
+from backend.pipeline.render import render, prepare_video_asset
+from backend.schemas.timeline import Timeline, TimelineVideo, TimelineWord
+
+logger = logging.getLogger("captions_runner")
+
+JobStatus = Literal["queued", "processing", "completed", "failed"]
+
+
+class JobInfo(BaseModel):
+    id: str
+    status: JobStatus = "queued"
+    step: str = "queued"
+    progress: float = 0.0
+    error: Optional[str] = None
+    preset: str = "bold_creator"
+    llm_provider: str = "none"
+    language: str = "en"
+    created_at: float = Field(default_factory=time.time)
+    updated_at: float = Field(default_factory=time.time)
+    input_file: str = ""
+    output_file: Optional[str] = None
+    timeline_file: Optional[str] = None
+
+
+class JobManager:
+    """Manages job state, persistence, and execution queue."""
+
+    def __init__(self, base_jobs_dir: str = "jobs", max_workers: int = 1):
+        self.jobs_dir = Path(base_jobs_dir).resolve()
+        self.jobs_dir.mkdir(parents=True, exist_ok=True)
+        self.jobs: dict[str, JobInfo] = {}
+        self.executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers, thread_name_prefix="caption_worker"
+        )
+        self._load_existing_jobs()
+
+    def _load_existing_jobs(self):
+        """Load past jobs from disk if available."""
+        if not self.jobs_dir.exists():
+            return
+        for child in self.jobs_dir.iterdir():
+            if child.is_dir():
+                job_json = child / "job.json"
+                if job_json.exists():
+                    try:
+                        data = json.loads(job_json.read_text(encoding="utf-8"))
+                        info = JobInfo(**data)
+                        self.jobs[info.id] = info
+                    except Exception as e:
+                        logger.warning(f"Failed to read existing job from {job_json}: {e}")
+
+    def save_job(self, job: JobInfo):
+        """Save job metadata to disk."""
+        job.updated_at = time.time()
+        self.jobs[job.id] = job
+        job_dir = self.jobs_dir / job.id
+        job_dir.mkdir(parents=True, exist_ok=True)
+        job_file = job_dir / "job.json"
+        job_file.write_text(job.model_dump_json(indent=2), encoding="utf-8")
+
+    def get_job(self, job_id: str) -> Optional[JobInfo]:
+        """Retrieve job information by ID."""
+        return self.jobs.get(job_id)
+
+    def submit_job(
+        self,
+        input_video_source: Path,
+        preset: str = "bold_creator",
+        llm_provider: str = "none",
+        language: str = "en",
+    ) -> JobInfo:
+        """Create and queue a new pipeline processing job."""
+        job_id = f"job_{uuid.uuid4().hex[:10]}"
+        job_dir = self.jobs_dir / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        target_input = job_dir / "input.mp4"
+        shutil.copy2(input_video_source, target_input)
+
+        job = JobInfo(
+            id=job_id,
+            status="queued",
+            step="queued",
+            progress=0.0,
+            preset=preset,
+            llm_provider=llm_provider,
+            language=language,
+            input_file=str(target_input),
+        )
+        self.save_job(job)
+
+        # Submit task to worker pool
+        self.executor.submit(self._run_job_task, job_id)
+        return job
+
+    def _run_job_task(self, job_id: str):
+        job = self.get_job(job_id)
+        if not job:
+            return
+
+        job_dir = self.jobs_dir / job_id
+        input_path = Path(job.input_file)
+        output_mp4 = job_dir / "output.mp4"
+        timeline_json = job_dir / "timeline.json"
+        words_json = job_dir / "words.json"
+        phrases_json = job_dir / "phrases.json"
+
+        def update_progress(step: str, progress: float):
+            job.status = "processing"
+            job.step = step
+            job.progress = round(progress, 3)
+            self.save_job(job)
+
+        try:
+            # 1. Probing (0.00 -> 0.05)
+            update_progress("probing", 0.02)
+            probe = probe_video(input_path)
+            update_progress("probing", 0.05)
+
+            # 2. Transcription (0.05 -> 0.35)
+            update_progress("transcribing", 0.08)
+            transcript = transcribe(
+                path=input_path,
+                language=job.language if job.language != "auto" else None,
+            )
+            words_json.write_text(transcript.model_dump_json(indent=2), encoding="utf-8")
+            update_progress("transcribing", 0.35)
+
+            # 3. Chunking (0.35 -> 0.45)
+            update_progress("chunking", 0.38)
+            phrases = chunk_words(
+                words=transcript.words,
+                duration=probe.duration,
+            )
+            phrases_doc = PhrasesDocument(
+                language=transcript.language or job.language,
+                duration=probe.duration,
+                phrases=phrases,
+            )
+            phrases_json.write_text(phrases_doc.model_dump_json(indent=2), encoding="utf-8")
+            update_progress("chunking", 0.45)
+
+            # 4. Planning & Layout (0.45 -> 0.55)
+            update_progress("planning", 0.48)
+            planner = get_planner(provider=job.llm_provider, preset=job.preset)
+            events = planner.plan(
+                phrases=phrases_doc.phrases,
+                video_duration=probe.duration,
+                preset=job.preset,
+                language=transcript.language or job.language,
+            )
+
+            # Copy input asset to remotion public dir
+            rel_src = prepare_video_asset(input_path, job_id=job_id)
+
+            tl_video = TimelineVideo(
+                src=rel_src,
+                width=probe.width,
+                height=probe.height,
+                fps=round(probe.fps),
+                durationSec=round(probe.duration, 2),
+            )
+            tl_words = [
+                TimelineWord(i=w.i, text=w.text, start=round(w.start, 2), end=round(w.end, 2))
+                for w in transcript.words
+            ]
+            timeline = Timeline(
+                version=1,
+                video=tl_video,
+                language=transcript.language or job.language,
+                words=tl_words,
+                events=events,
+            )
+            timeline_json.write_text(
+                json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),
+                encoding="utf-8",
+            )
+            job.timeline_file = str(timeline_json)
+            update_progress("planning", 0.55)
+
+            # 5. Rendering with Remotion (0.55 -> 0.98)
+            update_progress("rendering", 0.56)
+
+            def on_render_progress(pct: float):
+                # Map 0.0 - 1.0 to 0.56 - 0.98
+                mapped = 0.56 + (pct * 0.42)
+                update_progress("rendering", mapped)
+
+            render(
+                timeline_input=timeline,
+                output_path=output_mp4,
+                progress_callback=on_render_progress,
+            )
+
+            # 6. Complete (1.00)
+            job.status = "completed"
+            job.step = "completed"
+            job.progress = 1.0
+            job.output_file = str(output_mp4)
+            self.save_job(job)
+            logger.info(f"Job {job_id} successfully completed. Output: {output_mp4}")
+
+        except Exception as e:
+            logger.exception(f"Job {job_id} failed with error: {e}")
+            job.status = "failed"
+            job.step = "failed"
+            job.error = str(e)
+            self.save_job(job)
+
+
+# Global singleton instance
+_runner_instance: Optional[JobManager] = None
+
+
+def get_job_manager() -> JobManager:
+    global _runner_instance
+    if _runner_instance is None:
+        _runner_instance = JobManager()
+    return _runner_instance
