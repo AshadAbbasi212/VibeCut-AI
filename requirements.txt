@@ -1,0 +1,13 @@
+faster-whisper
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2
+python-dotenv
+httpx
+pytest
+# optional planner providers (install the one you use)
+google-genai
+anthropic
+# optional: synthesize a speech test clip when no sample video is provided
+edge-tts

@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+node_modules/
+jobs/
+vendor/
+out/
+dist/
+*.mp4
+*.mov
+*.wav
+models/
+remotion/public/jobs/
+.DS_Store
