@@ -5,10 +5,14 @@ import {
   OffthreadVideo,
   Sequence,
   staticFile,
+  useCurrentFrame,
+  useVideoConfig,
 } from "remotion";
-import { Timeline, TimelineEvent } from "../types/timeline";
+import { Timeline, TimelineEvent, TimelineWord } from "../types/timeline";
 import { getStyleComponent } from "../styles/registry";
 import { ensureFontsLoaded } from "../load-font";
+import { GraphicRenderer, ArrowDoodle } from "../decorations";
+import { popIn } from "../anim";
 
 export type CaptionedVideoProps = {
   timeline?: Timeline;
@@ -119,6 +123,74 @@ const getZoneStyle = (event: TimelineEvent): React.CSSProperties => {
   }
 };
 
+const EventContainer: React.FC<{
+  event: TimelineEvent;
+  words: TimelineWord[];
+  durationInFrames: number;
+}> = ({ event, words, durationInFrames }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const Component = getStyleComponent(event.style);
+
+  const graphicScale = popIn(frame, fps, 0, 10, 0.45, 180);
+  const doodleProgress = Math.min(1, Math.max(0, (frame - 4) / (fps * 0.45)));
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* Attached Graphic (above/below/left/right) if not sticker */}
+      {event.graphic && event.style !== "sticker" && (
+        <div
+          style={{
+            transform: `scale(${graphicScale})`,
+            marginBottom: event.graphic.position === "above" ? "14px" : undefined,
+            marginTop: event.graphic.position === "below" ? "14px" : undefined,
+            position:
+              event.graphic.position === "left" || event.graphic.position === "right"
+                ? "absolute"
+                : "relative",
+            left: event.graphic.position === "left" ? "-75px" : undefined,
+            right: event.graphic.position === "right" ? "-75px" : undefined,
+            top:
+              event.graphic.position === "left" || event.graphic.position === "right"
+                ? "50%"
+                : undefined,
+            transformOrigin: "center center",
+          }}
+        >
+          <GraphicRenderer graphic={event.graphic} size={64} />
+        </div>
+      )}
+
+      {/* Main Style Component */}
+      <Component
+        event={event}
+        words={words}
+        durationInFrames={durationInFrames}
+      />
+
+      {/* Optional Attached Arrow Doodle */}
+      {event.decorations?.includes("arrow") && (
+        <ArrowDoodle
+          progress={doodleProgress}
+          style={{
+            top: "-40px",
+            right: "-90px",
+            transform: "rotate(15deg)",
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
   useMemo(() => {
     ensureFontsLoaded();
@@ -157,7 +229,6 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
           1,
           Math.round((event.end - event.start) * fps)
         );
-        const Component = getStyleComponent(event.style);
 
         return (
           <Sequence
@@ -166,7 +237,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
             durationInFrames={durationInFrames}
           >
             <div style={getZoneStyle(event)}>
-              <Component
+              <EventContainer
                 event={event}
                 words={timeline.words}
                 durationInFrames={durationInFrames}

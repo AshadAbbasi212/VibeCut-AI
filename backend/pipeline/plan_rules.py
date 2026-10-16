@@ -13,17 +13,22 @@ EMOJI_KEYWORDS: dict[str, str] = {
     "hospital": "🏥",
     "money": "💰",
     "cash": "💵",
-    "skills": "⚡",
-    "skill": "⚡",
-    "idea": "💡",
-    "ideas": "💡",
     "brain": "🧠",
     "fire": "🔥",
     "rocket": "🚀",
-    "target": "🎯",
     "action": "🚀",
     "time": "⏳",
     "heart": "❤️",
+}
+
+ICON_KEYWORDS: dict[str, str] = {
+    "skills": "zap",
+    "skill": "zap",
+    "idea": "lightbulb",
+    "ideas": "lightbulb",
+    "target": "target",
+    "growth": "trending-up",
+    "spark": "sparkles",
 }
 
 EMPHASIS_KEYWORDS = {
@@ -35,9 +40,11 @@ ORDINAL_WORDS = {"one", "two", "three", "first", "second", "third", "1", "2", "3
 
 
 def detect_graphic_for_text(text: str) -> Optional[Graphic]:
-    """Detect concrete noun in text and return appropriate graphic sticker."""
+    """Detect concrete noun in text and return appropriate graphic sticker or icon."""
     lower_words = [w.lower().strip(".,!?:;\"'") for w in text.split()]
     for w in lower_words:
+        if w in ICON_KEYWORDS:
+            return Graphic(kind="icon", value=ICON_KEYWORDS[w], position="above")
         if w in EMOJI_KEYWORDS:
             return Graphic(kind="emoji", value=EMOJI_KEYWORDS[w], position="above")
     return None
@@ -160,6 +167,8 @@ class RulePlanner:
             elif "rather than" in text_lower or "luck" in text_lower or word_count <= 4:
                 feature_style = "handwritten"
                 feature_zone = "upper"
+                if "stop" in text_lower or "planning" in text_lower:
+                    feature_decorations = ["arrow"]
 
             # Fallback for remaining phrases: occasional sticker or serif_title
             if not feature_style and (idx % 3 == 0) and word_count <= 6:

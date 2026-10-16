@@ -120,3 +120,57 @@ export const UnderlineScribble: React.FC<{
     </svg>
   );
 };
+
+export const ArrowDoodle: React.FC<{
+  width?: number;
+  height?: number;
+  color?: string;
+  progress?: number;
+  style?: React.CSSProperties;
+}> = ({ width = 140, height = 80, color = "#FDE047", progress = 1, style }) => {
+  const pathLength = 180;
+  const dashoffset = pathLength * (1 - Math.min(1, Math.max(0, progress)));
+
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{
+        position: "absolute",
+        overflow: "visible",
+        pointerEvents: "none",
+        ...style,
+      }}
+    >
+      {/* Curved body of arrow */}
+      <path
+        d={`M 10 ${height - 10} Q ${width * 0.4} ${height * 0.15}, ${width - 15} 25`}
+        fill="none"
+        stroke={color}
+        strokeWidth={3.5}
+        strokeLinecap="round"
+        strokeDasharray={pathLength}
+        strokeDashoffset={dashoffset}
+        style={{ filter: `drop-shadow(0 0 6px ${color}88)` }}
+      />
+      {/* Arrowhead */}
+      {progress > 0.6 && (
+        <path
+          d={`M ${width - 32} 16 L ${width - 15} 25 L ${width - 24} 40`}
+          fill="none"
+          stroke={color}
+          strokeWidth={3.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{
+            filter: `drop-shadow(0 0 6px ${color}88)`,
+            opacity: Math.min(1, (progress - 0.6) / 0.4),
+          }}
+        />
+      )}
+    </svg>
+  );
+};
+
+export { GraphicRenderer } from "./GraphicRenderer";

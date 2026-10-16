@@ -4,6 +4,8 @@ import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut, floatY } from "../../anim";
 import { getFontFamilies } from "../../load-font";
 
+import { GraphicRenderer } from "../../decorations";
+
 interface StickerProps {
   event: TimelineEvent;
   words: TimelineWord[];
@@ -23,8 +25,11 @@ export const Sticker: React.FC<StickerProps> = ({
   const opacity = fadeOut(frame, durationInFrames, 6);
   const floatOffset = floatY(frame, fps, 7, 1.4);
 
-  // Determine graphic value (emoji or icon)
-  const graphicVal = event.graphic?.value || event.text || "💡";
+  // Determine graphic data
+  const graphic = event.graphic || {
+    kind: "emoji",
+    value: event.text || "💡",
+  };
 
   return (
     <div
@@ -38,21 +43,15 @@ export const Sticker: React.FC<StickerProps> = ({
         textAlign: "center",
       }}
     >
-      {/* Sticker icon / emoji with cyan / golden glow */}
-      <div
-        style={{
-          fontSize: "100px",
-          lineHeight: 1,
-          filter:
-            "drop-shadow(0 0 16px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 32px rgba(56, 189, 248, 0.45))",
-          transformOrigin: "center center",
-        }}
-      >
-        {graphicVal}
-      </div>
+      {/* Sticker icon / emoji / image via GraphicRenderer */}
+      <GraphicRenderer
+        graphic={graphic}
+        size={110}
+        glowColor="rgba(56, 189, 248, 0.85)"
+      />
 
       {/* Optional accompanying text tag */}
-      {event.text && event.text !== graphicVal && (
+      {event.text && event.text !== graphic.value && (
         <span
           style={{
             marginTop: "12px",
