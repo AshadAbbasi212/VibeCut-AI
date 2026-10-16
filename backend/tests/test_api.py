@@ -100,3 +100,18 @@ def test_download_incomplete_job_fails(client):
     out_resp = client.get(f"/api/jobs/{job_id}/output")
     assert out_resp.status_code == 400
     assert "not completed yet" in out_resp.json()["detail"]
+
+
+def test_frontend_serving(client):
+    root_resp = client.get("/")
+    assert root_resp.status_code == 200
+    assert "Dynamic Captions" in root_resp.text
+    assert "style.css" in root_resp.text
+    assert "app.js" in root_resp.text
+
+
+def test_sample_video_endpoint(client):
+    sample_resp = client.get("/api/sample")
+    assert sample_resp.status_code == 200
+    assert sample_resp.headers["content-type"] == "video/mp4"
+    assert len(sample_resp.content) > 0

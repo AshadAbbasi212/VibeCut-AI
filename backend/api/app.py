@@ -118,3 +118,23 @@ def get_job_timeline(job_id: str):
 
     data = json.loads(Path(job.timeline_file).read_text(encoding="utf-8"))
     return JSONResponse(content=data)
+
+
+@app.get("/api/sample")
+def get_sample_video():
+    """Return the synthetic sample video for testing."""
+    sample_path = Path("samples/synthetic.mp4").resolve()
+    if not sample_path.exists():
+        raise HTTPException(status_code=404, detail="Synthetic sample video not found")
+    return FileResponse(
+        path=sample_path,
+        media_type="video/mp4",
+        filename="sample.mp4",
+    )
+
+
+# Mount frontend single page application
+frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
+if frontend_dir.exists():
+    from fastapi.staticfiles import StaticFiles
+    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
