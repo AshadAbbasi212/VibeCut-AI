@@ -1,7 +1,7 @@
 # Progress (agent keeps this updated)
 - [x] Phase 0 Environment & scaffolding
 - [x] Phase 1 Transcription
-- [ ] Phase 2 Chunking
+- [x] Phase 2 Chunking
 - [ ] Phase 3 Remotion baseline
 - [ ] Phase 4 Style library + gallery
 - [ ] Phase 5 Planner & layout
