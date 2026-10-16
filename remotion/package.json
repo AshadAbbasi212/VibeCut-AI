@@ -1,0 +1,26 @@
+{
+  "name": "dynamic-captions-studio-remotion",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.536",
+    "@remotion/google-fonts": "4.0.536",
+    "@remotion/layout-utils": "4.0.536",
+    "@remotion/media-utils": "4.0.536",
+    "@remotion/paths": "4.0.536",
+    "@remotion/renderer": "4.0.536",
+    "lucide-react": "1.16.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.536"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.7",
+    "typescript": "5.9.3"
+  }
+}

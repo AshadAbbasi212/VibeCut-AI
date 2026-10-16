@@ -12,5 +12,6 @@ dist/
 *.wav
 models/
 remotion/public/jobs/
+remotion/public/temp/
 .cache/
 .DS_Store
