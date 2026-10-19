@@ -52,5 +52,9 @@
 - **Decision**: Redesigned the frontend into a full-featured creator studio with a 4-tab control dock (`1. Video & Trim`, `2. Style Engine`, `3. Edit Captions`, `4. Exports`), a synchronized 9:16 vertical video player, an interactive live style sandbox for all 16 styles, and exposed `GET /api/styles` and `POST /api/jobs/{id}/rerender` endpoints.
 - **Why**: Creators need a seamless, desktop-class editing experience where they can review videos, adjust word-level timing, change per-phrase styles, and re-render in seconds directly from the timeline without re-running transcription or chunking.
 
+## 2026-10-19: Development No-Cache Middleware & HTTP HEAD Video Support
+- **Decision**: Added FastAPI HTTP middleware setting `Cache-Control: no-cache, no-store, must-revalidate` for static files, and registered both `GET` and `HEAD` routes on `/api/jobs/{id}/output` and `/api/sample`. Upgraded aspect ratio toggle styling to high-contrast cyan accent and set video canvas preview to `object-fit: contain`.
+- **Why**: Prevents browsers from silently serving stale `app.js` and `index.html` after UI modifications during development. Resolves browser media player failures when querying video metadata with standard HTTP `HEAD` pre-requests. Ensures instant, unambiguous visual feedback for active aspect ratios without video clipping.
+
 
 

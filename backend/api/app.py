@@ -28,6 +28,18 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    """Ensure frontend HTML, JS, and CSS files are never cached by browsers during development."""
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith((".html", ".js", ".css")):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
+
 @app.get("/api/health")
 def health_check():
     """Health check endpoint."""
@@ -93,7 +105,7 @@ def get_job_status(job_id: str):
     return job
 
 
-@app.get("/api/jobs/{job_id}/output")
+@app.api_route("/api/jobs/{job_id}/output", methods=["GET", "HEAD"])
 def download_job_output(job_id: str):
     """Download the final rendered MP4 video."""
     manager = get_job_manager()
@@ -247,7 +259,7 @@ def export_job_vtt(job_id: str):
     )
 
 
-@app.get("/api/sample")
+@app.api_route("/api/sample", methods=["GET", "HEAD"])
 def get_sample_video():
     """Return the synthetic sample video for testing."""
     sample_path = Path("samples/synthetic.mp4").resolve()
