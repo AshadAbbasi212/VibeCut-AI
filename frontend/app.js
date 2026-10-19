@@ -215,7 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
       completed: "Render complete! Preparing video...",
       failed: "Render failed.",
     };
-    processingStep.textContent = stepNames[job.step] || job.step;
+    if (job.step === "rendering" && pct >= 95) {
+      processingStep.textContent = "Muxing audio & finalizing MP4 with FFmpeg...";
+    } else {
+      processingStep.textContent = stepNames[job.step] || job.step;
+    }
 
     // Highlight checklist
     const stepIds = ["probing", "transcribing", "chunking", "planning", "rendering"];
