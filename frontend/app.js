@@ -35,9 +35,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnProgressFill = document.getElementById("btnProgressFill");
   const btnTextLabel = document.getElementById("btnTextLabel");
 
+  // Prominent Pipeline Progress Card references
+  const pipelineProgressCard = document.getElementById("pipelineProgressCard");
+  const pipelineProgressTitle = document.getElementById("pipelineProgressTitle");
+  const pipelineProgressPct = document.getElementById("pipelineProgressPct");
+  const pipelineProgressFill = document.getElementById("pipelineProgressFill");
+  const pipelineProgressDesc = document.getElementById("pipelineProgressDesc");
+  const pipelineProgressTime = document.getElementById("pipelineProgressTime");
+
   const stageStatus = document.getElementById("stageStatus");
   const phoneCanvas = document.getElementById("phoneCanvas");
-  const arButtons = document.querySelectorAll(".btn-ar");
+  const arSelectedLabel = document.getElementById("arSelectedLabel");
+  const allArButtons = document.querySelectorAll(".btn-ar, .btn-ar-opt");
 
   const viewIdle = document.getElementById("viewIdle");
   const viewSource = document.getElementById("viewSource");
@@ -85,17 +94,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   checkHealth();
 
-  // 2. Aspect Ratio Selector (Top Right of Canvas)
-  arButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      arButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedAspectRatio = btn.dataset.ar;
+  // 2. Synchronized Aspect Ratio Selector (Both in Options & on Canvas)
+  function setAspectRatio(ar) {
+    selectedAspectRatio = ar;
+    allArButtons.forEach((b) => {
+      b.classList.toggle("active", b.dataset.ar === ar);
+    });
 
-      // Morphs phone canvas container
-      phoneCanvas.className = "phone-canvas ar-" + selectedAspectRatio.replace(":", "-");
-      stageStatus.textContent = `Preview (${selectedAspectRatio})`;
-      showToast(`Switched canvas to ${selectedAspectRatio}`);
+    const labels = {
+      "9:16": "9:16 Vertical (Shorts/Reels)",
+      "16:9": "16:9 Landscape (YouTube)",
+      "1:1": "1:1 Square (Feed)",
+      "4:5": "4:5 Portrait (Instagram)",
+    };
+    if (arSelectedLabel) arSelectedLabel.textContent = labels[ar] || ar;
+    phoneCanvas.className = "phone-canvas ar-" + ar.replace(":", "-");
+    stageStatus.textContent = `Preview (${ar})`;
+    showToast(`Switched canvas to ${ar}`);
+  }
+
+  allArButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setAspectRatio(btn.dataset.ar);
     });
   });
 
@@ -206,16 +226,28 @@ document.addEventListener("DOMContentLoaded", () => {
   trimResetBtn.addEventListener("click", () => { trimStart.value = ""; trimEnd.value = ""; });
 
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
-  startJobBtn.addEventListener("click", () => {
+  startJobBtn.addEventListener("click", async () => {
     if (!selectedFile) {
-      showToast("Please upload a video or click 'Load Sample Reel'!");
-      return;
+      showToast("No video uploaded yet — auto-loading synthetic sample reel (12s)...");
+      await loadSample();
+      if (!selectedFile) {
+        showToast("Please upload a video or click 'Load Sample Reel'!");
+        return;
+      }
     }
 
     startJobBtn.disabled = true;
     showStage("processing");
     stageStatus.textContent = "Rendering...";
     jobStartTime = Date.now();
+
+    // Show and initialize prominent Pipeline Progress Card
+    if (pipelineProgressCard) pipelineProgressCard.classList.remove("hidden");
+    if (pipelineProgressTitle) pipelineProgressTitle.textContent = "Uploading Video to Engine...";
+    if (pipelineProgressPct) pipelineProgressPct.textContent = "0%";
+    if (pipelineProgressFill) pipelineProgressFill.style.width = "5%";
+    if (pipelineProgressDesc) pipelineProgressDesc.textContent = `Streaming ${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB to local studio runner...`;
+    if (pipelineProgressTime) pipelineProgressTime.textContent = "0s elapsed";
 
     // Prepare FormData
     const formData = new FormData();
@@ -260,6 +292,13 @@ document.addEventListener("DOMContentLoaded", () => {
         procPct.textContent = `${uploadPct}% Uploaded`;
         procStep.textContent = `Uploaded ${loadedMb} MB / ${totalMb} MB (${uploadPct}%)...`;
 
+        // Update prominent progress card
+        if (pipelineProgressPct) pipelineProgressPct.textContent = `${uploadPct}%`;
+        if (pipelineProgressFill) pipelineProgressFill.style.width = `${Math.max(5, uploadPct)}%`;
+        if (pipelineProgressDesc) pipelineProgressDesc.textContent = `Uploaded ${loadedMb} MB / ${totalMb} MB (${uploadPct}%)...`;
+        const elapsed = Math.floor((Date.now() - jobStartTime) / 1000);
+        if (pipelineProgressTime) pipelineProgressTime.textContent = `${elapsed}s elapsed`;
+
         btnTextLabel.textContent = `Uploading Video... ${uploadPct}%`;
         btnProgressFill.style.width = `${uploadPct}%`;
       }
@@ -275,6 +314,12 @@ document.addEventListener("DOMContentLoaded", () => {
           procFill.style.width = "25%";
           procPct.textContent = "25%";
           btnTextLabel.textContent = "Transcribing Speech...";
+
+          if (pipelineProgressTitle) pipelineProgressTitle.textContent = "Processing Video...";
+          if (pipelineProgressDesc) pipelineProgressDesc.textContent = "Aligning speech with faster-whisper timestamps...";
+          if (pipelineProgressPct) pipelineProgressPct.textContent = "25%";
+          if (pipelineProgressFill) pipelineProgressFill.style.width = "25%";
+
           startPolling(currentJobId);
         } catch (err) {
           onFailed({ error: "Failed to parse job response" });
@@ -344,14 +389,21 @@ document.addEventListener("DOMContentLoaded", () => {
       failed: "Render failed.",
     };
 
+    const currentStepText = (job.step === "rendering" && jobPct >= 95)
+      ? "Muxing audio & finalizing MP4 with FFmpeg..."
+      : (stepLabels[job.step] || job.step);
+
     procTitle.textContent = "Rendering Video...";
-    if (job.step === "rendering" && jobPct >= 95) {
-      procStep.textContent = "Muxing audio & finalizing MP4 with FFmpeg...";
-      btnTextLabel.textContent = "Finalizing MP4... 98%";
-    } else {
-      procStep.textContent = stepLabels[job.step] || job.step;
-      btnTextLabel.textContent = `Rendering... ${overallPct}%`;
-    }
+    procStep.textContent = currentStepText;
+    btnTextLabel.textContent = `Rendering... ${overallPct}%`;
+
+    // Prominent Progress Card
+    if (pipelineProgressCard) pipelineProgressCard.classList.remove("hidden");
+    if (pipelineProgressTitle) pipelineProgressTitle.textContent = `Rendering Video (${overallPct}%)`;
+    if (pipelineProgressPct) pipelineProgressPct.textContent = `${overallPct}%`;
+    if (pipelineProgressFill) pipelineProgressFill.style.width = `${overallPct}%`;
+    if (pipelineProgressDesc) pipelineProgressDesc.textContent = currentStepText;
+    if (pipelineProgressTime) pipelineProgressTime.textContent = `${elapsed}s elapsed`;
   }
 
   async function onCompleted(job) {
@@ -360,6 +412,15 @@ document.addEventListener("DOMContentLoaded", () => {
     btnProgressFill.style.width = "0%";
     btnTextLabel.textContent = "Generate Captioned Video ⚡";
     showToast("Render complete! Loading captioned video...");
+
+    // Update prominent card to 100% complete
+    if (pipelineProgressFill) pipelineProgressFill.style.width = "100%";
+    if (pipelineProgressPct) pipelineProgressPct.textContent = "100%";
+    if (pipelineProgressTitle) pipelineProgressTitle.textContent = "✓ Render Complete!";
+    if (pipelineProgressDesc) pipelineProgressDesc.textContent = "Captioned MP4 finalized and ready to download!";
+    setTimeout(() => {
+      if (pipelineProgressCard) pipelineProgressCard.classList.add("hidden");
+    }, 6000);
 
     // Pause source video if playing
     sourceVideoPlayer.pause();

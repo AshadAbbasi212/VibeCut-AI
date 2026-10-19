@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3.1">
   <style>
     /* ==========================================================================
        Minimalist Dark Design System (Linear / Apple inspired)
@@ -507,7 +507,145 @@
       z-index: 2;
     }
 
-    /* Stage Panel & Video Canvas */
+    /* Options Panel Aspect Ratio Selector Grid */
+    .ar-option-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-ar-opt {
+      background: var(--surface-hover);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .btn-ar-opt:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-ar-opt.active {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.14);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .btn-ar-opt .ar-icon {
+      font-size: 16px;
+    }
+
+    .btn-ar-opt .ar-ratio {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: var(--font-mono);
+    }
+
+    .btn-ar-opt.active .ar-ratio {
+      color: var(--accent);
+    }
+
+    .btn-ar-opt .ar-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    /* Dedicated Pipeline Progress Card */
+    .progress-card {
+      background: var(--surface);
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 24px var(--accent-glow);
+      animation: fadeIn 0.25s ease;
+    }
+
+    .progress-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .progress-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pulsing-dot {
+      width: 9px;
+      height: 9px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulseDot 1s infinite alternate;
+    }
+
+    @keyframes pulseDot {
+      from { opacity: 0.4; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1.25); }
+    }
+
+    .progress-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .progress-badge {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .pipeline-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .pipeline-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-grad);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    }
+
+    .progress-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Stage Panel & Video Canvas (Sticky to Viewport) */
+    .stage-col {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+    }
+
     .stage-wrapper {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1016,6 +1154,36 @@
             <button type="button" class="btn-chip" id="trimResetBtn">Full</button>
           </div>
 
+          <!-- Aspect Ratio Options in Left Controls -->
+          <div class="field" style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Aspect Ratio & Format</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="arSelectedLabel">9:16 Vertical</span>
+            </div>
+            <div class="ar-option-grid" id="arOptionsGrid">
+              <button type="button" class="btn-ar-opt active" data-ar="9:16">
+                <span class="ar-icon">📱</span>
+                <span class="ar-ratio">9:16</span>
+                <span class="ar-sub">Shorts / Reels</span>
+              </button>
+              <button type="button" class="btn-ar-opt" data-ar="16:9">
+                <span class="ar-icon">🖥️</span>
+                <span class="ar-ratio">16:9</span>
+                <span class="ar-sub">YouTube / Web</span>
+              </button>
+              <button type="button" class="btn-ar-opt" data-ar="1:1">
+                <span class="ar-icon">⏹️</span>
+                <span class="ar-ratio">1:1</span>
+                <span class="ar-sub">Square Feed</span>
+              </button>
+              <button type="button" class="btn-ar-opt" data-ar="4:5">
+                <span class="ar-icon">🖼️</span>
+                <span class="ar-ratio">4:5</span>
+                <span class="ar-sub">Portrait Post</span>
+              </button>
+            </div>
+          </div>
+
           <div class="options-grid">
             <div class="field">
               <label for="subPosition">Subtitle Position</label>
@@ -1053,6 +1221,24 @@
                 <span>⚡ 540p Fast Mode</span>
               </label>
             </div>
+          </div>
+        </div>
+
+        <!-- Real-Time Pipeline Progress Card (Always Visible When Rendering) -->
+        <div class="progress-card hidden" id="pipelineProgressCard">
+          <div class="progress-card-top">
+            <div class="progress-title-row">
+              <span class="pulsing-dot"></span>
+              <span class="progress-title" id="pipelineProgressTitle">Uploading Video...</span>
+            </div>
+            <span class="progress-badge" id="pipelineProgressPct">0%</span>
+          </div>
+          <div class="pipeline-track">
+            <div class="pipeline-fill" id="pipelineProgressFill"></div>
+          </div>
+          <div class="progress-card-bottom">
+            <span id="pipelineProgressDesc">Preparing local video stream...</span>
+            <span id="pipelineProgressTime">0s elapsed</span>
           </div>
         </div>
 
@@ -1146,6 +1332,6 @@
   <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>
