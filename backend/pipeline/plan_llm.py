@@ -66,6 +66,8 @@ class BasePlanner(ABC):
         caption_size: str = "medium",
         background_style: str = "transparent",
         highlight_color: str = "#38BDF8",
+        selected_styles: Optional[list[str]] = None,
+        subtitle_y: Optional[float] = None,
     ) -> list[TimelineEvent]:
         """Generate a list of TimelineEvents for the given phrases."""
         pass
@@ -88,6 +90,8 @@ class RulePlanner(BasePlanner):
         caption_size: str = "medium",
         background_style: str = "transparent",
         highlight_color: str = "#38BDF8",
+        selected_styles: Optional[list[str]] = None,
+        subtitle_y: Optional[float] = None,
     ) -> list[TimelineEvent]:
         raw_events = self.core.plan(
             phrases,
@@ -97,6 +101,8 @@ class RulePlanner(BasePlanner):
             caption_size=caption_size,
             background_style=background_style,
             highlight_color=highlight_color,
+            selected_styles=selected_styles,
+            subtitle_y=subtitle_y,
         )
         return assign_layout(raw_events, video_duration=video_duration)
 
@@ -183,17 +189,18 @@ class GeminiPlanner(BasePlanner):
         video_duration: float,
         preset: str = "bold_creator",
         language: str = "en",
+        **kwargs,
     ) -> list[TimelineEvent]:
         if not self.api_key:
             logger.warning("GEMINI_API_KEY not set. Falling back to RulePlanner.")
-            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language)
+            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         try:
             from google import genai
             from google.genai import types
         except ImportError:
             logger.warning("google-genai SDK not installed. Falling back to RulePlanner.")
-            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language)
+            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         # Prepare base pill captions
         base_events = [
@@ -284,16 +291,17 @@ class AnthropicPlanner(BasePlanner):
         video_duration: float,
         preset: str = "bold_creator",
         language: str = "en",
+        **kwargs,
     ) -> list[TimelineEvent]:
         if not self.api_key:
             logger.warning("ANTHROPIC_API_KEY not set. Falling back to RulePlanner.")
-            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language)
+            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         try:
             import anthropic
         except ImportError:
             logger.warning("anthropic SDK not installed. Falling back to RulePlanner.")
-            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language)
+            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         base_events = [
             TimelineEvent(

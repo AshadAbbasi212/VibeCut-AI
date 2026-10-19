@@ -16,6 +16,10 @@ import { QuoteEditorial } from "./quote_editorial";
 import { ComicBubble } from "./comic_bubble";
 import { GradientOutline } from "./gradient_outline";
 import { MinimalUnderline } from "./minimal_underline";
+import { HormoziBold } from "./hormozi_bold";
+import { RetroVaporwave } from "./retro_vaporwave";
+import { KaraokeBounce } from "./karaoke_bounce";
+import { FireBurn } from "./fire_burn";
 
 export interface StyleComponentProps {
   event: TimelineEvent;
@@ -49,6 +53,10 @@ export const STYLE_REGISTRY: Record<string, React.FC<StyleComponentProps>> = {
   comic_bubble: ComicBubble,
   gradient_outline: GradientOutline,
   minimal_underline: MinimalUnderline,
+  hormozi_bold: HormoziBold,
+  retro_vaporwave: RetroVaporwave,
+  karaoke_bounce: KaraokeBounce,
+  fire_burn: FireBurn,
 };
 
 export const getStyleComponent = (styleId: string): React.FC<StyleComponentProps> => {

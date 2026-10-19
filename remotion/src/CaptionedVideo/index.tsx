@@ -74,7 +74,7 @@ export const calculateCaptionedVideoMetadata: CalculateMetadataFunction<Captione
   };
 };
 
-const getZoneStyle = (event: TimelineEvent): React.CSSProperties => {
+const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSProperties => {
   const base: React.CSSProperties = {
     position: "absolute",
     display: "flex",
@@ -88,6 +88,21 @@ const getZoneStyle = (event: TimelineEvent): React.CSSProperties => {
     zIndex: event.layer || 1,
     pointerEvents: "none",
   };
+
+  // If user custom-dragged position is set (via event.y or global timeline.subtitleY)
+  const customY = event.y ?? (event.zone === "lower" || event.zone === "free" ? timeline?.subtitleY : undefined);
+  if (customY !== undefined && customY !== null) {
+    const topPct = customY * 100;
+    const leftPct = (event.x ?? 0.5) * 100;
+    return {
+      ...base,
+      top: `${topPct}%`,
+      left: `${leftPct}%`,
+      transform: "translate(-50%, -50%)",
+      width: "auto",
+      maxWidth: "92%",
+    };
+  }
 
   switch (event.zone) {
     case "upper":
@@ -110,7 +125,7 @@ const getZoneStyle = (event: TimelineEvent): React.CSSProperties => {
         transform: "translateY(-50%)",
       };
     case "free": {
-      const topPct = (event.y ?? 0.74) * 100;
+      const topPct = (event.y ?? 0.79) * 100;
       const leftPct = (event.x ?? 0.5) * 100;
       return {
         ...base,
@@ -256,7 +271,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
             from={from}
             durationInFrames={durationInFrames}
           >
-            <div style={getZoneStyle(event)}>
+            <div style={getZoneStyle(event, timeline)}>
               <EventContainer
                 event={event}
                 words={timeline.words}

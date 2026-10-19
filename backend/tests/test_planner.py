@@ -419,3 +419,44 @@ def test_sentence_level_pacing_locks_style():
     assert features[0].sentenceId == features[1].sentenceId == features[2].sentenceId
 
 
+def test_custom_single_style_selection_hormozi():
+    _, phrases = _make_sample_words_and_phrases()
+    planner = RuleCore()
+    events = planner.plan(
+        phrases,
+        video_duration=5.0,
+        selected_styles=["hormozi_bold"],
+        subtitle_y=0.74,
+    )
+    assert len(events) == len(phrases)
+    for ev in events:
+        assert ev.style == "hormozi_bold"
+        assert ev.y == 0.74
+        assert ev.zone == "free"
+        assert not ev.id.startswith("base_")
+
+
+def test_custom_multi_style_selection_rotation():
+    w0 = Word(i=0, text="First", start=0.0, end=0.4)
+    w1 = Word(i=1, text="sentence.", start=0.4, end=0.8)
+    p0 = Phrase(id="p0", text="First sentence.", start=0.0, end=0.8, speech_start=0.0, speech_end=0.8, words=[w0, w1], word_indices=[0, 1])
+
+    w2 = Word(i=2, text="Second", start=1.2, end=1.6)
+    w3 = Word(i=3, text="sentence.", start=1.6, end=2.0)
+    p1 = Phrase(id="p1", text="Second sentence.", start=1.2, end=2.0, speech_start=1.2, speech_end=2.0, words=[w2, w3], word_indices=[2, 3])
+
+    planner = RuleCore()
+    events = planner.plan(
+        [p0, p1],
+        video_duration=3.0,
+        selected_styles=["retro_vaporwave", "fire_burn"],
+        subtitle_y=0.65,
+    )
+    assert len(events) == 2
+    assert events[0].style == "retro_vaporwave"
+    assert events[1].style == "fire_burn"
+    assert events[0].y == 0.65
+    assert events[1].y == 0.65
+
+
+

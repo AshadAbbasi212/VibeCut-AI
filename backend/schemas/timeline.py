@@ -20,6 +20,10 @@ VALID_STYLES = {
     "comic_bubble",
     "gradient_outline",
     "minimal_underline",
+    "hormozi_bold",
+    "retro_vaporwave",
+    "karaoke_bounce",
+    "fire_burn",
 }
 
 VALID_ZONES = {"upper", "center", "lower", "free"}
@@ -125,6 +129,9 @@ class Timeline(BaseModel):
     )
     highlightColor: Optional[str] = Field(
         default="#38BDF8", description="Global highlight color"
+    )
+    subtitleY: Optional[float] = Field(
+        default=None, description="Global custom Y position (0.0 to 1.0) dragged by user"
     )
 
     @model_validator(mode="after")

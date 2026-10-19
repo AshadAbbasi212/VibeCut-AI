@@ -105,12 +105,101 @@ class RulePlanner:
         caption_size: str = "medium",
         background_style: str = "transparent",
         highlight_color: str = "#38BDF8",
+        selected_styles: Optional[list[str]] = None,
+        subtitle_y: Optional[float] = None,
     ) -> list[TimelineEvent]:
-        events: list[TimelineEvent] = []
+        from backend.schemas.timeline import VALID_STYLES
 
+        # Check if user picked custom caption style(s)
+        custom_styles = (
+            [s for s in selected_styles if s in VALID_STYLES]
+            if selected_styles
+            else []
+        )
+
+        # 1. Custom Single Style Selection (1 style picked)
+        if len(custom_styles) == 1:
+            chosen_style = custom_styles[0]
+            events: list[TimelineEvent] = []
+            for p in phrases:
+                if not p.word_indices:
+                    continue
+                s = round(p.start, 2)
+                e = max(round(p.end, 2), round(s + 0.35, 2))
+                if video_duration > 0 and e > video_duration:
+                    e = round(video_duration, 2)
+                    s = max(0.0, round(e - 0.35, 2))
+
+                highlights = detect_highlights(p.words)
+                events.append(
+                    TimelineEvent(
+                        id=f"evt_{p.id}",
+                        style=chosen_style,
+                        start=s,
+                        end=e,
+                        zone="free" if subtitle_y is not None else "lower",
+                        x=0.5 if subtitle_y is not None else None,
+                        y=round(subtitle_y, 2) if subtitle_y is not None else None,
+                        layer=1,
+                        wordRange=[p.word_indices[0], p.word_indices[-1]],
+                        text=p.text,
+                        highlights=highlights if highlights else None,
+                        captionSize=caption_size,
+                        backgroundStyle=background_style,
+                        highlightColor=highlight_color,
+                        animation=AnimationConfig(in_="pop", out="fade", wordStagger=0.04),
+                    )
+                )
+            return events
+
+        # 2. Custom Multi-Style Selection (2+ styles picked)
+        if len(custom_styles) > 1:
+            events: list[TimelineEvent] = []
+            if style_pacing == "sentence":
+                groups = group_phrases_into_sentences(phrases)
+            else:
+                groups = [[p] for p in phrases]
+
+            for g_idx, group in enumerate(groups):
+                group_style = custom_styles[g_idx % len(custom_styles)]
+                sentence_id = f"sent_{g_idx}"
+                for p in group:
+                    if not p.word_indices:
+                        continue
+                    s = round(p.start, 2)
+                    e = max(round(p.end, 2), round(s + 0.35, 2))
+                    if video_duration > 0 and e > video_duration:
+                        e = round(video_duration, 2)
+                        s = max(0.0, round(e - 0.35, 2))
+
+                    highlights = detect_highlights(p.words)
+                    events.append(
+                        TimelineEvent(
+                            id=f"evt_{p.id}",
+                            style=group_style,
+                            start=s,
+                            end=e,
+                            zone="free" if subtitle_y is not None else "lower",
+                            x=0.5 if subtitle_y is not None else None,
+                            y=round(subtitle_y, 2) if subtitle_y is not None else None,
+                            layer=1,
+                            wordRange=[p.word_indices[0], p.word_indices[-1]],
+                            text=p.text,
+                            highlights=highlights if highlights else None,
+                            captionSize=caption_size,
+                            backgroundStyle=background_style,
+                            highlightColor=highlight_color,
+                            animation=AnimationConfig(in_="pop", out="fade", wordStagger=0.04),
+                            sentenceId=sentence_id,
+                        )
+                    )
+            return events
+
+        # Default multi-style mode (no custom filter selected)
+        events: list[TimelineEvent] = []
         total_phrases = len(phrases)
 
-        # 1. Base track: every phrase gets a pill_word event in lower zone
+        # Base track: every phrase gets a pill_word event in lower zone
         for idx, p in enumerate(phrases):
             if not p.word_indices:
                 continue
@@ -127,7 +216,9 @@ class RulePlanner:
                     style="pill_word",
                     start=s,
                     end=e,
-                    zone="lower",
+                    zone="free" if subtitle_y is not None else "lower",
+                    x=0.5 if subtitle_y is not None else None,
+                    y=round(subtitle_y, 2) if subtitle_y is not None else None,
                     layer=1,
                     wordRange=[p.word_indices[0], p.word_indices[-1]],
                     text=p.text,
@@ -138,13 +229,16 @@ class RulePlanner:
             )
 
         if self.preset == "minimal_pill":
-            # minimal_pill preset: only pill_word captions with highlights
             return events
 
-        # Master pool of feature styles for maximum variety
+        # Master pool of feature styles including trending new styles
         all_feature_styles = [
+            "hormozi_bold",
             "title3d",
             "neon_glow",
+            "retro_vaporwave",
+            "karaoke_bounce",
+            "fire_burn",
             "typewriter_terminal",
             "paper_cutout",
             "glitch_kinetic",

@@ -26,6 +26,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const trim60sBtn = document.getElementById("trim60sBtn");
   const trimResetBtn = document.getElementById("trimResetBtn");
 
+  // Style Pool references
+  const stylesPoolGrid = document.getElementById("stylesPoolGrid");
+  const stylesBadgeCount = document.getElementById("stylesBadgeCount");
+  const selectAllStylesBtn = document.getElementById("selectAllStylesBtn");
+  const clearAllStylesBtn = document.getElementById("clearAllStylesBtn");
+  const stylesSummaryBadge = document.getElementById("stylesSummaryBadge");
+  const stylesSummaryText = document.getElementById("stylesSummaryText");
+  const stylePresetQuickBtns = document.querySelectorAll(".btn-style-preset-quick");
+
+  // CapCut Trimmer references
+  const trimReadout = document.getElementById("trimReadout");
+  const trimStartBadge = document.getElementById("trimStartBadge");
+  const trimEndBadge = document.getElementById("trimEndBadge");
+  const trimDurBadge = document.getElementById("trimDurBadge");
+  const trimTrackWrapper = document.getElementById("trimTrackWrapper");
+  const trimShadeLeft = document.getElementById("trimShadeLeft");
+  const trimWindow = document.getElementById("trimWindow");
+  const trimHandleLeft = document.getElementById("trimHandleLeft");
+  const trimHandleRight = document.getElementById("trimHandleRight");
+  const trimShadeRight = document.getElementById("trimShadeRight");
+  const trimPlayhead = document.getElementById("trimPlayhead");
+  const btnPlayCut = document.getElementById("btnPlayCut");
+  const playCutIcon = document.getElementById("playCutIcon");
+  const playCutLabel = document.getElementById("playCutLabel");
+
+  // Draggable Caption & Positioning references
+  const draggableCaptionBox = document.getElementById("draggableCaptionBox");
+  const dragCoordBadge = document.getElementById("dragCoordBadge");
+  const dragSampleText = document.getElementById("dragSampleText");
+  const snapGuideUpper = document.getElementById("snapGuideUpper");
+  const snapGuideCenter = document.getElementById("snapGuideCenter");
+  const snapGuideLower = document.getElementById("snapGuideLower");
+  const subPosLabel = document.getElementById("subPosLabel");
+  const subPosSlider = document.getElementById("subPosSlider");
+  const subPosQuickChips = document.querySelectorAll("#subPosQuickChips .btn-custom-chip");
+
   const subPosition = document.getElementById("subPosition");
   const videoLanguage = document.getElementById("videoLanguage");
   const llmProvider = document.getElementById("llmProvider");
@@ -276,13 +312,181 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSampleBtn.addEventListener("click", loadSample);
   quickSampleBtn.addEventListener("click", loadSample);
 
-  // 4. Preset Selection
+  // =========================================================================
+  // 4. Style Pool Multi-Selector & Presets
+  // =========================================================================
+  const ALL_AVAILABLE_STYLES = [
+    { id: "hormozi_bold", name: "Hormozi Bold", icon: "⚡", tag: "Trending", desc: "Alex Hormozi uppercase, yellow pop, heavy drop shadow" },
+    { id: "retro_vaporwave", name: "Retro 80s", icon: "🌴", tag: "Aesthetic", desc: "Dual chrome gradient, glowing grid card" },
+    { id: "karaoke_bounce", name: "Karaoke Bounce", icon: "🎤", tag: "Kinetic", desc: "Word-by-word hopping bounce physics dot with amber glow" },
+    { id: "fire_burn", name: "Fiery Flame", icon: "🔥", tag: "High Energy", desc: "Flame gradient text with flickering fiery red shadow" },
+    { id: "title3d", name: "3D Pop Title", icon: "🧊", tag: "3D Pop", desc: "Extruded multi-layer isometric 3D typography" },
+    { id: "neon_glow", name: "Cyber Neon", icon: "💡", tag: "Glow", desc: "Electric cyan luminous glow with pulsing flicker" },
+    { id: "pill_word", name: "Dynamic Pill", icon: "💊", tag: "Minimal", desc: "Sleek pill badge with word-by-word active pill" },
+    { id: "typewriter_terminal", name: "Hacker Terminal", icon: "💻", tag: "Tech", desc: "Monospace retro terminal console with blinking prompt" },
+    { id: "glitch_kinetic", name: "Kinetic Glitch", icon: "💥", tag: "Glitch", desc: "RGB channel split displacement with kinetic jitter" },
+    { id: "quote_editorial", name: "Editorial Quote", icon: "📰", tag: "Luxury", desc: "Magazine serif typography with amber quotation mark" },
+    { id: "comic_bubble", name: "Comic Bubble", icon: "💬", tag: "Pop Art", desc: "Pop-art dialogue speech bubble with bold black stroke" },
+    { id: "paper_cutout", name: "Paper Cutout", icon: "✂️", tag: "Craft", desc: "Layered kraft-paper torn note with washi tape" },
+    { id: "gradient_outline", name: "Gradient Outline", icon: "🌈", tag: "Modern", desc: "Iridescent gradient-bordered capsule with subtle glow" },
+    { id: "minimal_underline", name: "Minimal Underline", icon: "✨", tag: "Clean", desc: "Swiss minimalist typography with expanding underline" },
+    { id: "blob_card", name: "Blob Card", icon: "🫧", tag: "Glass", desc: "Organic morphing SVG blob card with spring pop-in" },
+    { id: "serif_title", name: "Serif Title", icon: "🏛️", tag: "Editorial", desc: "Editorial Fraunces serif with oval doodle" },
+    { id: "numbered_point", name: "Numbered Step", icon: "🔢", tag: "List", desc: "Italic serif numeral badge with circle doodle" },
+    { id: "handwritten", name: "Marker Script", icon: "✍️", tag: "Script", desc: "Casual expressive handwritten script with soft shadow" },
+    { id: "arc_letters", name: "Arc Curve", icon: "🪐", tag: "Curved", desc: "Curved letter placement along an arching trajectory" },
+    { id: "sticker", name: "Graphic Sticker", icon: "🏷️", tag: "Graphic", desc: "Vector graphic sticker with drop-shadow glow and float" },
+  ];
+
+  // All 20 styles active by default
+  let selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+
+  function renderStylesPool() {
+    if (!stylesPoolGrid) return;
+    stylesPoolGrid.innerHTML = "";
+
+    ALL_AVAILABLE_STYLES.forEach((style) => {
+      const isSelected = selectedStyles.includes(style.id);
+      const card = document.createElement("div");
+      card.className = `style-chip-item ${isSelected ? "active" : ""}`;
+      card.dataset.styleId = style.id;
+      card.title = style.desc;
+
+      card.innerHTML = `
+        <div class="style-chip-top">
+          <span class="style-chip-icon">${style.icon}</span>
+          <span class="style-chip-check">✓</span>
+        </div>
+        <span class="style-chip-title">${style.name}</span>
+        <span class="style-chip-tag">${style.tag}</span>
+      `;
+
+      card.addEventListener("click", () => {
+        toggleStyleSelection(style.id);
+      });
+
+      stylesPoolGrid.appendChild(card);
+    });
+
+    updateStylesSummary();
+  }
+
+  function toggleStyleSelection(styleId) {
+    if (selectedStyles.includes(styleId)) {
+      if (selectedStyles.length === 1) {
+        showToast("At least 1 style must remain selected.");
+        return;
+      }
+      selectedStyles = selectedStyles.filter((id) => id !== styleId);
+    } else {
+      selectedStyles.push(styleId);
+    }
+    renderStylesPool();
+  }
+
+  function updateStylesSummary() {
+    const count = selectedStyles.length;
+    if (stylesBadgeCount) {
+      stylesBadgeCount.textContent = `${count} of ${ALL_AVAILABLE_STYLES.length} Selected`;
+    }
+
+    if (stylesSummaryBadge && stylesSummaryText) {
+      if (count === 1) {
+        const found = ALL_AVAILABLE_STYLES.find((s) => s.id === selectedStyles[0]);
+        stylesSummaryBadge.textContent = "SINGLE STYLE MODE";
+        stylesSummaryText.textContent = `All video captions will consistently use ${found ? found.name : selectedStyles[0]}.`;
+      } else if (count === ALL_AVAILABLE_STYLES.length) {
+        stylesSummaryBadge.textContent = "DYNAMIC MIX (ALL 20)";
+        stylesSummaryText.textContent = "Rotating smoothly through all 20 creator styles sentence-by-sentence.";
+      } else {
+        stylesSummaryBadge.textContent = `${count} STYLES POOL`;
+        stylesSummaryText.textContent = `Custom pool: video rotates exclusively through your ${count} chosen styles.`;
+      }
+    }
+
+    updateDraggableCaptionPreview();
+  }
+
+  function updateDraggableCaptionPreview() {
+    if (!dragSampleText) return;
+    if (selectedStyles.length === 1) {
+      const single = selectedStyles[0];
+      if (single === "hormozi_bold") {
+        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #FACC15; background: none; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">DYNAMIC CAPTIONS</span> THAT HOOK`;
+        dragSampleText.style.fontFamily = "'Montserrat', 'Plus Jakarta Sans', sans-serif";
+        dragSampleText.style.fontWeight = "900";
+        dragSampleText.style.textTransform = "uppercase";
+      } else if (single === "retro_vaporwave") {
+        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #38BDF8; background: none;">DYNAMIC CAPTIONS</span> THAT SHINE`;
+        dragSampleText.style.fontFamily = "'Orbitron', sans-serif";
+        dragSampleText.style.fontWeight = "800";
+        dragSampleText.style.textTransform = "uppercase";
+      } else if (single === "fire_burn") {
+        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #EF4444; background: none;">DYNAMIC CAPTIONS</span> ON FIRE`;
+        dragSampleText.style.fontWeight = "900";
+      } else {
+        dragSampleText.innerHTML = `CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP`;
+        dragSampleText.style.fontFamily = "inherit";
+        dragSampleText.style.fontWeight = "800";
+        dragSampleText.style.textTransform = "none";
+      }
+    } else {
+      dragSampleText.innerHTML = `CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.style.fontFamily = "inherit";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "none";
+    }
+  }
+
+  if (selectAllStylesBtn) {
+    selectAllStylesBtn.addEventListener("click", () => {
+      selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+      renderStylesPool();
+      showToast("Selected all 20 caption styles.");
+    });
+  }
+
+  if (clearAllStylesBtn) {
+    clearAllStylesBtn.addEventListener("click", () => {
+      selectedStyles = ["hormozi_bold"];
+      renderStylesPool();
+      showToast("Reset to single style: Hormozi Bold.");
+    });
+  }
+
+  // 1-Click Preset Shortcuts
+  if (stylePresetQuickBtns) {
+    stylePresetQuickBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const pick = btn.dataset.pick;
+        if (pick === "all") {
+          selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+        } else if (pick) {
+          selectedStyles = [pick];
+        }
+        renderStylesPool();
+        showToast(`Preset: ${btn.textContent.trim()}`);
+      });
+    });
+  }
+
+  // High-Level Radio Presets sync
   presetChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       presetChips.forEach((c) => c.classList.remove("active"));
       chip.classList.add("active");
       const radio = chip.querySelector('input[type="radio"]');
-      if (radio) radio.checked = true;
+      if (radio) {
+        radio.checked = true;
+        if (radio.value === "minimal_pill") {
+          selectedStyles = ["pill_word", "minimal_underline"];
+        } else if (radio.value === "calm_serif") {
+          selectedStyles = ["serif_title", "quote_editorial", "blob_card", "minimal_underline"];
+        } else {
+          selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+        }
+        renderStylesPool();
+      }
     });
   });
 
@@ -291,13 +495,352 @@ document.addEventListener("DOMContentLoaded", () => {
     return checked ? checked.value : "bold_creator";
   }
 
-  // 5. Trimming Quick Buttons
-  trim15sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "15"; });
-  trim30sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "30"; });
-  trim60sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "60"; });
-  trimResetBtn.addEventListener("click", () => { trimStart.value = ""; trimEnd.value = ""; });
+  renderStylesPool();
 
+  // =========================================================================
+  // 5. CapCut-Style Dual-Handle Visual Video Trimmer
+  // =========================================================================
+  let videoTotalDuration = 12.0;
+  let trimStartSec = 0.0;
+  let trimEndSec = 12.0;
+  let isPlayingCut = false;
+  let currentDragHandle = null;
+  let dragTrackRect = null;
+  let windowDragStartSec = 0;
+  let windowDragStartEndSec = 0;
+  let windowDragStartPct = 0;
+
+  function formatTime(seconds) {
+    const s = Math.max(0, seconds);
+    const m = Math.floor(s / 60);
+    const remSec = (s % 60).toFixed(2);
+    return `${m.toString().padStart(2, "0")}:${remSec.padStart(5, "0")}`;
+  }
+
+  function initTrimmerDuration(duration) {
+    if (!duration || isNaN(duration) || duration <= 0) return;
+    videoTotalDuration = duration;
+    trimStartSec = 0.0;
+    trimEndSec = duration;
+    updateTrimmerDisplay();
+  }
+
+  function updateTrimmerDisplay() {
+    if (videoTotalDuration <= 0) return;
+    const startPct = Math.max(0, Math.min(100, (trimStartSec / videoTotalDuration) * 100));
+    const endPct = Math.max(0, Math.min(100, (trimEndSec / videoTotalDuration) * 100));
+    const widthPct = Math.max(0.5, endPct - startPct);
+
+    if (trimShadeLeft) trimShadeLeft.style.width = `${startPct}%`;
+    if (trimWindow) {
+      trimWindow.style.left = `${startPct}%`;
+      trimWindow.style.width = `${widthPct}%`;
+    }
+    if (trimShadeRight) {
+      trimShadeRight.style.left = `${endPct}%`;
+      trimShadeRight.style.width = `${Math.max(0, 100 - endPct)}%`;
+    }
+
+    if (trimStartBadge) trimStartBadge.textContent = formatTime(trimStartSec);
+    if (trimEndBadge) trimEndBadge.textContent = formatTime(trimEndSec);
+    const clipDur = (trimEndSec - trimStartSec).toFixed(1);
+    if (trimDurBadge) trimDurBadge.textContent = `Duration: ${clipDur}s`;
+    if (trimReadout) {
+      trimReadout.textContent = `${clipDur}s Selected (${formatTime(trimStartSec)} - ${formatTime(trimEndSec)})`;
+    }
+
+    // Sync hidden form inputs
+    if (trimStart) trimStart.value = trimStartSec > 0.05 ? trimStartSec.toFixed(2) : "";
+    if (trimEnd) trimEnd.value = trimEndSec < videoTotalDuration - 0.05 ? trimEndSec.toFixed(2) : "";
+  }
+
+  // Handle Drag Interactions
+  if (trimTrackWrapper) {
+    function onPointerDown(e, handleType) {
+      currentDragHandle = handleType;
+      dragTrackRect = trimTrackWrapper.getBoundingClientRect();
+      windowDragStartSec = trimStartSec;
+      windowDragStartEndSec = trimEndSec;
+      windowDragStartPct = (e.clientX - dragTrackRect.left) / dragTrackRect.width;
+
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (trimHandleLeft) {
+      trimHandleLeft.addEventListener("pointerdown", (e) => onPointerDown(e, "left"));
+    }
+    if (trimHandleRight) {
+      trimHandleRight.addEventListener("pointerdown", (e) => onPointerDown(e, "right"));
+    }
+    if (trimWindow) {
+      trimWindow.addEventListener("pointerdown", (e) => {
+        if (e.target !== trimHandleLeft && e.target !== trimHandleRight && !trimHandleLeft.contains(e.target) && !trimHandleRight.contains(e.target)) {
+          onPointerDown(e, "window");
+        }
+      });
+    }
+
+    function onPointerMove(e) {
+      if (!currentDragHandle || !dragTrackRect) return;
+      const x = Math.max(0, Math.min(dragTrackRect.width, e.clientX - dragTrackRect.left));
+      const pct = x / dragTrackRect.width;
+      const targetSec = pct * videoTotalDuration;
+
+      if (currentDragHandle === "left") {
+        trimStartSec = Math.max(0, Math.min(trimEndSec - 0.35, targetSec));
+        if (sourceVideoPlayer) {
+          sourceVideoPlayer.currentTime = trimStartSec;
+        }
+      } else if (currentDragHandle === "right") {
+        trimEndSec = Math.min(videoTotalDuration, Math.max(trimStartSec + 0.35, targetSec));
+        if (sourceVideoPlayer) {
+          sourceVideoPlayer.currentTime = trimEndSec;
+        }
+      } else if (currentDragHandle === "window") {
+        const deltaPct = pct - windowDragStartPct;
+        const deltaSec = deltaPct * videoTotalDuration;
+        const dur = windowDragStartEndSec - windowDragStartSec;
+
+        let newStart = windowDragStartSec + deltaSec;
+        let newEnd = newStart + dur;
+
+        if (newStart < 0) {
+          newStart = 0;
+          newEnd = dur;
+        } else if (newEnd > videoTotalDuration) {
+          newEnd = videoTotalDuration;
+          newStart = videoTotalDuration - dur;
+        }
+
+        trimStartSec = Math.max(0, newStart);
+        trimEndSec = Math.min(videoTotalDuration, newEnd);
+        if (sourceVideoPlayer) {
+          sourceVideoPlayer.currentTime = trimStartSec;
+        }
+      }
+
+      updateTrimmerDisplay();
+    }
+
+    function onPointerUp() {
+      currentDragHandle = null;
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    }
+  }
+
+  // Play Cut Button (Loop restricted chunk)
+  if (btnPlayCut) {
+    btnPlayCut.addEventListener("click", () => {
+      if (!sourceVideoPlayer || !sourceVideoPlayer.src) {
+        showToast("Load a video first to preview cut!");
+        return;
+      }
+
+      if (isPlayingCut) {
+        sourceVideoPlayer.pause();
+        isPlayingCut = false;
+        if (playCutLabel) playCutLabel.textContent = "Play Cut (Loop)";
+        if (playCutIcon) playCutIcon.textContent = "▶";
+        btnPlayCut.classList.remove("playing");
+      } else {
+        sourceVideoPlayer.currentTime = trimStartSec;
+        sourceVideoPlayer.play();
+        isPlayingCut = true;
+        if (playCutLabel) playCutLabel.textContent = "Pause Cut";
+        if (playCutIcon) playCutIcon.textContent = "⏸";
+        btnPlayCut.classList.add("playing");
+        if (trimPlayhead) trimPlayhead.classList.remove("hidden");
+      }
+    });
+
+    sourceVideoPlayer.addEventListener("timeupdate", () => {
+      if (videoTotalDuration <= 0) return;
+      const cur = sourceVideoPlayer.currentTime;
+
+      if (trimPlayhead) {
+        const pct = (cur / videoTotalDuration) * 100;
+        trimPlayhead.style.left = `${pct}%`;
+      }
+
+      if (isPlayingCut) {
+        if (cur >= trimEndSec || cur < trimStartSec - 0.2) {
+          sourceVideoPlayer.currentTime = trimStartSec;
+        }
+      }
+    });
+
+    sourceVideoPlayer.addEventListener("pause", () => {
+      if (isPlayingCut) {
+        isPlayingCut = false;
+        if (playCutLabel) playCutLabel.textContent = "Play Cut (Loop)";
+        if (playCutIcon) playCutIcon.textContent = "▶";
+        btnPlayCut.classList.remove("playing");
+      }
+    });
+  }
+
+  // Preset Buttons for Trimming
+  if (trim15sBtn) {
+    trim15sBtn.addEventListener("click", () => {
+      trimStartSec = 0.0;
+      trimEndSec = Math.min(videoTotalDuration, 15.0);
+      updateTrimmerDisplay();
+      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
+      showToast("Trimmed to first 15s Hook");
+    });
+  }
+  if (trim30sBtn) {
+    trim30sBtn.addEventListener("click", () => {
+      trimStartSec = 0.0;
+      trimEndSec = Math.min(videoTotalDuration, 30.0);
+      updateTrimmerDisplay();
+      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
+      showToast("Trimmed to 30s Reel");
+    });
+  }
+  if (trim60sBtn) {
+    trim60sBtn.addEventListener("click", () => {
+      trimStartSec = 0.0;
+      trimEndSec = Math.min(videoTotalDuration, 60.0);
+      updateTrimmerDisplay();
+      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
+      showToast("Trimmed to 60s Short");
+    });
+  }
+  if (trimResetBtn) {
+    trimResetBtn.addEventListener("click", () => {
+      trimStartSec = 0.0;
+      trimEndSec = videoTotalDuration;
+      updateTrimmerDisplay();
+      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
+      showToast("Reset to full video");
+    });
+  }
+
+  updateTrimmerDisplay();
+
+  // Calibrate Trimmer when video metadata is loaded
+  sourceVideoPlayer.addEventListener("loadedmetadata", () => {
+    if (sourceVideoPlayer.duration && !isNaN(sourceVideoPlayer.duration)) {
+      initTrimmerDuration(sourceVideoPlayer.duration);
+    }
+  });
+
+  // =========================================================================
+  // 5b. Drag-and-Drop Caption Placement on Video Canvas
+  // =========================================================================
+  let currentSubtitleY = 0.79; // Default 79% lower safe zone
+  let isDraggingCaption = false;
+
+  function setSubtitlePosition(posFract, trigger = "manual") {
+    const clamped = Math.max(0.10, Math.min(0.88, posFract));
+    currentSubtitleY = clamped;
+    const pct = Math.round(clamped * 100);
+
+    if (draggableCaptionBox) {
+      draggableCaptionBox.style.top = `${clamped * 100}%`;
+    }
+    if (dragCoordBadge) {
+      dragCoordBadge.textContent = `Y: ${pct}%`;
+    }
+    if (subPosSlider) {
+      subPosSlider.value = pct;
+    }
+
+    // Guideline highlights
+    const isNearUpper = Math.abs(clamped - 0.18) < 0.025;
+    const isNearCenter = Math.abs(clamped - 0.50) < 0.025;
+    const isNearLower = Math.abs(clamped - 0.79) < 0.025;
+
+    if (snapGuideUpper) snapGuideUpper.classList.toggle("highlight", isNearUpper);
+    if (snapGuideCenter) snapGuideCenter.classList.toggle("highlight", isNearCenter);
+    if (snapGuideLower) snapGuideLower.classList.toggle("highlight", isNearLower);
+
+    // Update quick chips active state
+    if (subPosQuickChips) {
+      subPosQuickChips.forEach((btn) => {
+        const p = btn.dataset.pos;
+        btn.classList.toggle("active", (p === "upper" && isNearUpper) || (p === "center" && isNearCenter) || (p === "lower" && isNearLower));
+      });
+    }
+
+    // Update label text
+    if (subPosLabel) {
+      if (isNearUpper) subPosLabel.textContent = "Top (18% Safe Zone)";
+      else if (isNearCenter) subPosLabel.textContent = "Center (50% Mid-Screen)";
+      else if (isNearLower) subPosLabel.textContent = "Bottom (79% Safe Zone)";
+      else subPosLabel.textContent = `Custom (${pct}% Y Position)`;
+    }
+
+    if (subPosition) {
+      if (isNearUpper) subPosition.value = "upper";
+      else if (isNearCenter) subPosition.value = "center";
+      else subPosition.value = "lower";
+    }
+  }
+
+  // Mouse & Touch Drag on Canvas Overlay
+  if (draggableCaptionBox && phoneCanvas) {
+    draggableCaptionBox.addEventListener("pointerdown", (e) => {
+      isDraggingCaption = true;
+      draggableCaptionBox.classList.add("dragging");
+      try { draggableCaptionBox.setPointerCapture(e.pointerId); } catch {}
+      e.preventDefault();
+    });
+
+    draggableCaptionBox.addEventListener("pointermove", (e) => {
+      if (!isDraggingCaption) return;
+      const rect = phoneCanvas.getBoundingClientRect();
+      if (rect.height <= 0) return;
+
+      let newY = (e.clientY - rect.top) / rect.height;
+
+      // Smart magnetic snap to Safe Zones
+      if (Math.abs(newY - 0.18) < 0.035) newY = 0.18;
+      else if (Math.abs(newY - 0.50) < 0.035) newY = 0.50;
+      else if (Math.abs(newY - 0.79) < 0.035) newY = 0.79;
+
+      setSubtitlePosition(newY, "drag");
+    });
+
+    draggableCaptionBox.addEventListener("pointerup", (e) => {
+      if (!isDraggingCaption) return;
+      isDraggingCaption = false;
+      draggableCaptionBox.classList.remove("dragging");
+      try { draggableCaptionBox.releasePointerCapture(e.pointerId); } catch {}
+      showToast(`Caption anchored at Y: ${Math.round(currentSubtitleY * 100)}%`);
+    });
+  }
+
+  // Position Slider Sync
+  if (subPosSlider) {
+    subPosSlider.addEventListener("input", (e) => {
+      setSubtitlePosition(parseFloat(e.target.value) / 100, "slider");
+    });
+  }
+
+  // Quick Preset Chips Sync
+  if (subPosQuickChips) {
+    subPosQuickChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = btn.dataset.pos;
+        if (p === "upper") setSubtitlePosition(0.18, "preset");
+        else if (p === "center") setSubtitlePosition(0.50, "preset");
+        else setSubtitlePosition(0.79, "preset");
+        showToast(`Position: ${btn.querySelector(".chip-label").textContent}`);
+      });
+    });
+  }
+
+  setSubtitlePosition(0.79);
+
+  // =========================================================================
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
+  // =========================================================================
   startJobBtn.addEventListener("click", async () => {
     if (!selectedFile) {
       showToast("No video uploaded yet — auto-loading synthetic sample reel (12s)...");
@@ -333,15 +876,17 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("background_style", selectedBgStyle);
     formData.append("style_pacing", selectedStylePacing);
     formData.append("highlight_color", selectedHighlightColor);
+    formData.append("selected_styles", selectedStyles.join(","));
+    formData.append("subtitle_y", currentSubtitleY.toFixed(2));
 
     if (draftToggle.checked) {
       formData.append("draft", "true");
     }
-    if (trimStart.value.trim()) {
-      formData.append("trim_start", trimStart.value.trim());
+    if (trimStartSec > 0.05) {
+      formData.append("trim_start", trimStartSec.toFixed(2));
     }
-    if (trimEnd.value.trim()) {
-      formData.append("trim_end", trimEnd.value.trim());
+    if (trimEndSec < videoTotalDuration - 0.05) {
+      formData.append("trim_end", trimEndSec.toFixed(2));
     }
 
     // Use XMLHttpRequest for real-time Upload Progress
@@ -621,6 +1166,12 @@ document.addEventListener("DOMContentLoaded", () => {
     viewSource.classList.toggle("hidden", stage !== "source");
     viewProcessing.classList.toggle("hidden", stage !== "processing");
     viewResult.classList.toggle("hidden", stage !== "result");
+
+    const showDraggable = (stage === "idle" || stage === "source");
+    if (draggableCaptionBox) draggableCaptionBox.classList.toggle("hidden", !showDraggable);
+    if (snapGuideUpper) snapGuideUpper.classList.toggle("hidden", !showDraggable);
+    if (snapGuideCenter) snapGuideCenter.classList.toggle("hidden", !showDraggable);
+    if (snapGuideLower) snapGuideLower.classList.toggle("hidden", !showDraggable);
   }
 
   // Toast Helper

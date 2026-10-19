@@ -202,12 +202,16 @@ def test_list_styles(client):
     assert resp.status_code == 200
     data = resp.json()
     assert "styles" in data
-    assert data["total"] == 16
+    assert data["total"] == 20
     style_ids = [s["id"] for s in data["styles"]]
     assert "neon_glow" in style_ids
     assert "typewriter_terminal" in style_ids
     assert "comic_bubble" in style_ids
     assert "title3d" in style_ids
+    assert "hormozi_bold" in style_ids
+    assert "retro_vaporwave" in style_ids
+    assert "karaoke_bounce" in style_ids
+    assert "fire_burn" in style_ids
 
 
 def test_rerender_endpoint(client, monkeypatch):
@@ -258,6 +262,8 @@ def test_job_submission_customization_options(client, tmp_path, monkeypatch):
                 "background_style": "glass",
                 "style_pacing": "sentence",
                 "highlight_color": "#EF4444",
+                "selected_styles": "hormozi_bold,retro_vaporwave",
+                "subtitle_y": "0.75",
             },
         )
 
@@ -267,6 +273,8 @@ def test_job_submission_customization_options(client, tmp_path, monkeypatch):
     assert job_data["background_style"] == "glass"
     assert job_data["style_pacing"] == "sentence"
     assert job_data["highlight_color"] == "#EF4444"
+    assert job_data["selected_styles"] == "hormozi_bold,retro_vaporwave"
+    assert job_data["subtitle_y"] == 0.75
 
 
 

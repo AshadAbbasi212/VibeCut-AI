@@ -62,6 +62,8 @@ async def create_job(
     highlight_color: str = Form("#38BDF8"),
     trim_start: Optional[float] = Form(None),
     trim_end: Optional[float] = Form(None),
+    selected_styles: Optional[str] = Form(None),
+    subtitle_y: Optional[float] = Form(None),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -92,6 +94,8 @@ async def create_job(
             highlight_color=highlight_color,
             trim_start=trim_start,
             trim_end=trim_end,
+            selected_styles=selected_styles,
+            subtitle_y=subtitle_y,
         )
         return job
     finally:
@@ -199,24 +203,28 @@ def rerender_job(
 
 @app.get("/api/styles")
 def list_styles():
-    """Return all available caption styles with metadata."""
+    """Return all available caption styles with rich metadata."""
     styles_meta = [
-        {"id": "title3d", "name": "3D Title", "category": "bold", "tag": "High Energy", "description": "Extruded 3D shadow, multi-line vertical gradients, twinkling stars"},
-        {"id": "neon_glow", "name": "Neon Glow", "category": "bold", "tag": "Cyberpunk", "description": "Electric cyan luminous glow with subtle pulsing flicker on frosted glass"},
-        {"id": "typewriter_terminal", "name": "Typewriter Terminal", "category": "tech", "tag": "Tech / Dev", "description": "Retro monospace terminal console with cyan prompt and blinking cursor"},
-        {"id": "paper_cutout", "name": "Paper Cutout", "category": "editorial", "tag": "Vlog / Craft", "description": "Angled (-2.5°) kraft-paper torn note with translucent washi tape overlay"},
-        {"id": "glitch_kinetic", "name": "Glitch Kinetic", "category": "bold", "tag": "Glitch", "description": "High-energy chromatic aberration with cyan/magenta split RGB layers"},
-        {"id": "quote_editorial", "name": "Quote Editorial", "category": "editorial", "tag": "Luxury", "description": "Magazine editorial serif typography with oversized warm amber quotation mark"},
-        {"id": "comic_bubble", "name": "Comic Bubble", "category": "pop", "tag": "Pop Art", "description": "Pop-art comic book speech bubble with bold 3.5px black stroke and tail pointer"},
-        {"id": "gradient_outline", "name": "Gradient Outline", "category": "bold", "tag": "Modern", "description": "Iridescent pink/purple gradient-bordered capsule with subtle glow"},
-        {"id": "minimal_underline", "name": "Minimal Underline", "category": "minimal", "tag": "Clean Swiss", "description": "Swiss minimalist typography with an animated expanding gradient underline bar"},
-        {"id": "blob_card", "name": "Blob Card", "category": "editorial", "tag": "Organic", "description": "Organic morphing SVG blob card with smooth spring pop-in"},
-        {"id": "serif_title", "name": "Serif Title", "category": "editorial", "tag": "Editorial", "description": "Editorial Fraunces serif with oval hand-drawn doodle & keyword pills"},
-        {"id": "numbered_point", "name": "Numbered Point", "category": "editorial", "tag": "List / Step", "description": "Italic serif numeral badge with hand-drawn circle doodle for lists & steps"},
-        {"id": "handwritten", "name": "Handwritten", "category": "editorial", "tag": "Casual Aside", "description": "Caveat script typography with soft dark shadow for commentary or asides"},
-        {"id": "arc_letters", "name": "Arc Letters", "category": "pop", "tag": "Curved", "description": "Curved letter placement along an arc with pastel colors and floating bounce"},
-        {"id": "sticker", "name": "Sticker Badge", "category": "pop", "tag": "Graphic", "description": "Lucide vector icon badge with drop-shadow glow and spring float"},
-        {"id": "pill_word", "name": "Pill Word", "category": "minimal", "tag": "Synced Sub", "description": "Word-synced high-contrast spoken-word active pill"},
+        {"id": "hormozi_bold", "name": "Hormozi Bold", "category": "bold", "tag": "Trending", "icon": "⚡", "description": "Alex Hormozi chunky uppercase font, yellow pop highlight, heavy drop shadow"},
+        {"id": "retro_vaporwave", "name": "Retro 80s", "category": "aesthetic", "tag": "Aesthetic", "icon": "🌴", "description": "Dual chrome pink-to-cyan gradient, glowing grid card"},
+        {"id": "karaoke_bounce", "name": "Karaoke Bounce", "category": "kinetic", "tag": "Kinetic", "icon": "🎤", "description": "Word-by-word hopping bounce physics dot with amber glow"},
+        {"id": "fire_burn", "name": "Fiery Flame", "category": "bold", "tag": "High Energy", "icon": "🔥", "description": "Flame gradient text with flickering fiery red drop shadow"},
+        {"id": "title3d", "name": "3D Title", "category": "bold", "tag": "High Energy", "icon": "🧊", "description": "Extruded 3D shadow, multi-line vertical gradients, twinkling stars"},
+        {"id": "neon_glow", "name": "Neon Glow", "category": "bold", "tag": "Cyberpunk", "icon": "💡", "description": "Electric cyan luminous glow with subtle pulsing flicker on frosted glass"},
+        {"id": "typewriter_terminal", "name": "Typewriter Terminal", "category": "tech", "tag": "Tech / Dev", "icon": "💻", "description": "Retro monospace terminal console with cyan prompt and blinking cursor"},
+        {"id": "paper_cutout", "name": "Paper Cutout", "category": "editorial", "tag": "Vlog / Craft", "icon": "✂️", "description": "Angled (-2.5°) kraft-paper torn note with translucent washi tape overlay"},
+        {"id": "glitch_kinetic", "name": "Glitch Kinetic", "category": "bold", "tag": "Glitch", "icon": "💥", "description": "High-energy chromatic aberration with cyan/magenta split RGB layers"},
+        {"id": "quote_editorial", "name": "Quote Editorial", "category": "editorial", "tag": "Luxury", "icon": "📰", "description": "Magazine editorial serif typography with oversized warm amber quotation mark"},
+        {"id": "comic_bubble", "name": "Comic Bubble", "category": "pop", "tag": "Pop Art", "icon": "💬", "description": "Pop-art comic book speech bubble with bold 3.5px black stroke and tail pointer"},
+        {"id": "gradient_outline", "name": "Gradient Outline", "category": "bold", "tag": "Modern", "icon": "🌈", "description": "Iridescent pink/purple gradient-bordered capsule with subtle glow"},
+        {"id": "minimal_underline", "name": "Minimal Underline", "category": "minimal", "tag": "Clean Swiss", "icon": "✨", "description": "Swiss minimalist typography with an animated expanding gradient underline bar"},
+        {"id": "blob_card", "name": "Blob Card", "category": "editorial", "tag": "Organic", "icon": "🫧", "description": "Organic morphing SVG blob card with smooth spring pop-in"},
+        {"id": "serif_title", "name": "Serif Title", "category": "editorial", "tag": "Editorial", "icon": "🏛️", "description": "Editorial Fraunces serif with oval hand-drawn doodle & keyword pills"},
+        {"id": "numbered_point", "name": "Numbered Point", "category": "editorial", "tag": "List / Step", "icon": "🔢", "description": "Italic serif numeral badge with hand-drawn circle doodle for lists & steps"},
+        {"id": "handwritten", "name": "Handwritten", "category": "editorial", "tag": "Casual Aside", "icon": "✍️", "description": "Caveat script typography with soft dark shadow for commentary or asides"},
+        {"id": "arc_letters", "name": "Arc Letters", "category": "pop", "tag": "Curved", "icon": "🪐", "description": "Curved letter placement along an arc with pastel colors and floating bounce"},
+        {"id": "sticker", "name": "Sticker Badge", "category": "pop", "tag": "Graphic", "icon": "🏷️", "description": "Lucide vector icon badge with drop-shadow glow and spring float"},
+        {"id": "pill_word", "name": "Pill Word", "category": "minimal", "tag": "Synced Sub", "icon": "💊", "description": "Word-synced high-contrast spoken-word active pill"},
     ]
     return {"styles": styles_meta, "total": len(styles_meta)}
 

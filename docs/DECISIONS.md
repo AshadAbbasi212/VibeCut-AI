@@ -60,6 +60,15 @@
 - **Decision**: Grouped spoken phrases into sentence units (`group_phrases_into_sentences`) so caption styles remain rock-solid and consistent throughout an entire sentence, changing style only when a complete sentence/thought concludes. Adjusted default font sizing to the 52px "sweet spot" (with configurable small 38px, medium 52px, large 68px scale via `getCaptionFontSize`). Replaced the solid white rectangular background box with a transparent default backdrop featuring high-contrast drop shadows and electric glowing word highlights, plus optional `glass` and `solid` modes. Added creator studio UI controls for Caption Size, Backdrop, Style Pacing, and Highlight Color in Card 3 ("3. Options").
 - **Why**: Switching visual styles mid-sentence (every 1-2s) created visual fatigue and distraction. Transparent backdrops prevent clunky bounding boxes and text clipping on dark/coding videos, while giving creators direct control over typography, pacing, and color schemes.
 
+## 2026-10-19: CapCut Dual-Handle Trimmer, 20-Style Pool & On-Canvas Caption Drag & Drop
+- **Decision**:
+  1. Built an interactive CapCut-style dual-handle timeline trimmer with draggable left `[` and right `]` handles, dimmed exclusion zones, live video frame seeking during drag, time badges, and a `▶ Play Cut` preview loop.
+  2. Expanded the style engine to 20 styles by adding `hormozi_bold` (Alex Hormozi yellow-pop uppercase block text), `retro_vaporwave` (80s chrome gradient with neon grid backing), `karaoke_bounce` (bouncing rhythm ball physics dot with golden glow), and `fire_burn` (blazing ember fire gradient with flicker shadow).
+  3. Added an interactive visual style pool in Card 2 where creators select 1, 2, or all 20 styles with instant presets (`Hormozi Only`, `Retro 80s Only`, `Karaoke Only`, `Fire Only`, `Neon Only`, `Dynamic Mix`). When 1 style is picked, the planner locks the entire video into that style cleanly without duplicate base pills; picking 2+ styles rotates strictly across those selected.
+  4. Added direct drag-and-drop caption placement directly onto the video canvas (`#phoneCanvas`) with magnetic snap guidelines (Upper 18%, Center 50%, Lower 79%), live coordinate badges (`Y: 10%-88%`), and fine-tuning slider controls synced bidirectionally with the backend and Remotion renderer.
+- **Why**: Creators need full CapCut-level agency over video selection, typography styling, and spatial placement. Draggable timeline brackets remove guesswork from video trimming, custom style pools prevent unwanted aesthetic switching, and direct canvas dragging lets users position subtitles anywhere without blocking crucial visual elements in the video.
+
+
 
 
 

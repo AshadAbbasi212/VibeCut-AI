@@ -41,6 +41,8 @@ class JobInfo(BaseModel):
     highlight_color: str = "#38BDF8"
     trim_start: Optional[float] = None
     trim_end: Optional[float] = None
+    selected_styles: Optional[str] = None
+    subtitle_y: Optional[float] = None
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
     input_file: str = ""
@@ -164,6 +166,8 @@ class JobManager:
         highlight_color: str = "#38BDF8",
         trim_start: Optional[float] = None,
         trim_end: Optional[float] = None,
+        selected_styles: Optional[str] = None,
+        subtitle_y: Optional[float] = None,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
         job_id = f"job_{uuid.uuid4().hex[:10]}"
@@ -191,6 +195,8 @@ class JobManager:
             highlight_color=highlight_color,
             trim_start=trim_start,
             trim_end=trim_end,
+            selected_styles=selected_styles,
+            subtitle_y=subtitle_y,
             input_file=str(target_input),
         )
         self.save_job(job)
@@ -334,6 +340,11 @@ class JobManager:
             # 4. Planning & Layout (0.45 -> 0.55)
             update_progress("planning", 0.48)
             planner = get_planner(provider=job.llm_provider, preset=job.preset)
+            selected_styles_list = (
+                [s.strip() for s in job.selected_styles.split(",") if s.strip()]
+                if job.selected_styles
+                else None
+            )
             events = planner.plan(
                 phrases=phrases_doc.phrases,
                 video_duration=probe.duration,
@@ -343,6 +354,8 @@ class JobManager:
                 caption_size=job.caption_size,
                 background_style=job.background_style,
                 highlight_color=job.highlight_color,
+                selected_styles=selected_styles_list,
+                subtitle_y=job.subtitle_y,
             )
 
             # Copy input asset to remotion public dir
@@ -357,9 +370,9 @@ class JobManager:
             target_w, target_h = ar_map.get(job.aspect_ratio, (probe.width, probe.height))
 
             # Apply custom subtitle position preference if specified without causing collisions
-            if job.subtitle_position in ["upper", "center", "lower"] and job.subtitle_position != "lower":
+            if job.subtitle_position in ["upper", "center", "lower"] and job.subtitle_position != "lower" and job.subtitle_y is None:
                 for ev in events:
-                    if ev.id.startswith("base_"):
+                    if ev.id.startswith("base_") or ev.id.startswith("evt_"):
                         has_collision = any(
                             other.zone == job.subtitle_position and max(other.start, ev.start) < min(other.end, ev.end)
                             for other in events if other.id != ev.id
@@ -387,6 +400,7 @@ class JobManager:
                 captionSize=job.caption_size,
                 backgroundStyle=job.background_style,
                 highlightColor=job.highlight_color,
+                subtitleY=job.subtitle_y,
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

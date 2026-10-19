@@ -68,4 +68,5 @@ export interface Timeline {
   captionSize?: "small" | "medium" | "large";
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
+  subtitleY?: number;
 }
