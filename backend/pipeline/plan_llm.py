@@ -138,6 +138,14 @@ def _validate_and_parse_llm_json(
             item["start"] = max(0.0, min(float(item.get("start", w_start)), w_start + 0.15))
             item["end"] = min(video_duration, max(float(item.get("end", w_end)), w_end - 0.15))
 
+        ev_start = round(float(item.get("start", 0.0)), 2)
+        ev_end = max(round(float(item.get("end", 0.0)), 2), round(ev_start + 0.35, 2))
+        if video_duration > 0 and ev_end > video_duration:
+            ev_end = round(video_duration, 2)
+            ev_start = max(0.0, round(ev_end - 0.35, 2))
+        item["start"] = ev_start
+        item["end"] = ev_end
+
         ev = TimelineEvent(**item)
         parsed_events.append(ev)
 

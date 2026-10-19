@@ -118,3 +118,37 @@ def test_cli_argument_parsing():
         assert args.draft is True
         assert args.start == 1.0
         assert args.end == 4.5
+
+
+def test_rapid_short_utterance_does_not_fail_validation():
+    """Verify short rapid utterance (e.g. 0.26s) produces valid TimelineEvents without throwing."""
+    short_words = [
+        Word(i=0, text="You", start=10.00, end=10.08, prob=0.99),
+        Word(i=1, text="can", start=10.08, end=10.16, prob=0.99),
+        Word(i=2, text="just", start=10.16, end=10.26, prob=0.99),
+        Word(i=3, text="stop", start=10.26, end=10.65, prob=0.99),
+        Word(i=4, text="there.", start=10.65, end=11.20, prob=0.99),
+    ]
+    phrases = chunk_words(short_words, duration=15.0)
+    for p in phrases:
+        assert p.end - p.start >= 0.30
+
+    planner = RulePlanner(preset="bold_creator")
+    events = planner.plan(phrases, video_duration=15.0)
+    for ev in events:
+        assert ev.end - ev.start >= 0.30
+
+    layout_events = assign_layout(events, video_duration=15.0)
+    for ev in layout_events:
+        assert ev.end - ev.start >= 0.30
+
+    # Build full Timeline to verify all invariants
+    tl = Timeline(
+        version=1,
+        video=TimelineVideo(src="test.mp4", width=1080, height=1920, fps=30.0, durationSec=15.0),
+        language="en",
+        words=[TimelineWord(i=w.i, text=w.text, start=w.start, end=w.end) for w in short_words],
+        events=layout_events,
+    )
+    assert len(tl.events) > 0
+

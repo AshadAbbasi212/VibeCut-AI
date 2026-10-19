@@ -81,7 +81,7 @@ def assign_layout(
             if e - s < min_event_duration:
                 s = max(0.0, round(e - min_event_duration, 2))
 
-        if e <= s or (e - s) < 0.25:
+        if e <= s or (e - s) < 0.30:
             continue
 
         ev_copy = ev.model_copy(update={"start": s, "end": e})
@@ -104,9 +104,13 @@ def assign_layout(
                 if prev_dur >= min_event_duration:
                     cleaned_base[-1] = prev.model_copy(update={"end": b_up.start})
                 else:
-                    # Adjust b_up start
-                    b_up = b_up.model_copy(update={"start": prev.end})
-                    if b_up.end - b_up.start < min_event_duration:
+                    # Adjust b_up start and preserve min duration
+                    new_start = prev.end
+                    new_end = max(b_up.end, round(new_start + min_event_duration, 2))
+                    if video_duration > 0 and new_end > video_duration:
+                        new_end = round(video_duration, 2)
+                    b_up = b_up.model_copy(update={"start": new_start, "end": new_end})
+                    if b_up.end - b_up.start < 0.30:
                         continue
         cleaned_base.append(b_up)
 

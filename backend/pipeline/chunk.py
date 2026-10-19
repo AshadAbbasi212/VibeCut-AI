@@ -148,6 +148,20 @@ def chunk_words(
         sub_chunks = partition_words(seg, max_words=max_words)
         word_groups.extend(sub_chunks)
 
+    # Merge very short word groups (< 0.35s speech duration) with adjacent groups within same sentence
+    merged_groups: list[list[Word]] = []
+    for group in word_groups:
+        if not group:
+            continue
+        g_dur = group[-1].end - group[0].start
+        if merged_groups and g_dur < 0.35:
+            prev = merged_groups[-1]
+            if not has_sentence_punctuation(prev[-1].text) and (len(prev) + len(group) <= max_words + 2):
+                merged_groups[-1] = prev + group
+                continue
+        merged_groups.append(group)
+    word_groups = merged_groups if merged_groups else word_groups
+
     # Step 3: Construct Phrase objects with safe timing extensions
     phrases: list[Phrase] = []
     for idx, group in enumerate(word_groups):
@@ -188,9 +202,16 @@ def chunk_words(
             safe_limit = limit_end - 0.02 if i + 1 < total_phrases else limit_end
             p.end = round(min(potential_end, max(p.speech_end, safe_limit)), 3)
 
+        # Enforce minimum display duration invariant (at least 0.35s)
+        if p.end - p.start < 0.35:
+            p.end = round(p.start + 0.35, 3)
+
         # Enforce invariant: phrase end <= next phrase start
-        if i + 1 < total_phrases and p.end > phrases[i + 1].start:
-            p.end = phrases[i + 1].start
+        if i + 1 < total_phrases:
+            if phrases[i + 1].start < p.end:
+                phrases[i + 1].start = p.end
+                if phrases[i + 1].end < phrases[i + 1].start + 0.35:
+                    phrases[i + 1].end = round(phrases[i + 1].start + 0.35, 3)
 
     return phrases
 

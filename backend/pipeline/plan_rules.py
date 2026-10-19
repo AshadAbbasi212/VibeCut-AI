@@ -86,12 +86,18 @@ class RulePlanner:
             if not p.word_indices:
                 continue
 
+            s = round(p.start, 2)
+            e = max(round(p.end, 2), round(s + 0.35, 2))
+            if video_duration > 0 and e > video_duration:
+                e = round(video_duration, 2)
+                s = max(0.0, round(e - 0.35, 2))
+
             events.append(
                 TimelineEvent(
                     id=f"base_{p.id}",
                     style="pill_word",
-                    start=p.start,
-                    end=p.end,
+                    start=s,
+                    end=e,
                     zone="lower",
                     layer=1,
                     wordRange=[p.word_indices[0], p.word_indices[-1]],
@@ -224,12 +230,18 @@ class RulePlanner:
             event_highlights = detect_highlights(p.words)
             graphic_item = feature_graphic or detect_graphic_for_text(p.text)
 
+            feat_s = round(p.start, 2)
+            feat_e = max(round(p.end, 2), round(feat_s + 0.35, 2))
+            if video_duration > 0 and feat_e > video_duration:
+                feat_e = round(video_duration, 2)
+                feat_s = max(0.0, round(feat_e - 0.35, 2))
+
             events.append(
                 TimelineEvent(
                     id=f"feat_{p.id}",
                     style=feature_style,
-                    start=p.start,
-                    end=p.end,
+                    start=feat_s,
+                    end=feat_e,
                     zone=feature_zone,
                     layer=2,
                     wordRange=[p.word_indices[0], p.word_indices[-1]],
