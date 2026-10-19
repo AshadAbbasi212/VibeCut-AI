@@ -3,683 +3,1016 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dynamic Captions Studio — Professional Animated Word-Synced Video Captions</title>
-  <meta name="description" content="Professional creator studio for rendering dynamic, multi-style, animated vertical video captions with Remotion, faster-whisper, and 16 distinct creator styles.">
+  <title>Dynamic Captions Studio — Minimalist Video Captions</title>
+  <meta name="description" content="Clean, minimalist studio for rendering animated word-synced captions on vertical videos.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* ==========================================================================
+       Minimalist Dark Design System (Linear / Apple inspired)
+       ========================================================================== */
+    :root {
+      --bg: #090a0f;
+      --surface: #11131a;
+      --surface-hover: #171a24;
+      --surface-active: #1d212e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --border-focus: #38bdf8;
+      
+      --accent: #38bdf8;
+      --accent-grad: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      
+      --text: #f8fafc;
+      --text-sub: #94a3b8;
+      --text-dim: #64748b;
+      
+      --success: #10b981;
+      --error: #ef4444;
+      
+      --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Ambient background glow */
+    .glow-bg {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1000px;
+      height: 400px;
+      background: radial-gradient(ellipse at top, rgba(56, 189, 248, 0.12), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* App Container */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 60px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 28px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-badge {
+      width: 34px;
+      height: 34px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .brand h1 span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 9999px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    /* Main Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 480px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Panel Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-badge {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      border: 1.5px dashed var(--border-hover);
+      background: rgba(255, 255, 255, 0.015);
+      border-radius: var(--radius-sm);
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    .drop-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+      opacity: 0.8;
+    }
+
+    .drop-primary {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .drop-secondary {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+
+    .btn-select {
+      background: var(--surface-hover);
+      border: 1px solid var(--border-hover);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-select:hover {
+      background: var(--surface-active);
+      border-color: var(--accent);
+    }
+
+    /* Selected File Item */
+    .selected-file {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-hover);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+
+    .file-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .file-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 280px;
+    }
+
+    .file-size {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .btn-remove {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .btn-remove:hover {
+      color: var(--error);
+    }
+
+    .sample-link-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .sample-btn {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .sample-btn:hover {
+      color: #ffffff;
+    }
+
+    /* Presets */
+    .presets-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .preset-chip {
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 10px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .preset-chip input {
+      display: none;
+    }
+
+    .preset-chip:hover {
+      border-color: var(--border-hover);
+    }
+
+    .preset-chip.active {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .preset-chip .p-icon {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .preset-chip .p-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+    }
+
+    .preset-chip .p-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      margin-top: 2px;
+      display: block;
+    }
+
+    /* Options Inputs */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    .input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      transition: border-color 0.15s;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--border-focus);
+    }
+
+    select.input {
+      font-family: var(--font);
+      cursor: pointer;
+    }
+
+    .trim-quick-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .btn-chip {
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-chip:hover {
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    /* Draft Checkbox */
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .checkbox-row input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .checkbox-row span {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* Primary Generate Button */
+    .btn-primary {
+      width: 100%;
+      background: var(--accent-grad);
+      border: none;
+      color: #090a0f;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 800;
+      padding: 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: 0 4px 16px var(--accent-glow);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Stage Panel & Video Canvas */
+    .stage-wrapper {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .stage-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stage-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Phone / Canvas 9:16 Frame */
+    .phone-canvas {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 9 / 16;
+      background: #030408;
+      border: 1px solid var(--border-hover);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    /* Idle Mockup */
+    .idle-box {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-dim);
+    }
+
+    .idle-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.6;
+    }
+
+    .idle-box h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .idle-box p {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    /* Processing Box */
+    .processing-box {
+      width: 80%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .proc-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .proc-step {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      min-height: 18px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-hover);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 5%;
+      background: var(--accent-grad);
+      transition: width 0.3s ease;
+    }
+
+    .proc-meta {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* Result Video Player */
+    .result-box {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .result-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Result Action Buttons */
+    .result-actions-strip {
+      width: 100%;
+      max-width: 380px;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .btn-download-main {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: var(--accent-grad);
+      color: #090a0f;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .btn-download-main:hover {
+      opacity: 0.95;
+    }
+
+    .sub-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sub {
+      flex: 1;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      text-decoration: none;
+      padding: 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .btn-sub:hover {
+      background: var(--surface-active);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    /* Caption Editor & Inspector */
+    .editor-card {
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .editor-header h3 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .phrases-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .phrase-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+    }
+
+    .phrase-time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .phrase-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 13px;
+      font-family: var(--font);
+    }
+
+    .phrase-input:focus {
+      outline: none;
+    }
+
+    .phrase-badge {
+      font-size: 10px;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .btn-save-edits {
+      background: var(--success);
+      color: #090a0f;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border-hover);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.2s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
-  <!-- Ambient Lighting Effects -->
-  <div class="ambient-glow glow-1"></div>
-  <div class="ambient-glow glow-2"></div>
-  <div class="ambient-glow glow-3"></div>
+  <div class="glow-bg"></div>
 
-  <!-- Main App Shell -->
-  <div class="app-shell">
-
-    <!-- Top Navigation Bar -->
-    <header class="studio-header">
-      <div class="header-left">
-        <div class="brand-badge">
-          <div class="logo-orb">
-            <span class="logo-emoji">✨</span>
-          </div>
-          <div class="brand-copy">
-            <div class="brand-title">
-              Dynamic Captions <span>Studio Pro</span>
-            </div>
-            <div class="brand-sub">Word-Synced Multi-Style Vertical Video Engine</div>
-          </div>
+  <div class="app">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-badge">✨</div>
+        <div>
+          <h1>Dynamic Captions <span>Studio</span></h1>
         </div>
       </div>
-
-      <nav class="header-nav">
-        <a href="#studioWorkspace" class="nav-link active" id="navStudio">
-          <span class="nav-icon">🎬</span> Studio
-        </a>
-        <a href="#editorSection" class="nav-link" id="navEditor">
-          <span class="nav-icon">✍️</span> Transcript & Editor
-        </a>
-        <a href="#gallerySection" class="nav-link" id="navGallery">
-          <span class="nav-icon">🎨</span> Style Library (16)
-        </a>
-      </nav>
-
-      <div class="header-right">
-        <div class="engine-badge" id="engineStatusBadge" title="Engine operational and ready">
-          <span class="engine-pulse"></span>
-          <span class="engine-text" id="engineStatusText">Core Ready • 1080p 30fps</span>
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span id="engineStatus">Ready</span>
         </div>
-        <button type="button" class="btn-ghost-sm" id="sampleQuickBtn" title="Load sample test video">
-          <span>⚡ Try Sample Reel</span>
-        </button>
+        <button type="button" class="btn-ghost" id="quickSampleBtn">Load Sample Reel (12s)</button>
       </div>
     </header>
 
-    <!-- Studio Workspace -->
-    <main class="studio-workspace" id="studioWorkspace">
+    <!-- Main Workspace -->
+    <main class="grid">
+      <!-- Left: Studio Setup -->
+      <section class="controls-col">
+        <!-- 1. Source Video -->
+        <div class="card">
+          <div class="card-title">
+            <span>1. Video Source</span>
+            <span class="card-badge">9:16 Shorts</span>
+          </div>
 
-      <!-- LEFT COLUMN: Creator Dock / Configuration -->
-      <section class="dock-panel">
-        <!-- Dock Tab Switcher -->
-        <div class="dock-tabs">
-          <button type="button" class="dock-tab active" data-tab="tab-source">
-            <span class="tab-icon">📹</span>
-            <span>1. Video & Trim</span>
-          </button>
-          <button type="button" class="dock-tab" data-tab="tab-styles">
-            <span class="tab-icon">🎭</span>
-            <span>2. Style Engine</span>
-          </button>
-          <button type="button" class="dock-tab" data-tab="tab-editor" id="tabEditorBtn">
-            <span class="tab-icon">✍️</span>
-            <span>3. Edit Captions</span>
-            <span class="tab-badge hidden" id="captionCountBadge">0</span>
-          </button>
-          <button type="button" class="dock-tab" data-tab="tab-export">
-            <span class="tab-icon">📦</span>
-            <span>4. Exports</span>
-          </button>
+          <!-- Dropzone -->
+          <div class="dropzone" id="dropZone">
+            <input type="file" id="videoFileInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;">
+            <div id="dropPrompt">
+              <div class="drop-icon">🎬</div>
+              <p class="drop-primary">Drop video file here</p>
+              <p class="drop-secondary">MP4, MOV, or WebM (Vertical 1080x1920)</p>
+              <button type="button" class="btn-select" id="browseBtn">Browse File</button>
+            </div>
+            <div class="selected-file hidden" id="fileBadge">
+              <div class="file-meta">
+                <span>🎥</span>
+                <div>
+                  <div class="file-name" id="fileName">video.mp4</div>
+                  <div class="file-size" id="fileSize">12.4 MB</div>
+                </div>
+              </div>
+              <button type="button" class="btn-remove" id="removeFileBtn" title="Remove">×</button>
+            </div>
+          </div>
+
+          <div class="sample-link-bar">
+            <span>Don't have a video handy?</span>
+            <button type="button" class="sample-btn" id="loadSampleBtn">⚡ Load Synthetic Sample (12s)</button>
+          </div>
         </div>
 
-        <!-- TAB 1: Source & Trim -->
-        <div class="dock-tab-pane active" id="tab-source">
-          <!-- Video Upload Dropzone -->
-          <div class="panel-card">
-            <div class="card-header">
-              <div class="card-title">
-                <span class="step-circle">1</span>
-                <h3>Upload Vertical Video</h3>
-              </div>
-              <span class="card-pill">9:16 Optimized</span>
+        <!-- 2. Style Preset -->
+        <div class="card">
+          <div class="card-title">
+            <span>2. Style Preset</span>
+            <span class="card-badge">16 Styles</span>
+          </div>
+
+          <div class="presets-row">
+            <label class="preset-chip active" id="chipBold">
+              <input type="radio" name="preset" value="bold_creator" checked>
+              <div class="p-icon">⚡</div>
+              <span class="p-name">Bold Creator</span>
+              <span class="p-desc">3D, Neon, Glitch</span>
+            </label>
+
+            <label class="preset-chip" id="chipCalm">
+              <input type="radio" name="preset" value="calm_serif">
+              <div class="p-icon">📖</div>
+              <span class="p-name">Calm Serif</span>
+              <span class="p-desc">Editorial, Blobs</span>
+            </label>
+
+            <label class="preset-chip" id="chipMinimal">
+              <input type="radio" name="preset" value="minimal_pill">
+              <div class="p-icon">💊</div>
+              <span class="p-name">Minimal Pill</span>
+              <span class="p-desc">Clean Word Sync</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Trimming & Options -->
+        <div class="card">
+          <div class="card-title">
+            <span>3. Options</span>
+            <span class="card-badge">Custom</span>
+          </div>
+
+          <div class="options-grid">
+            <div class="field">
+              <label for="trimStart">Start (sec)</label>
+              <input type="number" id="trimStart" placeholder="0.0" min="0" step="0.5" class="input">
+            </div>
+            <div class="field">
+              <label for="trimEnd">End (sec)</label>
+              <input type="number" id="trimEnd" placeholder="Full" min="0" step="0.5" class="input">
+            </div>
+          </div>
+
+          <div class="trim-quick-row">
+            <button type="button" class="btn-chip" id="trim15sBtn">15s Hook</button>
+            <button type="button" class="btn-chip" id="trim30sBtn">30s Reel</button>
+            <button type="button" class="btn-chip" id="trim60sBtn">60s Short</button>
+            <button type="button" class="btn-chip" id="trimResetBtn">Full</button>
+          </div>
+
+          <div class="options-grid">
+            <div class="field">
+              <label for="llmProvider">Planner Engine</label>
+              <select id="llmProvider" class="input">
+                <option value="none">Deterministic (10-15 Styles)</option>
+                <option value="gemini">Google Gemini 2.5</option>
+                <option value="anthropic">Anthropic Claude</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="videoLanguage">Language</label>
+              <select id="videoLanguage" class="input">
+                <option value="en">English (en)</option>
+                <option value="auto">Auto Detect</option>
+                <option value="es">Spanish (es)</option>
+                <option value="fr">French (fr)</option>
+                <option value="de">German (de)</option>
+              </select>
+            </div>
+          </div>
+
+          <label class="checkbox-row" for="draftToggle">
+            <input type="checkbox" id="draftToggle" checked>
+            <span>⚡ Fast Draft Mode (540p / 0.5 scale for 4x faster rendering)</span>
+          </label>
+        </div>
+
+        <!-- Action Button -->
+        <button type="button" class="btn-primary" id="startJobBtn">
+          Generate Captioned Video ⚡
+        </button>
+      </section>
+
+      <!-- Right: Preview Stage & Player -->
+      <section class="stage-col">
+        <div class="stage-wrapper">
+          <div class="stage-header">
+            <span class="stage-title" id="stageStatus">Preview Canvas</span>
+            <span class="card-badge" id="timeElapsedBadge">9:16 Vertical</span>
+          </div>
+
+          <!-- Phone Frame -->
+          <div class="phone-canvas">
+            <!-- State 1: Idle -->
+            <div class="idle-box" id="viewIdle">
+              <div class="idle-icon">🎬</div>
+              <h4>No Video Loaded</h4>
+              <p>Upload a vertical video or click "Load Sample Reel" to render dynamic captions.</p>
             </div>
 
-            <div class="upload-dropzone" id="dropZone">
-              <input type="file" id="videoFileInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;">
+            <!-- State 2: Processing -->
+            <div class="processing-box hidden" id="viewProcessing">
+              <div class="spinner"></div>
+              <h4 class="proc-title" id="procTitle">Rendering Video...</h4>
+              <p class="proc-step" id="procStep">Analyzing audio & video stream</p>
               
-              <div class="dropzone-idle" id="dropPrompt">
-                <div class="upload-icon-wrapper">
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                </div>
-                <div class="drop-text-group">
-                  <p class="drop-headline">Drag & Drop your video file here</p>
-                  <p class="drop-subtext">Supports MP4, MOV, WebM • Up to 4K resolution</p>
-                </div>
-                <button type="button" class="btn-browse" id="browseBtn">Select File</button>
+              <div class="progress-track">
+                <div class="progress-fill" id="procFill"></div>
               </div>
-
-              <!-- Selected File Card -->
-              <div class="file-card hidden" id="fileBadge">
-                <div class="file-thumb" id="fileThumbPreview">🎬</div>
-                <div class="file-details">
-                  <p class="file-title" id="fileName">video.mp4</p>
-                  <div class="file-meta-row">
-                    <span class="file-tag" id="fileSize">14.2 MB</span>
-                    <span class="file-tag" id="fileDurationTag">Ready</span>
-                    <span class="file-tag highlight" id="fileAspectTag">9:16 Shorts</span>
-                  </div>
-                </div>
-                <button type="button" class="btn-remove-file" id="removeFileBtn" title="Remove Video">×</button>
+              
+              <div class="proc-meta">
+                <span id="procPct">0%</span>
+                <span id="procElapsed">0s</span>
               </div>
             </div>
 
-            <!-- Quick Sample Loader -->
-            <div class="sample-strip">
-              <span class="sample-label">Need instant test media?</span>
-              <button type="button" class="btn-link" id="loadSampleBtn">
-                ⚡ Load Synthetic 12s Sample Clip
-              </button>
+            <!-- State 3: Result Video Player -->
+            <div class="result-box hidden" id="viewResult">
+              <video id="resultVideo" controls playsinline></video>
             </div>
           </div>
 
-          <!-- Video Subclip Trimming -->
-          <div class="panel-card">
-            <div class="card-header">
-              <div class="card-title">
-                <span class="step-circle">2</span>
-                <h3>Range & Clip Trimming</h3>
-              </div>
-              <span class="card-pill optional">Optional</span>
-            </div>
-            <p class="card-desc">Trim the most engaging segment before transcription to save rendering time.</p>
-
-            <div class="trim-grid">
-              <div class="input-field">
-                <label for="trimStart">Start Offset (seconds)</label>
-                <div class="input-with-icon">
-                  <span class="field-icon">⏱️</span>
-                  <input type="number" id="trimStart" placeholder="0.0" min="0" step="0.5" class="pro-input">
-                </div>
-              </div>
-              <div class="input-field">
-                <label for="trimEnd">End Offset (seconds)</label>
-                <div class="input-with-icon">
-                  <span class="field-icon">⏱️</span>
-                  <input type="number" id="trimEnd" placeholder="Full Video" min="0" step="0.5" class="pro-input">
-                </div>
-              </div>
-            </div>
-
-            <div class="trim-presets">
-              <button type="button" class="btn-preset-chip" id="trim15sBtn">⚡ 15s Hook</button>
-              <button type="button" class="btn-preset-chip" id="trim30sBtn">⚡ 30s Reel</button>
-              <button type="button" class="btn-preset-chip" id="trim60sBtn">⚡ 60s Short</button>
-              <button type="button" class="btn-preset-chip active" id="trimResetBtn">Full Video</button>
+          <!-- Result Download Buttons -->
+          <div class="result-actions-strip hidden" id="resultActions">
+            <a href="#" class="btn-download-main" id="downloadMp4Btn" download>
+              ⬇️ Download Captioned MP4
+            </a>
+            <div class="sub-actions">
+              <a href="#" class="btn-sub" id="downloadSrtBtn" download>Download .SRT</a>
+              <a href="#" class="btn-sub" id="downloadVttBtn" download>Download .VTT</a>
+              <button type="button" class="btn-sub" id="resetBtn">Process Another</button>
             </div>
           </div>
         </div>
 
-        <!-- TAB 2: Style Engine & Presets -->
-        <div class="dock-tab-pane" id="tab-styles">
-          <!-- Preset Selector Cards -->
-          <div class="panel-card">
-            <div class="card-header">
-              <div class="card-title">
-                <span class="step-circle">3</span>
-                <h3>Curated Style Presets</h3>
-              </div>
-              <span class="card-pill">16 Styles Active</span>
+        <!-- Captions Inspector & Inline Editor -->
+        <div class="editor-card hidden" id="editorCard">
+          <div class="editor-header">
+            <div>
+              <h3>Captions Timeline (<span id="eventCount">0</span> phrases)</h3>
             </div>
-
-            <div class="preset-selection-grid">
-              <!-- Preset 1: Bold Creator -->
-              <label class="pro-preset-card active" data-preset="bold_creator">
-                <input type="radio" name="preset" value="bold_creator" checked>
-                <div class="preset-glow"></div>
-                <div class="preset-header">
-                  <div class="preset-icon-box creator">⚡</div>
-                  <div class="preset-title-wrap">
-                    <h4>Bold Creator</h4>
-                    <span class="preset-tag">High Energy • Reels / TikTok</span>
-                  </div>
-                </div>
-                <p class="preset-description">
-                  3D extruded gradient titles, neon glow, hacker typewriter, cyber glitch, and pop stickers. Guaranteed 10–15 styles per video without repetition.
-                </p>
-                <div class="preset-style-badges">
-                  <span class="mini-style-badge">title3d</span>
-                  <span class="mini-style-badge">neon_glow</span>
-                  <span class="mini-style-badge">typewriter_terminal</span>
-                  <span class="mini-style-badge">glitch_kinetic</span>
-                </div>
-              </label>
-
-              <!-- Preset 2: Calm Serif -->
-              <label class="pro-preset-card" data-preset="calm_serif">
-                <input type="radio" name="preset" value="calm_serif">
-                <div class="preset-glow"></div>
-                <div class="preset-header">
-                  <div class="preset-icon-box serif">📖</div>
-                  <div class="preset-title-wrap">
-                    <h4>Calm Serif</h4>
-                    <span class="preset-tag">Editorial • Podcast / Luxury</span>
-                  </div>
-                </div>
-                <p class="preset-description">
-                  Fraunces luxury serif headlines, oversized amber quotation marks, organic frosted blob cards, and animated hand-drawn oval doodles.
-                </p>
-                <div class="preset-style-badges">
-                  <span class="mini-style-badge">quote_editorial</span>
-                  <span class="mini-style-badge">serif_title</span>
-                  <span class="mini-style-badge">blob_card</span>
-                  <span class="mini-style-badge">paper_cutout</span>
-                </div>
-              </label>
-
-              <!-- Preset 3: Minimal Pill -->
-              <label class="pro-preset-card" data-preset="minimal_pill">
-                <input type="radio" name="preset" value="minimal_pill">
-                <div class="preset-glow"></div>
-                <div class="preset-header">
-                  <div class="preset-icon-box minimal">💊</div>
-                  <div class="preset-title-wrap">
-                    <h4>Minimal Pill</h4>
-                    <span class="preset-tag">Modern Clean • Shorts</span>
-                  </div>
-                </div>
-                <p class="preset-description">
-                  High-contrast spoken word active pills, Swiss clean typography with expanding gradient underline bars, and gentle float badges.
-                </p>
-                <div class="preset-style-badges">
-                  <span class="mini-style-badge">pill_word</span>
-                  <span class="mini-style-badge">minimal_underline</span>
-                  <span class="mini-style-badge">gradient_outline</span>
-                </div>
-              </label>
-            </div>
+            <button type="button" class="btn-save-edits hidden" id="saveEditsBtn">💾 Save Changes</button>
           </div>
-
-          <!-- Advanced Engine Settings -->
-          <div class="panel-card">
-            <details class="pro-details" open>
-              <summary class="pro-summary">
-                <span class="summary-title">⚙️ Engine & AI Configuration</span>
-                <span class="summary-chevron">▾</span>
-              </summary>
-              <div class="details-body">
-                <div class="form-row">
-                  <div class="input-field">
-                    <label for="llmProvider">Style Planner Intelligence</label>
-                    <select id="llmProvider" class="pro-select">
-                      <option value="none">Deterministic Rule Engine (10-15 Styles Non-Repeating)</option>
-                      <option value="gemini">Google Gemini 2.5 Flash</option>
-                      <option value="anthropic">Anthropic Claude 3.5 Sonnet</option>
-                    </select>
-                  </div>
-                  <div class="input-field">
-                    <label for="videoLanguage">Spoken Speech Language</label>
-                    <select id="videoLanguage" class="pro-select">
-                      <option value="en">English (en)</option>
-                      <option value="auto">Auto-Detect Whisper</option>
-                      <option value="es">Spanish (es)</option>
-                      <option value="fr">French (fr)</option>
-                      <option value="de">German (de)</option>
-                      <option value="pt">Portuguese (pt)</option>
-                      <option value="ja">Japanese (ja)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div class="form-row">
-                  <div class="input-field">
-                    <label for="renderConcurrency">Render CPU Concurrency</label>
-                    <select id="renderConcurrency" class="pro-select">
-                      <option value="auto">Auto (Detected CPU Cores)</option>
-                      <option value="2">2 Worker Threads</option>
-                      <option value="4">4 Worker Threads (Fast)</option>
-                      <option value="8">8 Worker Threads (Ultra)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </details>
-
-            <!-- Fast Draft Switch -->
-            <div class="toggle-card">
-              <div class="toggle-left">
-                <div class="toggle-icon">⚡</div>
-                <div class="toggle-copy">
-                  <div class="toggle-title">Fast Draft Preview Mode</div>
-                  <div class="toggle-sub">Renders at 540p / 0.5 scale in ~1/4 time for rapid testing</div>
-                </div>
-              </div>
-              <label class="switch-control" for="draftToggle">
-                <input type="checkbox" id="draftToggle">
-                <span class="switch-slider"></span>
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 3: Transcript & Inline Caption Editor -->
-        <div class="dock-tab-pane" id="tab-editor">
-          <div class="panel-card">
-            <div class="card-header">
-              <div class="card-title">
-                <span class="step-circle">✍️</span>
-                <h3>Transcript & Caption Studio</h3>
-              </div>
-              <div class="editor-header-actions">
-                <button type="button" class="btn-primary-sm hidden" id="saveEditsBtn">
-                  💾 Save & Apply Changes
-                </button>
-                <button type="button" class="btn-accent-sm hidden" id="rerenderBtn">
-                  ⚡ Fast Re-Render MP4
-                </button>
-              </div>
-            </div>
-            <p class="card-desc">
-              Edit phrase wording, adjust timing, or reassign styles on any specific phrase. Video playback automatically syncs with the editor below.
-            </p>
-
-            <div class="editor-empty-state" id="editorEmptyState">
-              <div class="empty-icon">📝</div>
-              <h4>No Active Transcript</h4>
-              <p>Generate or load captions to inspect and edit each phrase inline.</p>
-            </div>
-
-            <div class="timeline-editor-container hidden" id="timelineEditorContainer">
-              <div class="timeline-meta-bar">
-                <div class="meta-item">
-                  <span class="meta-label">Phrases:</span>
-                  <span class="meta-val" id="editorPhraseCount">0</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Total Duration:</span>
-                  <span class="meta-val" id="editorDurationVal">0.0s</span>
-                </div>
-                <div class="meta-item">
-                  <span class="meta-label">Sync Mode:</span>
-                  <span class="meta-val active-sync">Live Player Synced</span>
-                </div>
-              </div>
-
-              <!-- Interactive Phrase List -->
-              <div class="phrase-editor-list" id="phraseEditorList"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB 4: Export Hub -->
-        <div class="dock-tab-pane" id="tab-export">
-          <div class="panel-card">
-            <div class="card-header">
-              <div class="card-title">
-                <span class="step-circle">📦</span>
-                <h3>Export & Downloads</h3>
-              </div>
-              <span class="card-pill">Studio Output</span>
-            </div>
-            <p class="card-desc">Download high-definition video files, industry-standard subtitle formats, or raw timeline JSON.</p>
-
-            <div class="export-cards-grid">
-              <div class="export-tile">
-                <div class="export-tile-icon">🎬</div>
-                <div class="export-tile-info">
-                  <h4>Captioned MP4 Video</h4>
-                  <p>1080x1920 30fps vertical video with animated burned-in dynamic captions.</p>
-                </div>
-                <a href="#" class="btn-export-download disabled" id="exportVideoBtn" download>
-                  Download .MP4
-                </a>
-              </div>
-
-              <div class="export-tile">
-                <div class="export-tile-icon">📄</div>
-                <div class="export-tile-info">
-                  <h4>SubRip Subtitle (.SRT)</h4>
-                  <p>Standard timed subtitle file for YouTube Shorts, Adobe Premiere, and DaVinci.</p>
-                </div>
-                <a href="#" class="btn-export-download disabled" id="exportSrtBtn" download>
-                  Download .SRT
-                </a>
-              </div>
-
-              <div class="export-tile">
-                <div class="export-tile-icon">🌐</div>
-                <div class="export-tile-info">
-                  <h4>WebVTT Subtitle (.VTT)</h4>
-                  <p>Web Video Text Tracks format optimized for TikTok, Instagram, and web players.</p>
-                </div>
-                <a href="#" class="btn-export-download disabled" id="exportVttBtn" download>
-                  Download .VTT
-                </a>
-              </div>
-
-              <div class="export-tile">
-                <div class="export-tile-icon">⚙️</div>
-                <div class="export-tile-info">
-                  <h4>Timeline Metadata (.JSON)</h4>
-                  <p>Full Remotion timeline tree with millisecond word timestamps and zone layout.</p>
-                </div>
-                <button type="button" class="btn-export-download disabled" id="exportJsonBtn">
-                  View / Copy JSON
-                </button>
-              </div>
-            </div>
-
-            <!-- Collapsible JSON Viewer -->
-            <div class="json-drawer hidden" id="jsonDrawer">
-              <div class="json-drawer-header">
-                <span>timeline.json</span>
-                <button type="button" class="btn-copy-code" id="copyJsonBtn">Copy to Clipboard</button>
-              </div>
-              <pre class="json-code-block"><code id="jsonCodeView"></code></pre>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sticky Dock Action Bar -->
-        <div class="dock-action-bar">
-          <button type="button" class="btn-render-primary" id="startJobBtn">
-            <span class="render-btn-glow"></span>
-            <span class="render-btn-icon">⚡</span>
-            <span class="render-btn-text" id="startJobBtnText">Generate Dynamic Captions</span>
-          </button>
+          <div class="phrases-list" id="phrasesList"></div>
         </div>
       </section>
-
-      <!-- RIGHT COLUMN: Studio Stage & 9:16 Video Player -->
-      <section class="stage-panel">
-        <div class="stage-frame-container">
-          <div class="stage-header-bar">
-            <div class="stage-dots">
-              <span class="dot dot-red"></span>
-              <span class="dot dot-yellow"></span>
-              <span class="dot dot-green"></span>
-            </div>
-            <div class="stage-title-tag" id="stageStatusTag">Stage Ready • 9:16 Frame</div>
-            <div class="stage-actions">
-              <button type="button" class="btn-icon-ghost" id="theaterModeBtn" title="Toggle Theater Mode">⛶</button>
-            </div>
-          </div>
-
-          <!-- Vertical Phone Canvas (1080x1920 aspect ratio) -->
-          <div class="stage-screen-box">
-
-            <!-- STATE 1: IDLE / EMPTY MOCKUP -->
-            <div class="screen-view view-idle" id="viewIdle">
-              <!-- Animated Mockup Showcase -->
-              <div class="idle-mockup">
-                <div class="idle-notch"></div>
-                <div class="idle-speaker-silhouette">
-                  <div class="silhouette-head"></div>
-                  <div class="silhouette-torso"></div>
-                </div>
-
-                <!-- Floating Simulated Captions -->
-                <div class="mockup-caption-upper">
-                  <div class="mockup-cutout">HOW CREATORS WIN</div>
-                </div>
-
-                <div class="mockup-caption-center">
-                  <div class="mockup-title3d">MAKING MONEY IS</div>
-                  <div class="mockup-doodle-sparkle">✨ <span>SKILLS PROBLEM</span> ✨</div>
-                </div>
-
-                <div class="mockup-caption-lower">
-                  <div class="mockup-pill">
-                    <span class="active-word">Stop planning</span> and start doing
-                  </div>
-                </div>
-
-                <div class="idle-overlay-hint">
-                  <div class="idle-hint-card">
-                    <div class="hint-icon">🎬</div>
-                    <h4>Vertical Studio Ready</h4>
-                    <p>Select a video on the left dock or click "Try Sample Reel" to render word-synced animated captions.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- STATE 2: PROCESSING / PROGRESS PIPELINE -->
-            <div class="screen-view view-processing hidden" id="viewProcessing">
-              <div class="processing-glow-canvas">
-                <div class="hologram-spinner">
-                  <div class="spinner-track"></div>
-                  <div class="spinner-particle"></div>
-                  <div class="spinner-center">
-                    <span class="spinner-pct" id="processingPercentText">0%</span>
-                  </div>
-                </div>
-
-                <h3 class="processing-heading" id="processingHeading">Engine Rendering...</h3>
-                <p class="processing-subheading" id="processingStepDescription">
-                  Probing audio streams & speech alignment
-                </p>
-
-                <!-- Glowing Progress Bar -->
-                <div class="pro-progress-bar-wrap">
-                  <div class="pro-progress-bar-fill" id="progressBarFill" style="width: 5%;"></div>
-                </div>
-
-                <div class="progress-stats-row">
-                  <span class="stat-pill" id="progressTimeElapsed">Elapsed: 0s</span>
-                  <span class="stat-pill" id="progressResolution">1080x1920 • 30fps</span>
-                </div>
-
-                <!-- 5-Step Pipeline Checklist -->
-                <div class="pipeline-track">
-                  <div class="pipeline-item" id="pipe_probing">
-                    <div class="pipe-node">○</div>
-                    <div class="pipe-label">
-                      <strong>Stream Probe</strong>
-                      <span>Aspect ratio & audio channels</span>
-                    </div>
-                  </div>
-
-                  <div class="pipeline-item" id="pipe_transcribing">
-                    <div class="pipe-node">○</div>
-                    <div class="pipe-label">
-                      <strong>Faster-Whisper</strong>
-                      <span>Word-level precision timestamps</span>
-                    </div>
-                  </div>
-
-                  <div class="pipeline-item" id="pipe_chunking">
-                    <div class="pipe-node">○</div>
-                    <div class="pipe-label">
-                      <strong>Cadence Chunking</strong>
-                      <span>Natural spoken phrasing & pauses</span>
-                    </div>
-                  </div>
-
-                  <div class="pipeline-item" id="pipe_planning">
-                    <div class="pipe-node">○</div>
-                    <div class="pipe-label">
-                      <strong>Multi-Style Layout</strong>
-                      <span>10–15 distinct styles assignment</span>
-                    </div>
-                  </div>
-
-                  <div class="pipeline-item" id="pipe_rendering">
-                    <div class="pipe-node">○</div>
-                    <div class="pipe-label">
-                      <strong>Remotion Composition</strong>
-                      <span>Frame rendering & FFmpeg muxing</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- STATE 3: RESULT PLAYER & VIDEO CONTROLS -->
-            <div class="screen-view view-result hidden" id="viewResult">
-              <div class="video-container" id="videoContainer">
-                <video id="studioResultVideo" playsinline preload="auto"></video>
-
-                <!-- Center Big Play Button Overlay -->
-                <button type="button" class="btn-video-overlay-play" id="overlayPlayBtn">
-                  <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3"/>
-                  </svg>
-                </button>
-
-                <!-- Custom Studio Player Controls -->
-                <div class="studio-player-controls">
-                  <!-- Progress Scrubber -->
-                  <div class="timeline-scrubber" id="timelineScrubber">
-                    <div class="scrubber-buffer" id="scrubberBuffer"></div>
-                    <div class="scrubber-played" id="scrubberPlayed"></div>
-                    <div class="scrubber-thumb" id="scrubberThumb"></div>
-                  </div>
-
-                  <!-- Control Buttons Row -->
-                  <div class="player-controls-row">
-                    <div class="controls-left">
-                      <button type="button" class="btn-player" id="playPauseBtn" title="Play / Pause (Space)">
-                        <span id="playIcon">▶</span>
-                      </button>
-                      <button type="button" class="btn-player" id="stepBackBtn" title="Step Back 1s">↺ 1s</button>
-                      <button type="button" class="btn-player" id="stepForwardBtn" title="Step Forward 1s">↻ 1s</button>
-                      <div class="player-timecode">
-                        <span id="currentTimeDisplay">00:00.00</span> / <span id="durationDisplay">00:00.00</span>
-                      </div>
-                    </div>
-
-                    <div class="controls-right">
-                      <button type="button" class="btn-player" id="speedToggleBtn" title="Playback Speed">1.0x</button>
-                      <button type="button" class="btn-player" id="muteToggleBtn" title="Mute / Unmute">🔊</button>
-                      <button type="button" class="btn-player" id="fullscreenBtn" title="Fullscreen">⛶</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Quick Result Bar -->
-              <div class="result-action-strip">
-                <a href="#" class="btn-action-primary" id="quickDownloadMp4Btn" download>
-                  <span>⬇️ Download MP4</span>
-                </a>
-                <button type="button" class="btn-action-secondary" id="editCaptionsJumpBtn">
-                  <span>✍️ Edit Captions</span>
-                </button>
-                <button type="button" class="btn-action-ghost" id="newJobBtn">
-                  <span>Process Another</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
     </main>
-
-    <!-- Style Library Showcase (16 Styles Interactive Playground) -->
-    <section class="gallery-showcase-section" id="gallerySection">
-      <div class="gallery-intro">
-        <div class="gallery-badge">16 Built-in Styles</div>
-        <h2>Dynamic Style Library & Live Playground</h2>
-        <p>Engineered to match modern high-retention vertical short-form creator aesthetics. Type below to test any phrase live.</p>
-
-        <!-- Live Sandbox Input -->
-        <div class="sandbox-input-box">
-          <span class="sandbox-prefix">Live Test Text:</span>
-          <input type="text" id="sandboxTextInput" value="MAKING MONEY IS A SKILL" placeholder="Type custom caption text..." class="pro-sandbox-input">
-        </div>
-
-        <!-- Filter Chips -->
-        <div class="gallery-filter-chips">
-          <button type="button" class="filter-chip active" data-filter="all">All Styles (16)</button>
-          <button type="button" class="filter-chip" data-filter="bold">⚡ High Energy & Bold (4)</button>
-          <button type="button" class="filter-chip" data-filter="editorial">📖 Editorial & Serif (5)</button>
-          <button type="button" class="filter-chip" data-filter="minimal">💊 Clean & Minimal (2)</button>
-          <button type="button" class="filter-chip" data-filter="tech">💻 Tech & Monospace (1)</button>
-          <button type="button" class="filter-chip" data-filter="pop">🎨 Pop Art & Badges (4)</button>
-        </div>
-      </div>
-
-      <!-- 16 Style Cards Grid -->
-      <div class="gallery-cards-grid" id="galleryGrid">
-        <!-- Cards dynamically populated or statically seeded with live binding -->
-      </div>
-    </section>
-
-    <!-- Studio Footer -->
-    <footer class="studio-footer">
-      <div class="footer-left">
-        <span class="footer-brand">Dynamic Captions Studio Pro</span>
-        <span class="footer-meta">Powered by Remotion • faster-whisper • FastAPI • Pydantic v2</span>
-      </div>
-      <div class="footer-right">
-        <span>1080x1920 Standard • Word Alignment &lt;100ms • Zero Safe-Zone Overlap</span>
-      </div>
-    </footer>
-
   </div>
 
-  <!-- Toast Container -->
-  <div class="toast-shelf" id="toastShelf"></div>
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
 
-  <!-- Main JavaScript Engine -->
   <script src="app.js"></script>
 </body>
 </html>
