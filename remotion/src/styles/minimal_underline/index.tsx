@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface MinimalUnderlineProps {
   event: TimelineEvent;
@@ -35,18 +36,18 @@ export const MinimalUnderline: React.FC<MinimalUnderlineProps> = ({
         justifyContent: "center",
         transform: `scale(${scale})`,
         opacity,
-        padding: "6px 18px",
-        backgroundColor: "rgba(0, 0, 0, 0.6)",
-        backdropFilter: "blur(8px)",
-        borderRadius: "8px",
-        maxWidth: "85%",
+        padding: "8px 22px",
+        backgroundColor: "rgba(0, 0, 0, 0.65)",
+        backdropFilter: "blur(10px)",
+        borderRadius: "10px",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
       <span
         style={{
           fontFamily: fonts.sans,
-          fontSize: "34px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 50)}px`,
           fontWeight: 800,
           lineHeight: 1.25,
           color: "#FFFFFF",

@@ -562,6 +562,89 @@
       white-space: nowrap;
     }
 
+    /* Creator Customization Group Styles */
+    .custom-chip-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .btn-custom-chip {
+      flex: 1;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-dim);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .btn-custom-chip .chip-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .btn-custom-chip .chip-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    .btn-custom-chip:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .btn-custom-chip.active {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+    }
+
+    .btn-custom-chip.active .chip-label {
+      color: var(--accent);
+    }
+
+    .color-swatch-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .btn-color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      outline: 2px solid rgba(255, 255, 255, 0.15);
+      outline-offset: 2px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .btn-color-swatch:hover {
+      transform: scale(1.15);
+      outline-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-color-swatch.active {
+      transform: scale(1.2);
+      outline-color: #ffffff;
+      outline-width: 2.5px;
+    }
+
     /* Dedicated Pipeline Progress Card */
     .progress-card {
       background: var(--surface);
@@ -1205,6 +1288,83 @@
             </div>
           </div>
 
+          <!-- Caption Font Size Controls -->
+          <div style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Caption Font Size</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="captionSizeSelectedLabel">Medium (52px Sweet Spot)</span>
+            </div>
+            <div class="custom-chip-group" id="captionSizeChips">
+              <button type="button" class="btn-custom-chip" data-size="small">
+                <span class="chip-label">Small</span>
+                <span class="chip-sub">38px</span>
+              </button>
+              <button type="button" class="btn-custom-chip active" data-size="medium">
+                <span class="chip-label">Medium</span>
+                <span class="chip-sub">52px (Sweet Spot)</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-size="large">
+                <span class="chip-label">Large</span>
+                <span class="chip-sub">68px</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Caption Backdrop Controls -->
+          <div style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Caption Backdrop</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="bgStyleSelectedLabel">Transparent (No Box)</span>
+            </div>
+            <div class="custom-chip-group" id="bgStyleChips">
+              <button type="button" class="btn-custom-chip active" data-bg="transparent">
+                <span class="chip-label">Transparent</span>
+                <span class="chip-sub">Clean (No Box)</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-bg="glass">
+                <span class="chip-label">Dark Glass</span>
+                <span class="chip-sub">Frosted Blur</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-bg="solid">
+                <span class="chip-label">Solid</span>
+                <span class="chip-sub">White Pill</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Style Switching Pacing -->
+          <div style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Style Switching Pacing</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="pacingSelectedLabel">Sentence by Sentence</span>
+            </div>
+            <div class="custom-chip-group" id="pacingChips">
+              <button type="button" class="btn-custom-chip active" data-pacing="sentence">
+                <span class="chip-label">Sentence by Sentence</span>
+                <span class="chip-sub">Changes on complete thought</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-pacing="phrase">
+                <span class="chip-label">Dynamic Phrase</span>
+                <span class="chip-sub">Every 3-5 words</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Word Highlight Color -->
+          <div style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Word Highlight Color</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="highlightColorSelectedLabel">Electric Cyan</span>
+            </div>
+            <div class="color-swatch-group" id="highlightColorSwatches">
+              <button type="button" class="btn-color-swatch active" data-color="#38BDF8" style="background: #38BDF8;" title="Electric Cyan"></button>
+              <button type="button" class="btn-color-swatch" data-color="#FBBF24" style="background: #FBBF24;" title="Cyber Gold"></button>
+              <button type="button" class="btn-color-swatch" data-color="#22C55E" style="background: #22C55E;" title="Neon Green"></button>
+              <button type="button" class="btn-color-swatch" data-color="#EF4444" style="background: #EF4444;" title="Crimson Rose"></button>
+              <button type="button" class="btn-color-swatch" data-color="#FFFFFF" style="background: #FFFFFF;" title="Clean White"></button>
+            </div>
+          </div>
+
           <div class="options-grid">
             <div class="field">
               <label for="llmProvider">Planner Intelligence</label>
@@ -1332,6 +1492,6 @@
   <!-- Toast Notification -->
   <div class="toast" id="toast"></div>
 
-  <script src="app.js?v=3.1"></script>
+  <script src="app.js?v=3.2"></script>
 </body>
 </html>

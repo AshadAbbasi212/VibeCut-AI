@@ -4,6 +4,7 @@ import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
 import { EllipseDoodle } from "../../decorations";
+import { getCaptionFontSize } from "../registry";
 
 interface SerifTitleProps {
   event: TimelineEvent;
@@ -107,7 +108,7 @@ export const SerifTitle: React.FC<SerifTitleProps> = ({
               gap: "10px",
               margin: "3px 0",
               fontFamily: fonts.serif,
-              fontSize: "36px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
               fontWeight: 800,
               lineHeight: 1.2,
               color: "#FFFFFF",

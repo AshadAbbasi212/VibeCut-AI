@@ -119,6 +119,78 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // 2b. Creator Customization Options State & Wiring
+  let selectedCaptionSize = "medium";
+  let selectedBgStyle = "transparent";
+  let selectedStylePacing = "sentence";
+  let selectedHighlightColor = "#38BDF8";
+
+  // Caption Size Chips
+  const captionSizeChips = document.querySelectorAll("#captionSizeChips .btn-custom-chip");
+  const captionSizeSelectedLabel = document.getElementById("captionSizeSelectedLabel");
+  captionSizeChips.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      captionSizeChips.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedCaptionSize = btn.dataset.size;
+      const sizeLabels = {
+        small: "Small (38px)",
+        medium: "Medium (52px Sweet Spot)",
+        large: "Large (68px)",
+      };
+      if (captionSizeSelectedLabel) captionSizeSelectedLabel.textContent = sizeLabels[selectedCaptionSize] || selectedCaptionSize;
+      showToast(`Caption font size: ${selectedCaptionSize}`);
+    });
+  });
+
+  // Background Style Chips
+  const bgStyleChips = document.querySelectorAll("#bgStyleChips .btn-custom-chip");
+  const bgStyleSelectedLabel = document.getElementById("bgStyleSelectedLabel");
+  bgStyleChips.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      bgStyleChips.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedBgStyle = btn.dataset.bg;
+      const bgLabels = {
+        transparent: "Transparent (No Box)",
+        glass: "Dark Glass (Frosted Blur)",
+        solid: "Solid (White Pill)",
+      };
+      if (bgStyleSelectedLabel) bgStyleSelectedLabel.textContent = bgLabels[selectedBgStyle] || selectedBgStyle;
+      showToast(`Backdrop: ${selectedBgStyle}`);
+    });
+  });
+
+  // Style Pacing Chips
+  const pacingChips = document.querySelectorAll("#pacingChips .btn-custom-chip");
+  const pacingSelectedLabel = document.getElementById("pacingSelectedLabel");
+  pacingChips.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      pacingChips.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedStylePacing = btn.dataset.pacing;
+      const pacingLabels = {
+        sentence: "Sentence by Sentence",
+        phrase: "Dynamic Phrase",
+      };
+      if (pacingSelectedLabel) pacingSelectedLabel.textContent = pacingLabels[selectedStylePacing] || selectedStylePacing;
+      showToast(`Pacing: ${selectedStylePacing}`);
+    });
+  });
+
+  // Highlight Color Swatches
+  const colorSwatches = document.querySelectorAll("#highlightColorSwatches .btn-color-swatch");
+  const highlightColorSelectedLabel = document.getElementById("highlightColorSelectedLabel");
+  colorSwatches.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      colorSwatches.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedHighlightColor = btn.dataset.color;
+      if (highlightColorSelectedLabel) highlightColorSelectedLabel.textContent = btn.title || selectedHighlightColor;
+      showToast(`Highlight color: ${btn.title}`);
+    });
+  });
+
   // 3. File Selection & Instant Video Preview
   browseBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -257,6 +329,10 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("language", videoLanguage.value);
     formData.append("aspect_ratio", selectedAspectRatio);
     formData.append("subtitle_position", subPosition ? subPosition.value : "lower");
+    formData.append("caption_size", selectedCaptionSize);
+    formData.append("background_style", selectedBgStyle);
+    formData.append("style_pacing", selectedStylePacing);
+    formData.append("highlight_color", selectedHighlightColor);
 
     if (draftToggle.checked) {
       formData.append("draft", "true");

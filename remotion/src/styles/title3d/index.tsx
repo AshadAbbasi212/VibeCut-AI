@@ -4,6 +4,7 @@ import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
 import { Sparkles } from "../../decorations";
+import { getCaptionFontSize } from "../registry";
 
 interface Title3dProps {
   event: TimelineEvent;
@@ -133,7 +134,7 @@ export const Title3d: React.FC<Title3dProps> = ({
               style={{
                 display: "block",
                 fontFamily: fonts.condensed,
-                fontSize: "44px",
+                fontSize: `${getCaptionFontSize(event.captionSize, 56)}px`,
                 fontWeight: 900,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
@@ -155,7 +156,7 @@ export const Title3d: React.FC<Title3dProps> = ({
                 left: 0,
                 right: 0,
                 fontFamily: fonts.condensed,
-                fontSize: "44px",
+                fontSize: `${getCaptionFontSize(event.captionSize, 56)}px`,
                 fontWeight: 900,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",

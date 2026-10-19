@@ -367,3 +367,55 @@ def test_rule_planner_10_to_15_styles_variety():
             feature_styles[idx] == feature_styles[idx - 1] == feature_styles[idx - 2]
         ), f"Three consecutive identical styles found at index {idx}: {feature_styles[idx]}"
 
+
+def test_sentence_level_pacing_locks_style():
+    """Verify that phrases in the same sentence share the same style, switching only when sentence ends."""
+    from backend.pipeline.plan_rules import group_phrases_into_sentences
+
+    # Sentence 1: 3 phrases ending with a period
+    w1 = Word(i=0, text="When", start=0.0, end=0.4)
+    w2 = Word(i=1, text="you", start=0.4, end=0.8)
+    w3 = Word(i=2, text="build", start=0.8, end=1.2)
+    p0 = Phrase(id="p0", text="When you build", start=0.0, end=1.2, speech_start=0.0, speech_end=1.2, words=[w1, w2, w3], word_indices=[0, 1, 2])
+
+    w4 = Word(i=3, text="clean", start=1.3, end=1.7)
+    w5 = Word(i=4, text="captions", start=1.7, end=2.2)
+    p1 = Phrase(id="p1", text="clean captions", start=1.3, end=2.2, speech_start=1.3, speech_end=2.2, words=[w4, w5], word_indices=[3, 4])
+
+    w6 = Word(i=5, text="they", start=2.3, end=2.6)
+    w7 = Word(i=6, text="shine.", start=2.6, end=3.0)
+    p2 = Phrase(id="p2", text="they shine.", start=2.3, end=3.0, speech_start=2.3, speech_end=3.0, words=[w6, w7], word_indices=[5, 6])
+
+    # Sentence 2: 2 phrases
+    w8 = Word(i=7, text="Always", start=3.4, end=3.8)
+    w9 = Word(i=8, text="test", start=3.8, end=4.2)
+    p3 = Phrase(id="p3", text="Always test", start=3.4, end=4.2, speech_start=3.4, speech_end=4.2, words=[w8, w9], word_indices=[7, 8])
+
+    w10 = Word(i=9, text="everything.", start=4.3, end=5.0)
+    p4 = Phrase(id="p4", text="everything.", start=4.3, end=5.0, speech_start=4.3, speech_end=5.0, words=[w10], word_indices=[9])
+
+    phrases = [p0, p1, p2, p3, p4]
+    sentences = group_phrases_into_sentences(phrases)
+    assert len(sentences) == 2
+    assert len(sentences[0]) == 3
+    assert len(sentences[1]) == 2
+
+    planner = RuleCore(preset="bold_creator")
+    events = planner.plan(
+        phrases,
+        video_duration=5.5,
+        style_pacing="sentence",
+        caption_size="medium",
+        background_style="transparent",
+        highlight_color="#22C55E",
+    )
+
+    features = [e for e in events if not e.id.startswith("base_")]
+    # First sentence (p0, p1, p2): all 3 phrases must share the same style
+    assert features[0].style == features[1].style == features[2].style
+    assert features[0].captionSize == "medium"
+    assert features[0].backgroundStyle == "transparent"
+    assert features[0].highlightColor == "#22C55E"
+    assert features[0].sentenceId == features[1].sentenceId == features[2].sentenceId
+
+

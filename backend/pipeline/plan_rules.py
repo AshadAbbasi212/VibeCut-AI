@@ -62,6 +62,34 @@ def detect_highlights(phrase_words: list[Word]) -> list[Highlight]:
     return highlights[:2]  # Limit to max 2 highlights per event
 
 
+def group_phrases_into_sentences(phrases: list[Phrase]) -> list[list[Phrase]]:
+    """Group consecutive phrases into sentences based on punctuation and natural pauses."""
+    if not phrases:
+        return []
+
+    sentences: list[list[Phrase]] = []
+    current_sentence: list[Phrase] = [phrases[0]]
+
+    for i in range(1, len(phrases)):
+        prev_p = phrases[i - 1]
+        curr_p = phrases[i]
+
+        has_sent_end = any(prev_p.text.rstrip().endswith(p) for p in {".", "!", "?", "—"})
+        pause = curr_p.start - prev_p.end
+        word_count_in_curr = sum(len(p.words) for p in current_sentence)
+
+        if has_sent_end or pause >= 0.65 or word_count_in_curr >= 14:
+            sentences.append(current_sentence)
+            current_sentence = [curr_p]
+        else:
+            current_sentence.append(curr_p)
+
+    if current_sentence:
+        sentences.append(current_sentence)
+
+    return sentences
+
+
 class RulePlanner:
     """Deterministic rule-based planner implementing styling heuristics."""
 
@@ -73,11 +101,12 @@ class RulePlanner:
         phrases: list[Phrase],
         video_duration: float,
         language: str = "en",
+        style_pacing: str = "sentence",
+        caption_size: str = "medium",
+        background_style: str = "transparent",
+        highlight_color: str = "#38BDF8",
     ) -> list[TimelineEvent]:
         events: list[TimelineEvent] = []
-        last_feature_time: dict[str, float] = {}
-        last_feature_style: Optional[str] = None
-        consecutive_same_style = 0
 
         total_phrases = len(phrases)
 
@@ -102,6 +131,9 @@ class RulePlanner:
                     layer=1,
                     wordRange=[p.word_indices[0], p.word_indices[-1]],
                     text=p.text,
+                    captionSize=caption_size,
+                    backgroundStyle=background_style,
+                    highlightColor=highlight_color,
                 )
             )
 
@@ -138,16 +170,24 @@ class RulePlanner:
 
         used_styles: set[str] = set()
         recent_styles: list[str] = []
-        window_size = 6
+        window_size = 5
 
-        # 2. Add impact feature events across phrases ensuring 10-15 distinct styles
-        for idx, p in enumerate(phrases):
-            if not p.word_indices:
+        # Group by sentence if style_pacing == "sentence", else group by individual phrase
+        if style_pacing == "sentence":
+            phrase_groups = group_phrases_into_sentences(phrases)
+        else:
+            phrase_groups = [[p] for p in phrases]
+
+        total_groups = len(phrase_groups)
+
+        # 2. Add impact feature events across sentence groups ensuring rich distinct styles
+        for g_idx, group in enumerate(phrase_groups):
+            if not group:
                 continue
 
-            text_lower = p.text.lower()
-            word_count = len(p.words)
-            words_in_phrase = [w.text.lower().strip(".,!?:;\"'") for w in p.words]
+            group_text = " ".join(p.text for p in group)
+            text_lower = group_text.lower()
+            all_words_in_group = [w.text.lower().strip(".,!?:;\"'") for p in group for w in p.words]
 
             feature_style: Optional[str] = None
             feature_zone = "upper"
@@ -156,14 +196,14 @@ class RulePlanner:
             feature_decorations: list[str] = []
             feature_graphic: Optional[Graphic] = None
 
-            # Determine semantic candidate style
-            if any(w in ORDINAL_WORDS for w in words_in_phrase) and any(
+            # Determine semantic candidate style for this sentence
+            if any(w in ORDINAL_WORDS for w in all_words_in_group) and any(
                 kw in text_lower for kw in ["step", "number", "point", "having", "way"]
             ):
                 feature_style = "numbered_point"
                 feature_decorations = ["ellipse"]
 
-            elif idx == 0:
+            elif g_idx == 0:
                 feature_style = "serif_title" if self.preset == "calm_serif" else "title3d"
                 feature_zone = "center"
                 feature_decorations = ["sparkles"]
@@ -180,7 +220,7 @@ class RulePlanner:
                 feature_style = "quote_editorial"
                 feature_zone = "upper"
 
-            elif "?" in p.text or "!" in p.text or any(w in text_lower for w in ["wow", "crazy", "secret", "shout", "boom"]):
+            elif "?" in group_text or "!" in group_text or any(w in text_lower for w in ["wow", "crazy", "secret", "shout", "boom"]):
                 feature_style = "comic_bubble"
                 feature_zone = "center"
 
@@ -211,25 +251,25 @@ class RulePlanner:
                 feature_style = "handwritten"
                 feature_zone = "upper"
 
-            elif len(p.words) in (2, 3) and all(len(w) <= 3 for w in words_in_phrase):
+            elif len(all_words_in_group) in (2, 3) and all(len(w) <= 4 for w in all_words_in_group):
                 feature_style = "arc_letters"
                 feature_zone = "center"
 
             else:
-                detected_graphic = detect_graphic_for_text(p.text) if self.preset != "calm_serif" else None
+                detected_graphic = detect_graphic_for_text(group_text) if self.preset != "calm_serif" else None
                 if detected_graphic:
                     feature_style = "sticker"
                     feature_graphic = detected_graphic
                     feature_zone = "center"
-                elif total_phrases >= 6 and (idx % 2 == 1 or len(used_styles) < min(14, total_phrases)):
-                    # Rotate in fresh unused styles to guarantee at least 10-15 styles in the video
+                elif total_groups >= 4:
+                    # Rotate in fresh unused styles to guarantee rich variety
                     unused = [s for s in all_feature_styles if s not in used_styles]
                     if unused:
                         feature_style = unused[0]
                     else:
                         available = [s for s in all_feature_styles if s not in recent_styles]
-                        feature_style = available[0] if available else all_feature_styles[idx % len(all_feature_styles)]
-                    feature_zone = "upper" if idx % 2 == 0 else "center"
+                        feature_style = available[0] if available else all_feature_styles[g_idx % len(all_feature_styles)]
+                    feature_zone = "upper" if g_idx % 2 == 0 else "center"
 
             if not feature_style:
                 continue
@@ -249,33 +289,47 @@ class RulePlanner:
             if len(recent_styles) > window_size:
                 recent_styles.pop(0)
 
-            # Highlights for the feature event
-            event_highlights = detect_highlights(p.words)
-            graphic_item = feature_graphic or detect_graphic_for_text(p.text)
+            # Generate feature events for each phrase within this sentence group
+            sentence_id = f"sent_{g_idx}"
+            for p in group:
+                if not p.word_indices:
+                    continue
 
-            feat_s = round(p.start, 2)
-            feat_e = max(round(p.end, 2), round(feat_s + 0.35, 2))
-            if video_duration > 0 and feat_e > video_duration:
-                feat_e = round(video_duration, 2)
-                feat_s = max(0.0, round(feat_e - 0.35, 2))
+                event_highlights = detect_highlights(p.words)
+                if highlight_color and event_highlights:
+                    for h in event_highlights:
+                        if h.kind == "color":
+                            h.value = highlight_color
 
-            events.append(
-                TimelineEvent(
-                    id=f"feat_{p.id}",
-                    style=feature_style,
-                    start=feat_s,
-                    end=feat_e,
-                    zone=feature_zone,
-                    layer=2,
-                    wordRange=[p.word_indices[0], p.word_indices[-1]],
-                    text=p.text,
-                    highlights=event_highlights if event_highlights else None,
-                    palette=feature_palette,
-                    variant=feature_variant,
-                    decorations=feature_decorations if feature_decorations else None,
-                    graphic=graphic_item,
-                    animation=AnimationConfig(in_="pop", out="fade", wordStagger=0.04),
+                graphic_item = feature_graphic or detect_graphic_for_text(p.text)
+
+                feat_s = round(p.start, 2)
+                feat_e = max(round(p.end, 2), round(feat_s + 0.35, 2))
+                if video_duration > 0 and feat_e > video_duration:
+                    feat_e = round(video_duration, 2)
+                    feat_s = max(0.0, round(feat_e - 0.35, 2))
+
+                events.append(
+                    TimelineEvent(
+                        id=f"feat_{p.id}",
+                        style=feature_style,
+                        start=feat_s,
+                        end=feat_e,
+                        zone=feature_zone,
+                        layer=2,
+                        wordRange=[p.word_indices[0], p.word_indices[-1]],
+                        text=p.text,
+                        highlights=event_highlights if event_highlights else None,
+                        palette=feature_palette,
+                        variant=feature_variant,
+                        decorations=feature_decorations if feature_decorations else None,
+                        graphic=graphic_item,
+                        animation=AnimationConfig(in_="pop", out="fade", wordStagger=0.04),
+                        captionSize=caption_size,
+                        backgroundStyle=background_style,
+                        highlightColor=highlight_color,
+                        sentenceId=sentence_id,
+                    )
                 )
-            )
 
         return events

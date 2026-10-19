@@ -13,6 +13,7 @@
 - [x] Phase 11 Fast draft previews, clip trimming, & SRT/VTT exports
 - [x] Phase 12 Professional Creator Studio Frontend & Fast Re-render Pipeline
 - [x] Phase 13 Aspect ratio selector UI polish, HEAD video streaming support, & development no-cache middleware
+- [x] Phase 14 Sentence-level style pacing, medium 52px caption sweet spot, transparent backdrop default, & studio creator options
 
 ## Notes / known issues
 - Phase 5: Pydantic v2 timeline schema, JSON schema export, RulePlanner, GeminiPlanner & AnthropicPlanner with fallback, layout engine enforcing zone conflicts, safe areas, pacing, and <= 3 concurrent events. out/timeline.json generated with 7 styles and rendered successfully to out/phase5_render.mp4.
@@ -23,6 +24,7 @@
 - Phase 10 & 11: Expanded style library to 16 distinct styles (added neon_glow, typewriter_terminal, paper_cutout, glitch_kinetic, quote_editorial, comic_bubble, gradient_outline, minimal_underline). Enforced 10 to 15 distinct styles per video via an anti-repetition queue (size 6). Scaled subtitle sizing by 40-50% (30-44px) and suppressed concurrent base pill rendering so single clean captions never clutter the screen. Added in-browser clip trimming, 540p fast draft rendering, click-to-edit caption updates, and downloadable .srt/.vtt exports. 51 pytest tests passing, Remotion typecheck 100% clean.
 - Phase 12: Professional Creator Studio Frontend completely redesigned. Features 4-tab creator dock (Video & Trim, Style Engine, Transcript & Inline Editor with active video playback sync, and Export Hub), custom 9:16 vertical video player with transport controls, interactive Style Library live preview sandbox with real-time text input and category filters, and backend endpoints GET /api/styles and POST /api/jobs/{id}/rerender for lightning-fast direct timeline re-renders. 53/53 pytest tests passing.
 - Phase 13: Added development no-cache HTTP headers to prevent browser caching of frontend HTML/JS/CSS assets, added HTTP HEAD support to /api/sample and /api/jobs/{id}/output for browser video player compliance, upgraded top-right canvas aspect ratio toggle buttons to high-contrast cyan glowing active state, and set preview video to object-fit: contain. Verified end-to-end job submission, polling, and MP4 rendering with 100% test pass rate (53/53 pytest).
+- Phase 14: Sentence-level style pacing (`group_phrases_into_sentences`), keeping visual styles rock-solid and stable across an entire thought without mid-sentence jumping. Replaced clunky solid white rectangular box with transparent default backdrop (`backgroundColor: "transparent"`) with high-contrast drop shadows and glowing word highlights. Standardized font sizing to medium 52px "sweet spot" across all 16 styles via `getCaptionFontSize`. Added UI customization chip controls for Caption Size (Small/Medium/Large), Backdrop (Transparent/Dark Glass/Solid), Pacing (Sentence by Sentence / Dynamic), and Word Highlight Color (Electric Cyan, Cyber Gold, Neon Green, Crimson, White). 55/55 pytest tests passing, Remotion typecheck 100% clean.
 
 
 

@@ -56,6 +56,10 @@ async def create_job(
     draft: bool = Form(False),
     aspect_ratio: str = Form("9:16"),
     subtitle_position: str = Form("lower"),
+    caption_size: str = Form("medium"),
+    background_style: str = Form("transparent"),
+    style_pacing: str = Form("sentence"),
+    highlight_color: str = Form("#38BDF8"),
     trim_start: Optional[float] = Form(None),
     trim_end: Optional[float] = Form(None),
 ):
@@ -82,6 +86,10 @@ async def create_job(
             draft=draft,
             aspect_ratio=aspect_ratio,
             subtitle_position=subtitle_position,
+            caption_size=caption_size,
+            background_style=background_style,
+            style_pacing=style_pacing,
+            highlight_color=highlight_color,
             trim_start=trim_start,
             trim_end=trim_end,
         )

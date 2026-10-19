@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface HandwrittenProps {
   event: TimelineEvent;
@@ -37,7 +38,7 @@ export const Handwritten: React.FC<HandwrittenProps> = ({
       <span
         style={{
           fontFamily: fonts.handwriting,
-          fontSize: "30px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
           fontWeight: 700,
           lineHeight: 1.2,
           color: "#FFFFFF",

@@ -4,6 +4,7 @@ import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
 import { Sparkles } from "../../decorations";
+import { getCaptionFontSize } from "../registry";
 
 interface BlobCardProps {
   event: TimelineEvent;
@@ -100,7 +101,7 @@ export const BlobCard: React.FC<BlobCardProps> = ({
             key={idx}
             style={{
               fontFamily: fonts.serif,
-              fontSize: "32px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 48)}px`,
               fontWeight: 700,
               lineHeight: 1.25,
               color: isFrosted ? "#FFFFFF" : "#FFFFFF",

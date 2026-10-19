@@ -38,6 +38,10 @@ export interface TimelineEvent {
   graphic?: TimelineGraphic | null;
   animation?: TimelineAnimation | null;
   variant?: string;
+  captionSize?: "small" | "medium" | "large";
+  backgroundStyle?: "transparent" | "glass" | "solid";
+  highlightColor?: string;
+  sentenceId?: string;
 }
 
 export interface TimelineWord {
@@ -61,4 +65,7 @@ export interface Timeline {
   language: string;
   words: TimelineWord[];
   events: TimelineEvent[];
+  captionSize?: "small" | "medium" | "large";
+  backgroundStyle?: "transparent" | "glass" | "solid";
+  highlightColor?: string;
 }

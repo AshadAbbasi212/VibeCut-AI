@@ -301,6 +301,68 @@
           "default": null,
           "description": "Optional style variant e.g. 'glow' or 'frosted'",
           "title": "Variant"
+        },
+        "captionSize": {
+          "anyOf": [
+            {
+              "enum": [
+                "small",
+                "medium",
+                "large"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional caption size override",
+          "title": "Captionsize"
+        },
+        "backgroundStyle": {
+          "anyOf": [
+            {
+              "enum": [
+                "transparent",
+                "glass",
+                "solid"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Caption background style: transparent, glass, solid",
+          "title": "Backgroundstyle"
+        },
+        "highlightColor": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Word highlight hex color",
+          "title": "Highlightcolor"
+        },
+        "sentenceId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Grouping identifier for sentence-level style consistency",
+          "title": "Sentenceid"
         }
       },
       "required": [
@@ -411,6 +473,55 @@
       },
       "title": "Events",
       "type": "array"
+    },
+    "captionSize": {
+      "anyOf": [
+        {
+          "enum": [
+            "small",
+            "medium",
+            "large"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "medium",
+      "description": "Global caption size",
+      "title": "Captionsize"
+    },
+    "backgroundStyle": {
+      "anyOf": [
+        {
+          "enum": [
+            "transparent",
+            "glass",
+            "solid"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "transparent",
+      "description": "Global background style",
+      "title": "Backgroundstyle"
+    },
+    "highlightColor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "#38BDF8",
+      "description": "Global highlight color",
+      "title": "Highlightcolor"
     }
   },
   "required": [

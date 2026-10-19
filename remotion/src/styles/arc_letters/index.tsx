@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut, floatY } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface ArcLettersProps {
   event: TimelineEvent;
@@ -76,7 +77,7 @@ export const ArcLetters: React.FC<ArcLettersProps> = ({
               top: "50%",
               transform: `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(${angleDeg}deg) scale(${tokenPop})`,
               fontFamily: fonts.sans,
-              fontSize: "36px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
               fontWeight: 900,
               color,
               textShadow: `0 0 16px ${color}AA, 0 3px 8px rgba(0,0,0,0.6)`,

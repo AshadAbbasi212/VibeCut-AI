@@ -4,6 +4,7 @@ import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
 import { EllipseDoodle } from "../../decorations";
+import { getCaptionFontSize } from "../registry";
 
 interface NumberedPointProps {
   event: TimelineEvent;
@@ -106,7 +107,7 @@ export const NumberedPoint: React.FC<NumberedPointProps> = ({
             key={idx}
             style={{
               fontFamily: fonts.serif,
-              fontSize: "32px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 48)}px`,
               fontWeight: 700,
               lineHeight: 1.25,
               color: "#FFFFFF",

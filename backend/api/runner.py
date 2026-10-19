@@ -35,6 +35,10 @@ class JobInfo(BaseModel):
     draft: bool = False
     aspect_ratio: str = "9:16"
     subtitle_position: str = "lower"
+    caption_size: str = "medium"
+    background_style: str = "transparent"
+    style_pacing: str = "sentence"
+    highlight_color: str = "#38BDF8"
     trim_start: Optional[float] = None
     trim_end: Optional[float] = None
     created_at: float = Field(default_factory=time.time)
@@ -154,6 +158,10 @@ class JobManager:
         draft: bool = False,
         aspect_ratio: str = "9:16",
         subtitle_position: str = "lower",
+        caption_size: str = "medium",
+        background_style: str = "transparent",
+        style_pacing: str = "sentence",
+        highlight_color: str = "#38BDF8",
         trim_start: Optional[float] = None,
         trim_end: Optional[float] = None,
     ) -> JobInfo:
@@ -177,6 +185,10 @@ class JobManager:
             draft=draft,
             aspect_ratio=aspect_ratio,
             subtitle_position=subtitle_position,
+            caption_size=caption_size,
+            background_style=background_style,
+            style_pacing=style_pacing,
+            highlight_color=highlight_color,
             trim_start=trim_start,
             trim_end=trim_end,
             input_file=str(target_input),
@@ -327,6 +339,10 @@ class JobManager:
                 video_duration=probe.duration,
                 preset=job.preset,
                 language=transcript.language or job.language,
+                style_pacing=job.style_pacing,
+                caption_size=job.caption_size,
+                background_style=job.background_style,
+                highlight_color=job.highlight_color,
             )
 
             # Copy input asset to remotion public dir
@@ -368,6 +384,9 @@ class JobManager:
                 language=transcript.language or job.language,
                 words=tl_words,
                 events=events,
+                captionSize=job.caption_size,
+                backgroundStyle=job.background_style,
+                highlightColor=job.highlight_color,
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

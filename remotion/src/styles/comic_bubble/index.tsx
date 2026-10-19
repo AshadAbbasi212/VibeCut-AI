@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface ComicBubbleProps {
   event: TimelineEvent;
@@ -37,14 +38,14 @@ export const ComicBubble: React.FC<ComicBubbleProps> = ({
         borderRadius: "20px",
         border: "3px solid #000000",
         boxShadow: "4px 4px 0px #000000",
-        maxWidth: "85%",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
       <span
         style={{
           fontFamily: fonts.sans,
-          fontSize: "32px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 48)}px`,
           fontWeight: 900,
           textTransform: "uppercase",
           letterSpacing: "0.02em",

@@ -129,6 +129,7 @@ def assign_layout(
     last_feature_style: Optional[str] = None
     consecutive_style_count = 0
     last_title3d_time = -100.0
+    last_sentence_id: Optional[str] = None
 
     for feat in feature_events:
         style = feat.style
@@ -139,16 +140,27 @@ def assign_layout(
             else:
                 last_title3d_time = feat.start
 
-        # Enforce max 2 consecutive identical styles
-        if style == last_feature_style:
-            if consecutive_style_count >= 2:
-                style = STYLE_ALTERNATIVES.get(style, "serif_title")
-                consecutive_style_count = 1
+        # Enforce max 2 consecutive identical styles across different sentences/events
+        is_same_sentence = (
+            feat.sentenceId is not None
+            and last_sentence_id is not None
+            and feat.sentenceId == last_sentence_id
+        )
+
+        if not is_same_sentence:
+            if style == last_feature_style:
+                if consecutive_style_count >= 2:
+                    style = STYLE_ALTERNATIVES.get(style, "serif_title")
+                    consecutive_style_count = 1
+                else:
+                    consecutive_style_count += 1
             else:
-                consecutive_style_count += 1
+                consecutive_style_count = 1
+            last_feature_style = style
+            last_sentence_id = feat.sentenceId
         else:
-            consecutive_style_count = 1
-        last_feature_style = style
+            # Within the same sentence, preserve the established style
+            style = last_feature_style or style
 
         # Safe line splitting
         lines = feat.lines

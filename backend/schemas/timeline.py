@@ -87,6 +87,18 @@ class TimelineEvent(BaseModel):
     graphic: Optional[Graphic] = Field(default=None)
     animation: Optional[AnimationConfig] = Field(default=None)
     variant: Optional[str] = Field(default=None, description="Optional style variant e.g. 'glow' or 'frosted'")
+    captionSize: Optional[Literal["small", "medium", "large"]] = Field(
+        default=None, description="Optional caption size override"
+    )
+    backgroundStyle: Optional[Literal["transparent", "glass", "solid"]] = Field(
+        default=None, description="Caption background style: transparent, glass, solid"
+    )
+    highlightColor: Optional[str] = Field(
+        default=None, description="Word highlight hex color"
+    )
+    sentenceId: Optional[str] = Field(
+        default=None, description="Grouping identifier for sentence-level style consistency"
+    )
 
     @model_validator(mode="after")
     def validate_event(self) -> "TimelineEvent":
@@ -105,6 +117,15 @@ class Timeline(BaseModel):
     language: str = Field(default="en")
     words: list[TimelineWord] = Field(default_factory=list)
     events: list[TimelineEvent] = Field(default_factory=list)
+    captionSize: Optional[Literal["small", "medium", "large"]] = Field(
+        default="medium", description="Global caption size"
+    )
+    backgroundStyle: Optional[Literal["transparent", "glass", "solid"]] = Field(
+        default="transparent", description="Global background style"
+    )
+    highlightColor: Optional[str] = Field(
+        default="#38BDF8", description="Global highlight color"
+    )
 
     @model_validator(mode="after")
     def validate_timeline_invariants(self) -> "Timeline":

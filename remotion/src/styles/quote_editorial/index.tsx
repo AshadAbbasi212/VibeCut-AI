@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface QuoteEditorialProps {
   event: TimelineEvent;
@@ -39,13 +40,13 @@ export const QuoteEditorial: React.FC<QuoteEditorialProps> = ({
         borderRadius: "16px",
         borderLeft: "3px solid #F59E0B",
         boxShadow: "0 10px 30px rgba(0, 0, 0, 0.4)",
-        maxWidth: "85%",
+        maxWidth: "92%",
       }}
     >
       <span
         style={{
           fontFamily: fonts.serif,
-          fontSize: "44px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 56)}px`,
           lineHeight: 0.8,
           color: "#F59E0B",
           marginRight: "10px",
@@ -59,7 +60,7 @@ export const QuoteEditorial: React.FC<QuoteEditorialProps> = ({
       <span
         style={{
           fontFamily: fonts.serif,
-          fontSize: "32px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 48)}px`,
           fontStyle: "italic",
           fontWeight: 700,
           lineHeight: 1.25,

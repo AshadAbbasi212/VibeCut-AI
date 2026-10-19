@@ -23,6 +23,15 @@ export interface StyleComponentProps {
   durationInFrames: number;
 }
 
+export const getCaptionFontSize = (
+  size?: "small" | "medium" | "large" | string,
+  base: number = 52
+): number => {
+  if (size === "small") return Math.round(base * 0.74);
+  if (size === "large") return Math.round(base * 1.30);
+  return base;
+};
+
 export const STYLE_REGISTRY: Record<string, React.FC<StyleComponentProps>> = {
   pill_word: PillWord,
   title3d: Title3d,

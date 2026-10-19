@@ -223,7 +223,14 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       </AbsoluteFill>
 
       {/* Dynamic Caption Events */}
-      {timeline.events.map((event) => {
+      {timeline.events.map((rawEvent) => {
+        const event: TimelineEvent = {
+          ...rawEvent,
+          captionSize: rawEvent.captionSize || timeline.captionSize || "medium",
+          backgroundStyle: rawEvent.backgroundStyle || timeline.backgroundStyle || "transparent",
+          highlightColor: rawEvent.highlightColor || timeline.highlightColor || "#38BDF8",
+        };
+
         // When a feature event is active for this phrase window, suppress the redundant
         // base caption so only one clean, styled caption is visible at a time.
         if (event.id.startsWith("base_")) {

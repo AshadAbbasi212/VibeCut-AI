@@ -62,6 +62,10 @@ class BasePlanner(ABC):
         video_duration: float,
         preset: str = "bold_creator",
         language: str = "en",
+        style_pacing: str = "sentence",
+        caption_size: str = "medium",
+        background_style: str = "transparent",
+        highlight_color: str = "#38BDF8",
     ) -> list[TimelineEvent]:
         """Generate a list of TimelineEvents for the given phrases."""
         pass
@@ -80,8 +84,20 @@ class RulePlanner(BasePlanner):
         video_duration: float,
         preset: str = "bold_creator",
         language: str = "en",
+        style_pacing: str = "sentence",
+        caption_size: str = "medium",
+        background_style: str = "transparent",
+        highlight_color: str = "#38BDF8",
     ) -> list[TimelineEvent]:
-        raw_events = self.core.plan(phrases, video_duration, language=language)
+        raw_events = self.core.plan(
+            phrases,
+            video_duration,
+            language=language,
+            style_pacing=style_pacing,
+            caption_size=caption_size,
+            background_style=background_style,
+            highlight_color=highlight_color,
+        )
         return assign_layout(raw_events, video_duration=video_duration)
 
 

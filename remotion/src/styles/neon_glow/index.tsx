@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface NeonGlowProps {
   event: TimelineEvent;
@@ -51,7 +52,7 @@ export const NeonGlow: React.FC<NeonGlowProps> = ({
         boxShadow: `0 0 20px rgba(6, 182, 212, ${pulse * 0.4}), inset 0 0 10px rgba(6, 182, 212, 0.2)`,
         transform: `scale(${scale})`,
         opacity,
-        maxWidth: "85%",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
@@ -62,7 +63,7 @@ export const NeonGlow: React.FC<NeonGlowProps> = ({
             key={w.i ?? idx}
             style={{
               fontFamily: fonts.sans,
-              fontSize: "34px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
               fontWeight: 900,
               textTransform: "uppercase",
               letterSpacing: "0.04em",

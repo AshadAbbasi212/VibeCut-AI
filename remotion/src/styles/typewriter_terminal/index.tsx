@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface TypewriterTerminalProps {
   event: TimelineEvent;
@@ -50,13 +51,13 @@ export const TypewriterTerminal: React.FC<TypewriterTerminalProps> = ({
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(16, 185, 129, 0.3)",
         transform: `scale(${scale})`,
         opacity,
-        maxWidth: "85%",
+        maxWidth: "92%",
       }}
     >
       <span
         style={{
           fontFamily: fonts.mono,
-          fontSize: "26px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 42)}px`,
           fontWeight: 800,
           color: "#10B981",
           marginRight: "4px",
@@ -72,7 +73,7 @@ export const TypewriterTerminal: React.FC<TypewriterTerminalProps> = ({
             key={w.i ?? idx}
             style={{
               fontFamily: fonts.mono,
-              fontSize: "30px",
+              fontSize: `${getCaptionFontSize(event.captionSize, 46)}px`,
               fontWeight: 700,
               color: isSpoken ? "#F8FAFC" : "#64748B",
               transition: "color 0.05s ease",
@@ -86,7 +87,7 @@ export const TypewriterTerminal: React.FC<TypewriterTerminalProps> = ({
       <span
         style={{
           fontFamily: fonts.mono,
-          fontSize: "28px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 44)}px`,
           fontWeight: 900,
           color: "#10B981",
           opacity: cursorVisible ? 1 : 0,

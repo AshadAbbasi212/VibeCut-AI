@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface GradientOutlineProps {
   event: TimelineEvent;
@@ -42,14 +43,14 @@ export const GradientOutline: React.FC<GradientOutlineProps> = ({
           "linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), linear-gradient(135deg, #EC4899, #8B5CF6, #3B82F6)",
         backgroundOrigin: "border-box",
         backgroundClip: "padding-box, border-box",
-        maxWidth: "85%",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
       <span
         style={{
           fontFamily: fonts.sans,
-          fontSize: "34px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 50)}px`,
           fontWeight: 900,
           textTransform: "uppercase",
           letterSpacing: "0.03em",

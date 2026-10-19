@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface GlitchKineticProps {
   event: TimelineEvent;
@@ -40,7 +41,7 @@ export const GlitchKinetic: React.FC<GlitchKineticProps> = ({
         backgroundColor: "rgba(0, 0, 0, 0.65)",
         backdropFilter: "blur(8px)",
         borderRadius: "8px",
-        maxWidth: "85%",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
@@ -52,7 +53,7 @@ export const GlitchKinetic: React.FC<GlitchKineticProps> = ({
           left: `${20 - (isGlitching ? 3 : 1.5)}px`,
           right: `${20 + (isGlitching ? 3 : 1.5)}px`,
           fontFamily: fonts.sans,
-          fontSize: "36px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
           fontWeight: 900,
           textTransform: "uppercase",
           letterSpacing: "0.02em",
@@ -74,7 +75,7 @@ export const GlitchKinetic: React.FC<GlitchKineticProps> = ({
           left: `${20 + (isGlitching ? 3 : 1.5)}px`,
           right: `${20 - (isGlitching ? 3 : 1.5)}px`,
           fontFamily: fonts.sans,
-          fontSize: "36px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
           fontWeight: 900,
           textTransform: "uppercase",
           letterSpacing: "0.02em",
@@ -93,7 +94,7 @@ export const GlitchKinetic: React.FC<GlitchKineticProps> = ({
         style={{
           position: "relative",
           fontFamily: fonts.sans,
-          fontSize: "36px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
           fontWeight: 900,
           textTransform: "uppercase",
           letterSpacing: "0.02em",

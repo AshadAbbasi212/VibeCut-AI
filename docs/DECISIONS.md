@@ -56,5 +56,10 @@
 - **Decision**: Added FastAPI HTTP middleware setting `Cache-Control: no-cache, no-store, must-revalidate` for static files, and registered both `GET` and `HEAD` routes on `/api/jobs/{id}/output` and `/api/sample`. Upgraded aspect ratio toggle styling to high-contrast cyan accent and set video canvas preview to `object-fit: contain`.
 - **Why**: Prevents browsers from silently serving stale `app.js` and `index.html` after UI modifications during development. Resolves browser media player failures when querying video metadata with standard HTTP `HEAD` pre-requests. Ensures instant, unambiguous visual feedback for active aspect ratios without video clipping.
 
+## 2026-10-19: Sentence-Level Style Pacing, Transparent Backdrop & Studio Customization
+- **Decision**: Grouped spoken phrases into sentence units (`group_phrases_into_sentences`) so caption styles remain rock-solid and consistent throughout an entire sentence, changing style only when a complete sentence/thought concludes. Adjusted default font sizing to the 52px "sweet spot" (with configurable small 38px, medium 52px, large 68px scale via `getCaptionFontSize`). Replaced the solid white rectangular background box with a transparent default backdrop featuring high-contrast drop shadows and electric glowing word highlights, plus optional `glass` and `solid` modes. Added creator studio UI controls for Caption Size, Backdrop, Style Pacing, and Highlight Color in Card 3 ("3. Options").
+- **Why**: Switching visual styles mid-sentence (every 1-2s) created visual fatigue and distraction. Transparent backdrops prevent clunky bounding boxes and text clipping on dark/coding videos, while giving creators direct control over typography, pacing, and color schemes.
+
+
 
 

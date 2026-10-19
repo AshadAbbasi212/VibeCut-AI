@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface PaperCutoutProps {
   event: TimelineEvent;
@@ -40,7 +41,7 @@ export const PaperCutout: React.FC<PaperCutoutProps> = ({
         padding: "10px 24px",
         borderRadius: "3px",
         boxShadow: "0 8px 24px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0,0,0,0.2)",
-        maxWidth: "85%",
+        maxWidth: "92%",
         textAlign: "center",
       }}
     >
@@ -61,7 +62,7 @@ export const PaperCutout: React.FC<PaperCutoutProps> = ({
       <span
         style={{
           fontFamily: fonts.sans,
-          fontSize: "32px",
+          fontSize: `${getCaptionFontSize(event.captionSize, 48)}px`,
           fontWeight: 800,
           lineHeight: 1.25,
           letterSpacing: "-0.01em",

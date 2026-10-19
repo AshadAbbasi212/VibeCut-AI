@@ -31,45 +31,81 @@ export const PillWord: React.FC<PillWordProps> = ({
 
   const phraseWords = words.slice(firstIdx, lastIdx + 1);
 
+  // Caption size calculation (Default medium = 52px sweet spot)
+  const sizeMap: Record<string, number> = {
+    small: 38,
+    medium: 52,
+    large: 68,
+  };
+  const baseSize = sizeMap[event.captionSize || "medium"] || 52;
+
+  // Background style: "transparent" (default), "glass", "solid"
+  const bgStyle = event.backgroundStyle || "transparent";
+  const activeColor = event.highlightColor || "#38BDF8"; // Electric cyan default
+
+  const containerBg =
+    bgStyle === "solid"
+      ? "rgba(255, 255, 255, 0.92)"
+      : bgStyle === "glass"
+      ? "rgba(10, 15, 25, 0.70)"
+      : "transparent";
+
+  const containerBorder =
+    bgStyle === "glass"
+      ? "1.5px solid rgba(255, 255, 255, 0.16)"
+      : "none";
+
+  const containerShadow =
+    bgStyle === "solid"
+      ? "0 8px 24px rgba(0, 0, 0, 0.22)"
+      : bgStyle === "glass"
+      ? "0 8px 32px rgba(0, 0, 0, 0.55)"
+      : "none";
+
+  const containerBackdrop =
+    bgStyle === "glass" ? "blur(14px)" : undefined;
+
   return (
     <div
       style={{
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        flexWrap: "nowrap",
-        gap: "8px",
-        backgroundColor: "rgba(255, 255, 255, 0.90)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        padding: "10px 24px",
+        flexWrap: "wrap",
+        gap: "10px",
+        backgroundColor: containerBg,
+        border: containerBorder,
+        backdropFilter: containerBackdrop,
+        WebkitBackdropFilter: containerBackdrop,
+        padding: bgStyle === "transparent" ? "4px 8px" : "12px 28px",
         borderRadius: "9999px",
-        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08)",
+        boxShadow: containerShadow,
         transform: `scale(${scale})`,
         opacity,
-        maxWidth: "85%",
+        maxWidth: "92%",
+        textAlign: "center",
       }}
     >
       {phraseWords.map((w, idx) => {
         const isSpoken = currentTime >= w.start;
-        // Check for specific highlight overrides on this word index
-        const highlight = event.highlights?.find(
-          (h) => h.wordIndex === w.i
-        );
+        const highlight = event.highlights?.find((h) => h.wordIndex === w.i);
 
-        let color = isSpoken ? "#111827" : "#9ca3af";
-        let background = "transparent";
-        let padding = "0px";
-        let borderRadius = "0px";
+        let color: string;
+        let textShadow: string;
+        let fontWeight = 800;
 
-        if (highlight) {
-          if (highlight.kind === "color" && isSpoken) {
-            color = highlight.value;
-          } else if (highlight.kind === "pill") {
-            background = highlight.value;
-            color = "#dc2626"; // Crimson
-            padding = "2px 8px";
-            borderRadius = "6px";
+        if (bgStyle === "solid") {
+          color = isSpoken ? "#0F172A" : "#94A3B8";
+          textShadow = "none";
+        } else {
+          // Transparent / Glass mode
+          if (isSpoken) {
+            color = highlight?.value || activeColor;
+            fontWeight = 900;
+            textShadow = `0 0 24px ${activeColor}99, 0 2px 10px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.9)`;
+          } else {
+            color = "rgba(255, 255, 255, 0.88)";
+            textShadow = "0 2px 8px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.85)";
           }
         }
 
@@ -78,15 +114,16 @@ export const PillWord: React.FC<PillWordProps> = ({
             key={w.i ?? idx}
             style={{
               fontFamily: fonts.sans,
-              fontSize: "32px",
-              fontWeight: 800,
-              lineHeight: 1.2,
+              fontSize: `${baseSize}px`,
+              fontWeight,
+              lineHeight: 1.25,
               letterSpacing: "-0.01em",
               color,
-              backgroundColor: background,
-              padding,
-              borderRadius,
-              transition: "color 0.05s ease",
+              textShadow,
+              WebkitTextStroke: bgStyle !== "solid" ? "1px rgba(0, 0, 0, 0.45)" : undefined,
+              transition: "color 0.06s ease, transform 0.06s ease",
+              transform: isSpoken && bgStyle !== "solid" ? "scale(1.05)" : "none",
+              display: "inline-block",
             }}
           >
             {w.text}

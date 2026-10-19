@@ -3,8 +3,8 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut, floatY } from "../../anim";
 import { getFontFamilies } from "../../load-font";
-
 import { GraphicRenderer } from "../../decorations";
+import { getCaptionFontSize } from "../registry";
 
 interface StickerProps {
   event: TimelineEvent;
@@ -56,7 +56,7 @@ export const Sticker: React.FC<StickerProps> = ({
           style={{
             marginTop: "8px",
             fontFamily: fonts.sans,
-            fontSize: "26px",
+            fontSize: `${getCaptionFontSize(event.captionSize, 40)}px`,
             fontWeight: 800,
             color: "#FFFFFF",
             backgroundColor: "rgba(15, 23, 42, 0.75)",
