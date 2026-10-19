@@ -152,6 +152,51 @@ async def update_job_timeline(job_id: str, updated_timeline: dict):
         raise HTTPException(status_code=400, detail=f"Invalid timeline: {e}")
 
 
+@app.post("/api/jobs/{job_id}/rerender", response_model=JobInfo)
+def rerender_job(
+    job_id: str,
+    draft: Optional[bool] = Form(None),
+    concurrency: Optional[int] = Form(None),
+):
+    """Re-render video after editing captions/styles without re-transcribing."""
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+    if not job.timeline_file or not Path(job.timeline_file).exists():
+        raise HTTPException(status_code=400, detail="Cannot re-render: timeline not found")
+
+    try:
+        updated_job = manager.rerender_job(job_id=job_id, draft=draft, concurrency=concurrency)
+        return updated_job
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/styles")
+def list_styles():
+    """Return all available caption styles with metadata."""
+    styles_meta = [
+        {"id": "title3d", "name": "3D Title", "category": "bold", "tag": "High Energy", "description": "Extruded 3D shadow, multi-line vertical gradients, twinkling stars"},
+        {"id": "neon_glow", "name": "Neon Glow", "category": "bold", "tag": "Cyberpunk", "description": "Electric cyan luminous glow with subtle pulsing flicker on frosted glass"},
+        {"id": "typewriter_terminal", "name": "Typewriter Terminal", "category": "tech", "tag": "Tech / Dev", "description": "Retro monospace terminal console with cyan prompt and blinking cursor"},
+        {"id": "paper_cutout", "name": "Paper Cutout", "category": "editorial", "tag": "Vlog / Craft", "description": "Angled (-2.5°) kraft-paper torn note with translucent washi tape overlay"},
+        {"id": "glitch_kinetic", "name": "Glitch Kinetic", "category": "bold", "tag": "Glitch", "description": "High-energy chromatic aberration with cyan/magenta split RGB layers"},
+        {"id": "quote_editorial", "name": "Quote Editorial", "category": "editorial", "tag": "Luxury", "description": "Magazine editorial serif typography with oversized warm amber quotation mark"},
+        {"id": "comic_bubble", "name": "Comic Bubble", "category": "pop", "tag": "Pop Art", "description": "Pop-art comic book speech bubble with bold 3.5px black stroke and tail pointer"},
+        {"id": "gradient_outline", "name": "Gradient Outline", "category": "bold", "tag": "Modern", "description": "Iridescent pink/purple gradient-bordered capsule with subtle glow"},
+        {"id": "minimal_underline", "name": "Minimal Underline", "category": "minimal", "tag": "Clean Swiss", "description": "Swiss minimalist typography with an animated expanding gradient underline bar"},
+        {"id": "blob_card", "name": "Blob Card", "category": "editorial", "tag": "Organic", "description": "Organic morphing SVG blob card with smooth spring pop-in"},
+        {"id": "serif_title", "name": "Serif Title", "category": "editorial", "tag": "Editorial", "description": "Editorial Fraunces serif with oval hand-drawn doodle & keyword pills"},
+        {"id": "numbered_point", "name": "Numbered Point", "category": "editorial", "tag": "List / Step", "description": "Italic serif numeral badge with hand-drawn circle doodle for lists & steps"},
+        {"id": "handwritten", "name": "Handwritten", "category": "editorial", "tag": "Casual Aside", "description": "Caveat script typography with soft dark shadow for commentary or asides"},
+        {"id": "arc_letters", "name": "Arc Letters", "category": "pop", "tag": "Curved", "description": "Curved letter placement along an arc with pastel colors and floating bounce"},
+        {"id": "sticker", "name": "Sticker Badge", "category": "pop", "tag": "Graphic", "description": "Lucide vector icon badge with drop-shadow glow and spring float"},
+        {"id": "pill_word", "name": "Pill Word", "category": "minimal", "tag": "Synced Sub", "description": "Word-synced high-contrast spoken-word active pill"},
+    ]
+    return {"styles": styles_meta, "total": len(styles_meta)}
+
+
 @app.get("/api/jobs/{job_id}/export/srt")
 def export_job_srt(job_id: str):
     """Export video captions as SubRip (.srt) subtitle file."""

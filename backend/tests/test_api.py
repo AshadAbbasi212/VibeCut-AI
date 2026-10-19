@@ -196,3 +196,47 @@ def test_update_timeline(client, tmp_path):
     assert len(data["events"]) == 1
     assert data["events"][0]["text"] == "Edited caption text"
 
+
+def test_list_styles(client):
+    resp = client.get("/api/styles")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "styles" in data
+    assert data["total"] == 16
+    style_ids = [s["id"] for s in data["styles"]]
+    assert "neon_glow" in style_ids
+    assert "typewriter_terminal" in style_ids
+    assert "comic_bubble" in style_ids
+    assert "title3d" in style_ids
+
+
+def test_rerender_endpoint(client, monkeypatch):
+    manager = get_job_manager()
+    job_id = "job_mock_rerender"
+    job_dir = manager.jobs_dir / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    dummy_tl = job_dir / "timeline.json"
+    dummy_tl.write_text('{"version": 1, "video": {"src": "input.mp4", "width": 1080, "height": 1920, "fps": 30, "durationSec": 5}, "words": [], "events": []}')
+
+    job = JobInfo(
+        id=job_id,
+        status="completed",
+        step="completed",
+        timeline_file=str(dummy_tl),
+    )
+    manager.save_job(job)
+
+    # Monkeypatch executor to avoid real rendering in unit test
+    called = []
+    monkeypatch.setattr(manager.executor, "submit", lambda fn, *args: called.append(args[0]))
+
+    resp = client.post(f"/api/jobs/{job_id}/rerender", data={"draft": "true"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == job_id
+    assert data["draft"] is True
+    assert len(called) == 1
+    assert called[0] == job_id
+
+

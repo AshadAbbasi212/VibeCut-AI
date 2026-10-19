@@ -181,6 +181,78 @@ class JobManager:
         self.executor.submit(self._run_job_task, job_id)
         return job
 
+    def rerender_job(
+        self,
+        job_id: str,
+        draft: Optional[bool] = None,
+        concurrency: Optional[int] = None,
+    ) -> JobInfo:
+        """Queue a re-render of an existing job using its updated timeline."""
+        job = self.get_job(job_id)
+        if not job:
+            raise ValueError(f"Job {job_id} not found")
+        if not job.timeline_file or not Path(job.timeline_file).exists():
+            raise ValueError(f"Job {job_id} has no timeline file to re-render")
+
+        if draft is not None:
+            job.draft = draft
+        if concurrency is not None:
+            job.concurrency = concurrency
+
+        job.status = "queued"
+        job.step = "rendering"
+        job.progress = 0.05
+        job.error = None
+        self.save_job(job)
+
+        self.executor.submit(self._run_rerender_task, job_id)
+        return job
+
+    def _run_rerender_task(self, job_id: str):
+        job = self.get_job(job_id)
+        if not job or not job.timeline_file or not Path(job.timeline_file).exists():
+            return
+
+        job_dir = self.jobs_dir / job_id
+        output_mp4 = job_dir / "output.mp4"
+        timeline_json = Path(job.timeline_file)
+
+        def update_progress(step: str, progress: float):
+            job.status = "processing"
+            job.step = step
+            job.progress = round(progress, 3)
+            self.save_job(job)
+
+        try:
+            update_progress("rendering", 0.05)
+            tl_data = json.loads(timeline_json.read_text(encoding="utf-8"))
+            timeline = Timeline.model_validate(tl_data)
+
+            def on_render_progress(pct: float):
+                update_progress("rendering", 0.05 + (pct * 0.93))
+
+            concurrency_val = job.concurrency or min(os.cpu_count() or 4, 8)
+            render(
+                timeline_input=timeline,
+                output_path=output_mp4,
+                concurrency=concurrency_val,
+                draft=job.draft,
+                progress_callback=on_render_progress,
+            )
+
+            job.status = "completed"
+            job.step = "completed"
+            job.progress = 1.0
+            job.output_file = str(output_mp4)
+            self.save_job(job)
+            logger.info(f"Job {job_id} re-rendered successfully: {output_mp4}")
+        except Exception as e:
+            logger.exception(f"Re-render for {job_id} failed: {e}")
+            job.status = "failed"
+            job.step = "failed"
+            job.error = str(e)
+            self.save_job(job)
+
     def _run_job_task(self, job_id: str):
         job = self.get_job(job_id)
         if not job:

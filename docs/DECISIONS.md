@@ -48,8 +48,9 @@
 - **Decision**: Expanded available subtitle styles from 8 to 16 by adding `neon_glow`, `typewriter_terminal`, `paper_cutout`, `glitch_kinetic`, `quote_editorial`, `comic_bubble`, `gradient_outline`, and `minimal_underline`. In `RulePlanner`, implemented a rolling anti-repetition queue (size 6) and multi-style round-robin pool ensuring videos with multiple phrases draw across 10 to 15 distinct styles without consecutive repeats.
 - **Why**: Creators need high visual retention in short-form content. Ensuring a rich palette of 10-15 distinct styles per video keeps viewer engagement high while avoiding repetitive visual fatigue.
 
-## 2026-10-19: Fast Draft Previews, Clip Trimming, and Subtitle Exports
-- **Decision**: Added in-browser clip range trimming (`trim_start`, `trim_end`) executed via FFmpeg prior to transcription; added `--draft` mode rendering via Remotion `--scale=0.5`; exposed `/api/jobs/{id}/export/srt` and `/api/jobs/{id}/export/vtt` endpoints for standard subtitle download; and added timeline click-to-edit updates via `PUT /api/jobs/{id}/timeline`.
-- **Why**: Full 1080x1920 video renders can take several minutes on CPU. Draft mode (540p) finishes in ~1/4 the time for instant previewing. Trimming lets creators test short clips without re-encoding externally, and SRT/VTT exports allow creators to use captions across YouTube, TikTok, and Premiere.
+## 2026-10-19: Professional Creator Studio Frontend & Fast Re-render Pipeline
+- **Decision**: Redesigned the frontend into a full-featured creator studio with a 4-tab control dock (`1. Video & Trim`, `2. Style Engine`, `3. Edit Captions`, `4. Exports`), a synchronized 9:16 vertical video player, an interactive live style sandbox for all 16 styles, and exposed `GET /api/styles` and `POST /api/jobs/{id}/rerender` endpoints.
+- **Why**: Creators need a seamless, desktop-class editing experience where they can review videos, adjust word-level timing, change per-phrase styles, and re-render in seconds directly from the timeline without re-running transcription or chunking.
+
 
 
