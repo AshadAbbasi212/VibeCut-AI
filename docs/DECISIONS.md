@@ -40,7 +40,16 @@
 - **Decision**: Implemented the frontend as a self-contained, dependency-free vanilla HTML5/CSS3/ES6 single-page app served directly by FastAPI via `StaticFiles(directory='frontend', html=True)`.
 - **Why**: Eliminates Node/Vite build steps and dev server port conflicts in production/Docker, loads instantly with native modern browser APIs (Drag and Drop, FormData, Fetch, Video), and presents a dark-mode glassmorphic interface matching modern creator tools.
 
-## 2026-10-16: Polish, Hardening, and Multi-Preset Tuning
-- **Decision**: Added orientation correction for rotated smartphone videos in ffprobe, audio-less video handling in transcribe to return empty transcripts without throwing ffmpeg errors, long-video duration warnings (> 300s), draft rendering flag (`--draft` sets `--scale=0.5`), render concurrency controls, and tuned 3 distinct planner presets (`bold_creator`, `calm_serif`, `minimal_pill`).
-- **Why**: Handles real-world smartphone clips of varying aspect ratios, rotation metadata, missing audio tracks, or silent segments gracefully without crashing. Presets give creators one-click control over aesthetic intensity (energetic 3D/stickers vs editorial serif vs minimalist TikTok).
+## 2026-10-19: Subtitle Sizing Optimization and Single-Caption Screen Clearance
+- **Decision**: Scaled down font sizes across all styles by ~40-50% (30-44px instead of 88px, padding 10-20px instead of 40-76px). In Remotion, suppressed `base_` pill caption rendering during intervals where a concurrent `feat_` caption is active for the same phrase. Adjusted safe zone centers to: upper=18%, center=50%, lower=79%.
+- **Why**: 88px titles combined with simultaneous base pills covered over half the screen on 9:16 vertical shorts, blocking the speaker's face. Suppressing duplicate base pills and optimizing font scale keeps typography legible, crisp, and compact while keeping the speaker unobstructed.
+
+## 2026-10-19: 16-Style Library Expansion and 10-15 Style Variety Planner
+- **Decision**: Expanded available subtitle styles from 8 to 16 by adding `neon_glow`, `typewriter_terminal`, `paper_cutout`, `glitch_kinetic`, `quote_editorial`, `comic_bubble`, `gradient_outline`, and `minimal_underline`. In `RulePlanner`, implemented a rolling anti-repetition queue (size 6) and multi-style round-robin pool ensuring videos with multiple phrases draw across 10 to 15 distinct styles without consecutive repeats.
+- **Why**: Creators need high visual retention in short-form content. Ensuring a rich palette of 10-15 distinct styles per video keeps viewer engagement high while avoiding repetitive visual fatigue.
+
+## 2026-10-19: Fast Draft Previews, Clip Trimming, and Subtitle Exports
+- **Decision**: Added in-browser clip range trimming (`trim_start`, `trim_end`) executed via FFmpeg prior to transcription; added `--draft` mode rendering via Remotion `--scale=0.5`; exposed `/api/jobs/{id}/export/srt` and `/api/jobs/{id}/export/vtt` endpoints for standard subtitle download; and added timeline click-to-edit updates via `PUT /api/jobs/{id}/timeline`.
+- **Why**: Full 1080x1920 video renders can take several minutes on CPU. Draft mode (540p) finishes in ~1/4 the time for instant previewing. Trimming lets creators test short clips without re-encoding externally, and SRT/VTT exports allow creators to use captions across YouTube, TikTok, and Premiere.
+
 

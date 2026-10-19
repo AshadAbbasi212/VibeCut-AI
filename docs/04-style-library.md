@@ -61,6 +61,38 @@ An emoji/icon/image with a coloured glow outline (drop-shadow stack, e.g. cyan) 
 floats slightly. Positioned above a pill caption or beside a title. Triggered by `graphic` on an event or as a
 standalone event.
 
+### `neon_glow`
+Electric neon-cyan text with multi-layered glow filter on a dark translucent frosted pill. Words pop with spring
+scaling and a subtle luminous flicker pulse, ideal for tech, high-energy, or nightlife punchlines.
+
+### `typewriter_terminal`
+Retro monospace terminal aesthetic (Roboto Mono / Courier) featuring a cyan `> ` command prompt and blinking
+accent cursor. Words type out letter-by-letter with a mechanical digital cadence.
+
+### `paper_cutout`
+Angled kraft-paper style torn-card caption with a realistic translucent washi tape overlay at the top edge.
+Features slight natural tilt (-2.5 deg) and deep drop-shadow, perfect for storytelling or casual vlogs.
+
+### `glitch_kinetic`
+High-impact cybernetic glitch effect with split RGB cyan and magenta chromatic aberration layers, staggered
+subtle horizontal jitter, and aggressive bold condensed typography.
+
+### `quote_editorial`
+Magazine editorial quote design with an oversized warm amber quotation mark mark `“`, elegant italic Fraunces
+serif typography, and a subtle champagne glass background.
+
+### `comic_bubble`
+Playful pop-art comic book speech bubble with high-contrast 3.5px black border, solid white fill, bold comic
+sans lettering (Montserrat/Bangers feel), and a bottom-left directional pointer tail notch.
+
+### `gradient_outline`
+Modern sleek transparent pill with an iridescent pink-to-purple gradient border (`border: 2px solid`, gradient
+box-shadow glow), and gradient-masked headline text.
+
+### `minimal_underline`
+Swiss modernist minimalist typography with an energetic animated horizontal underline bar that draws in
+from left to right beneath the text using gradient accents.
+
 ### Doodles & decorations (shared)
 - `ellipse`: SVG path stroke draw-on (stroke-dashoffset or `@remotion/paths` evolve-path), 2-3px white,
   slightly irregular, overlaps text.

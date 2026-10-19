@@ -38,16 +38,16 @@ export const PillWord: React.FC<PillWordProps> = ({
         alignItems: "center",
         justifyContent: "center",
         flexWrap: "nowrap",
-        gap: "12px",
-        backgroundColor: "rgba(255, 255, 255, 0.88)",
+        gap: "8px",
+        backgroundColor: "rgba(255, 255, 255, 0.90)",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        padding: "16px 36px",
+        padding: "10px 24px",
         borderRadius: "9999px",
-        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06)",
+        boxShadow: "0 8px 24px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08)",
         transform: `scale(${scale})`,
         opacity,
-        maxWidth: "90%",
+        maxWidth: "85%",
       }}
     >
       {phraseWords.map((w, idx) => {
@@ -78,7 +78,7 @@ export const PillWord: React.FC<PillWordProps> = ({
             key={w.i ?? idx}
             style={{
               fontFamily: fonts.sans,
-              fontSize: "44px",
+              fontSize: "32px",
               fontWeight: 800,
               lineHeight: 1.2,
               letterSpacing: "-0.01em",

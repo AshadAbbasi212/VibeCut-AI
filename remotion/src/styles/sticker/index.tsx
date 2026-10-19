@@ -46,7 +46,7 @@ export const Sticker: React.FC<StickerProps> = ({
       {/* Sticker icon / emoji / image via GraphicRenderer */}
       <GraphicRenderer
         graphic={graphic}
-        size={110}
+        size={60}
         glowColor="rgba(56, 189, 248, 0.85)"
       />
 
@@ -54,14 +54,14 @@ export const Sticker: React.FC<StickerProps> = ({
       {event.text && event.text !== graphic.value && (
         <span
           style={{
-            marginTop: "12px",
+            marginTop: "8px",
             fontFamily: fonts.sans,
-            fontSize: "36px",
+            fontSize: "26px",
             fontWeight: 800,
             color: "#FFFFFF",
             backgroundColor: "rgba(15, 23, 42, 0.75)",
             backdropFilter: "blur(8px)",
-            padding: "6px 20px",
+            padding: "4px 14px",
             borderRadius: "9999px",
             border: "1px solid rgba(56, 189, 248, 0.5)",
             textShadow: "0 2px 4px rgba(0,0,0,0.5)",

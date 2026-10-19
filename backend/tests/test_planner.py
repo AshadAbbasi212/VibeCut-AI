@@ -329,3 +329,41 @@ def test_validate_and_parse_llm_json_garbage_handling():
     parsed = _validate_and_parse_llm_json(good_json, phrases, 5.0)
     assert len(parsed) == 1
     assert parsed[0].style == "title3d"
+
+
+def test_rule_planner_10_to_15_styles_variety():
+    """Verify that a video with multiple phrases plans across at least 10 to 15 distinct styles."""
+    words = []
+    phrases = []
+    # Generate 18 distinct phrases
+    for i in range(18):
+        w = Word(i=i, text=f"Word{i}", start=i * 1.0, end=(i + 1) * 1.0 - 0.1, probability=0.99)
+        words.append(w)
+        p = Phrase(
+            id=f"p{i}",
+            text=f"This is sentence phrase number {i} with impactful advice.",
+            start=i * 1.0,
+            end=(i + 1) * 1.0 - 0.1,
+            speech_start=i * 1.0,
+            speech_end=(i + 1) * 1.0 - 0.1,
+            words=[w],
+            word_indices=[i],
+        )
+        phrases.append(p)
+
+    planner = RuleCore(preset="bold_creator")
+    events = planner.plan(phrases, video_duration=18.0)
+
+    # Extract distinct styles used across feature events
+    feature_styles = [e.style for e in events if not e.id.startswith("base_")]
+    distinct_styles = set(feature_styles)
+
+    # Must contain at least 10 distinct styles
+    assert len(distinct_styles) >= 10, f"Expected >= 10 distinct styles, got {len(distinct_styles)}: {distinct_styles}"
+
+    # Anti-repetition check: no identical style within window of 3 consecutive feature events
+    for idx in range(2, len(feature_styles)):
+        assert not (
+            feature_styles[idx] == feature_styles[idx - 1] == feature_styles[idx - 2]
+        ), f"Three consecutive identical styles found at index {idx}: {feature_styles[idx]}"
+

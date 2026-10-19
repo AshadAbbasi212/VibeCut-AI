@@ -76,7 +76,7 @@ export const Title3d: React.FC<Title3dProps> = ({
         ];
       })();
 
-  const shadow3d = make3dShadow("#1E1B4B", 10);
+  const shadow3d = make3dShadow("#1E1B4B", 5);
 
   return (
     <div
@@ -89,27 +89,28 @@ export const Title3d: React.FC<Title3dProps> = ({
         transform: `scale(${scale})`,
         opacity,
         textAlign: "center",
+        maxWidth: "85%",
       }}
     >
       {/* Flanking sparkles */}
       <Sparkles
-        size={44}
+        size={26}
         color="#FDE047"
         phaseOffset={0}
         style={{
           position: "absolute",
           top: "40%",
-          left: "-48px",
+          left: "-28px",
         }}
       />
       <Sparkles
-        size={44}
+        size={26}
         color="#FDE047"
         phaseOffset={Math.PI}
         style={{
           position: "absolute",
           top: "25%",
-          right: "-48px",
+          right: "-28px",
         }}
       />
 
@@ -123,7 +124,7 @@ export const Title3d: React.FC<Title3dProps> = ({
             key={idx}
             style={{
               position: "relative",
-              margin: "-4px 0",
+              margin: "-2px 0",
               transform: `scale(${linePop})`,
             }}
           >
@@ -132,14 +133,14 @@ export const Title3d: React.FC<Title3dProps> = ({
               style={{
                 display: "block",
                 fontFamily: fonts.condensed,
-                fontSize: "88px",
+                fontSize: "44px",
                 fontWeight: 900,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
-                lineHeight: 1.05,
+                lineHeight: 1.08,
                 color: "#1E1B4B",
                 textShadow: shadow3d,
-                WebkitTextStroke: "6px #1E1B4B",
+                WebkitTextStroke: "3px #1E1B4B",
                 paintOrder: "stroke fill",
               }}
             >
@@ -154,11 +155,11 @@ export const Title3d: React.FC<Title3dProps> = ({
                 left: 0,
                 right: 0,
                 fontFamily: fonts.condensed,
-                fontSize: "88px",
+                fontSize: "44px",
                 fontWeight: 900,
                 textTransform: "uppercase",
                 letterSpacing: "0.04em",
-                lineHeight: 1.05,
+                lineHeight: 1.08,
                 background: `linear-gradient(180deg, ${colorTop} 15%, ${colorBottom} 85%)`,
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",

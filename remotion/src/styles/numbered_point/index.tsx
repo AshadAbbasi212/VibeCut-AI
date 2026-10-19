@@ -67,16 +67,16 @@ export const NumberedPoint: React.FC<NumberedPointProps> = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: "90px",
-          height: "90px",
-          marginBottom: "12px",
+          width: "56px",
+          height: "56px",
+          marginBottom: "8px",
         }}
       >
         <span
           style={{
             fontFamily: fonts.serif,
             fontStyle: "italic",
-            fontSize: "64px",
+            fontSize: "38px",
             fontWeight: 800,
             color: "#FFFFFF",
             textShadow: "0 2px 8px rgba(0,0,0,0.5)",
@@ -85,10 +85,10 @@ export const NumberedPoint: React.FC<NumberedPointProps> = ({
           {numeral}
         </span>
         <EllipseDoodle
-          width={96}
-          height={76}
+          width={64}
+          height={52}
           strokeColor="#FFFFFF"
-          strokeWidth={3}
+          strokeWidth={2.5}
           progress={ellipseProgress}
           style={{
             top: "50%",
@@ -106,12 +106,12 @@ export const NumberedPoint: React.FC<NumberedPointProps> = ({
             key={idx}
             style={{
               fontFamily: fonts.serif,
-              fontSize: "48px",
+              fontSize: "32px",
               fontWeight: 700,
               lineHeight: 1.25,
               color: "#FFFFFF",
               textShadow: "0 3px 12px rgba(0, 0, 0, 0.6)",
-              margin: "3px 0",
+              margin: "2px 0",
               letterSpacing: "-0.01em",
             }}
           >

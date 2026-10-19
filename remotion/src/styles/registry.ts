@@ -8,6 +8,14 @@ import { NumberedPoint } from "./numbered_point";
 import { Handwritten } from "./handwritten";
 import { ArcLetters } from "./arc_letters";
 import { Sticker } from "./sticker";
+import { NeonGlow } from "./neon_glow";
+import { TypewriterTerminal } from "./typewriter_terminal";
+import { PaperCutout } from "./paper_cutout";
+import { GlitchKinetic } from "./glitch_kinetic";
+import { QuoteEditorial } from "./quote_editorial";
+import { ComicBubble } from "./comic_bubble";
+import { GradientOutline } from "./gradient_outline";
+import { MinimalUnderline } from "./minimal_underline";
 
 export interface StyleComponentProps {
   event: TimelineEvent;
@@ -24,6 +32,14 @@ export const STYLE_REGISTRY: Record<string, React.FC<StyleComponentProps>> = {
   handwritten: Handwritten,
   arc_letters: ArcLetters,
   sticker: Sticker,
+  neon_glow: NeonGlow,
+  typewriter_terminal: TypewriterTerminal,
+  paper_cutout: PaperCutout,
+  glitch_kinetic: GlitchKinetic,
+  quote_editorial: QuoteEditorial,
+  comic_bubble: ComicBubble,
+  gradient_outline: GradientOutline,
+  minimal_underline: MinimalUnderline,
 };
 
 export const getStyleComponent = (styleId: string): React.FC<StyleComponentProps> => {

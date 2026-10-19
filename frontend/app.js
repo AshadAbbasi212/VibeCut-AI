@@ -19,6 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const videoLanguageSelect = document.getElementById("videoLanguage");
   const startJobBtn = document.getElementById("startJobBtn");
 
+  const trimStart = document.getElementById("trimStart");
+  const trimEnd = document.getElementById("trimEnd");
+  const trim30sBtn = document.getElementById("trim30sBtn");
+  const trim60sBtn = document.getElementById("trim60sBtn");
+  const trimResetBtn = document.getElementById("trimResetBtn");
+  const draftToggle = document.getElementById("draftToggle");
+
   const stageEmpty = document.getElementById("stageEmpty");
   const stageProcessing = document.getElementById("stageProcessing");
   const stageResult = document.getElementById("stageResult");
@@ -32,6 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const resultVideo = document.getElementById("resultVideo");
   const downloadBtn = document.getElementById("downloadBtn");
+  const downloadSrtBtn = document.getElementById("downloadSrtBtn");
+  const downloadVttBtn = document.getElementById("downloadVttBtn");
+  const saveEditsBtn = document.getElementById("saveEditsBtn");
   const resetBtn = document.getElementById("resetBtn");
   const eventsList = document.getElementById("eventsList");
   const eventCount = document.getElementById("eventCount");
@@ -45,6 +55,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentJobId = null;
   let pollInterval = null;
   let jobStartTime = null;
+  let currentTimeline = null;
+
+  // Trimming Quick Buttons
+  if (trim30sBtn) trim30sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "30"; });
+  if (trim60sBtn) trim60sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "60"; });
+  if (trimResetBtn) trimResetBtn.addEventListener("click", () => { trimStart.value = ""; trimEnd.value = ""; });
 
   // 1. File Handling
   browseBtn.addEventListener("click", () => videoFileInput.click());
@@ -150,6 +166,15 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("preset", getSelectedPreset());
     formData.append("llm_provider", llmProviderSelect.value);
     formData.append("language", videoLanguageSelect.value);
+    if (draftToggle && draftToggle.checked) {
+      formData.append("draft", "true");
+    }
+    if (trimStart && trimStart.value.trim()) {
+      formData.append("trim_start", trimStart.value.trim());
+    }
+    if (trimEnd && trimEnd.value.trim()) {
+      formData.append("trim_end", trimEnd.value.trim());
+    }
 
     try {
       const res = await fetch("/api/jobs", {
@@ -207,10 +232,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Step message
     const stepNames = {
       queued: "Waiting in queue...",
+      trimming: "Trimming video clip to selected range...",
       probing: "Analyzing video dimensions & audio...",
       transcribing: "Transcribing speech with faster-whisper...",
       chunking: "Structuring natural cadence & phrases...",
-      planning: "Assigning dynamic styles & avoiding collisions...",
+      planning: "Assigning 10-15 dynamic styles across phrases...",
       rendering: "Composing animated vertical MP4 with Remotion...",
       completed: "Render complete! Preparing video...",
       failed: "Render failed.",
@@ -245,16 +271,26 @@ document.addEventListener("DOMContentLoaded", () => {
     stageBadge.textContent = "Completed";
     startJobBtn.disabled = false;
 
-    // Set video src
+    // Set video src & download links
     resultVideo.src = `/api/jobs/${job.id}/output`;
     downloadBtn.href = `/api/jobs/${job.id}/output`;
     downloadBtn.download = `${job.id}_captioned.mp4`;
+
+    if (downloadSrtBtn) {
+      downloadSrtBtn.href = `/api/jobs/${job.id}/export/srt`;
+      downloadSrtBtn.download = `${job.id}.srt`;
+    }
+    if (downloadVttBtn) {
+      downloadVttBtn.href = `/api/jobs/${job.id}/export/vtt`;
+      downloadVttBtn.download = `${job.id}.vtt`;
+    }
 
     // Fetch and render timeline
     try {
       const tlRes = await fetch(`/api/jobs/${job.id}/timeline`);
       if (tlRes.ok) {
         const timeline = await tlRes.json();
+        currentTimeline = timeline;
         renderTimelineEvents(timeline);
       }
     } catch (e) {
@@ -284,18 +320,54 @@ document.addEventListener("DOMContentLoaded", () => {
       timeSpan.className = "event-time";
       timeSpan.textContent = `${ev.start.toFixed(2)}s - ${ev.end.toFixed(2)}s`;
 
-      const textSpan = document.createElement("span");
-      textSpan.className = "event-text";
-      textSpan.textContent = ev.text;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.className = "event-edit-input";
+      input.value = ev.text;
+      input.title = "Click to edit caption text";
+      input.addEventListener("input", (e) => {
+        ev.text = e.target.value;
+        jsonCode.textContent = JSON.stringify(currentTimeline, null, 2);
+        if (saveEditsBtn) {
+          saveEditsBtn.classList.remove("hidden");
+          saveEditsBtn.textContent = "💾 Save Edits";
+          saveEditsBtn.disabled = false;
+        }
+      });
 
       const badgeSpan = document.createElement("span");
       badgeSpan.className = "event-badge";
       badgeSpan.textContent = ev.style;
 
       row.appendChild(timeSpan);
-      row.appendChild(textSpan);
+      row.appendChild(input);
       row.appendChild(badgeSpan);
       eventsList.appendChild(row);
+    });
+  }
+
+  // Save edited captions listener
+  if (saveEditsBtn) {
+    saveEditsBtn.addEventListener("click", async () => {
+      if (!currentJobId || !currentTimeline) return;
+      saveEditsBtn.textContent = "Saving...";
+      saveEditsBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/jobs/${currentJobId}/timeline`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentTimeline),
+        });
+        if (!res.ok) throw new Error("Failed to save updated timeline");
+        saveEditsBtn.textContent = "✓ Edits Saved";
+        setTimeout(() => {
+          saveEditsBtn.textContent = "💾 Save Edits";
+        }, 2500);
+      } catch (err) {
+        alert("Error saving captions: " + err.message);
+        saveEditsBtn.disabled = false;
+        saveEditsBtn.textContent = "💾 Save Edits";
+      }
     });
   }
 
@@ -319,6 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
     stageBadge.textContent = "Awaiting Input";
     resultVideo.pause();
     resultVideo.src = "";
+    if (saveEditsBtn) saveEditsBtn.classList.add("hidden");
   });
 
   function showStage(stage) {

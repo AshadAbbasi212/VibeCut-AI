@@ -39,9 +39,9 @@ export const ArcLetters: React.FC<ArcLettersProps> = ({
   const tokens = rawTokens.filter((t) => t.trim().length > 0);
 
   const total = tokens.length;
-  // Arc parameters: distribute angle from -35 deg to +35 deg
-  const maxAngle = Math.min(45, total * 15);
-  const radius = 220;
+  // Arc parameters: distribute angle from -25 deg to +25 deg
+  const maxAngle = Math.min(35, total * 10);
+  const radius = 120;
 
   return (
     <div
@@ -52,7 +52,7 @@ export const ArcLetters: React.FC<ArcLettersProps> = ({
         justifyContent: "center",
         transform: `translateY(${floatOffset}px) scale(${scale})`,
         opacity,
-        height: "160px",
+        height: "90px",
       }}
     >
       {tokens.map((token, idx) => {
@@ -76,11 +76,11 @@ export const ArcLetters: React.FC<ArcLettersProps> = ({
               top: "50%",
               transform: `translate(-50%, -50%) translate(${x}px, ${y}px) rotate(${angleDeg}deg) scale(${tokenPop})`,
               fontFamily: fonts.sans,
-              fontSize: "68px",
+              fontSize: "36px",
               fontWeight: 900,
               color,
-              textShadow: `0 0 20px ${color}AA, 0 4px 12px rgba(0,0,0,0.6)`,
-              WebkitTextStroke: "2px rgba(255, 255, 255, 0.7)",
+              textShadow: `0 0 16px ${color}AA, 0 3px 8px rgba(0,0,0,0.6)`,
+              WebkitTextStroke: "1.5px rgba(255, 255, 255, 0.7)",
               lineHeight: 1,
             }}
           >

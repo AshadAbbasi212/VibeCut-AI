@@ -71,10 +71,33 @@
           <button type="button" class="btn-sample" id="loadSampleBtn">Load Synthetic Sample (12s)</button>
         </div>
 
+        <!-- Trimming Range -->
+        <div class="panel-section">
+          <div class="section-title">
+            <h3>2. Clip Range & Trim</h3>
+            <span class="hint">Optional subclip</span>
+          </div>
+          <div class="trim-inputs-row">
+            <div class="input-subgroup">
+              <label for="trimStart">Start (sec)</label>
+              <input type="number" id="trimStart" placeholder="0.0" min="0" step="0.5" class="text-input">
+            </div>
+            <div class="input-subgroup">
+              <label for="trimEnd">End (sec)</label>
+              <input type="number" id="trimEnd" placeholder="Full" min="0" step="0.5" class="text-input">
+            </div>
+          </div>
+          <div class="trim-quick-btns">
+            <button type="button" class="btn-chip" id="trim30sBtn">First 30s</button>
+            <button type="button" class="btn-chip" id="trim60sBtn">First 60s</button>
+            <button type="button" class="btn-chip" id="trimResetBtn">Full Video</button>
+          </div>
+        </div>
+
         <!-- Presets -->
         <div class="panel-section">
           <div class="section-title">
-            <h3>2. Style Preset</h3>
+            <h3>3. Style Preset</h3>
             <span class="hint">Curated aesthetics</span>
           </div>
 
@@ -87,7 +110,7 @@
                   <span class="preset-emoji">⚡</span>
                   <span class="preset-title">Bold Creator</span>
                 </div>
-                <p class="preset-desc">3D extruded gradient titles, pop-in stickers, twinkling sparkles & high energy.</p>
+                <p class="preset-desc">3D extruded gradient titles, neon glow, terminal typewriter, pop stickers & high energy.</p>
               </div>
             </label>
 
@@ -145,6 +168,13 @@
               </div>
             </div>
           </details>
+
+          <div class="draft-toggle-container">
+            <label class="checkbox-label" for="draftToggle">
+              <input type="checkbox" id="draftToggle">
+              <span class="checkbox-text">⚡ Fast Draft Preview (540p / 0.5 scale for rapid iteration)</span>
+            </label>
+          </div>
         </div>
 
         <!-- Action Button -->
@@ -220,14 +250,24 @@
                 </svg>
                 <span>Download Captioned MP4</span>
               </a>
+              <div class="sub-export-row">
+                <a href="#" class="btn-secondary btn-export-sub" id="downloadSrtBtn">Download .SRT</a>
+                <a href="#" class="btn-secondary btn-export-sub" id="downloadVttBtn">Download .VTT</a>
+              </div>
               <button type="button" class="btn-secondary" id="resetBtn">Process Another</button>
             </div>
 
             <!-- Events & Timeline Inspector -->
             <div class="inspector-card">
               <div class="inspector-header">
-                <h4>Captions Timeline (<span id="eventCount">0</span> events)</h4>
-                <button type="button" class="btn-toggle-json" id="toggleJsonBtn">View JSON</button>
+                <div>
+                  <h4>Captions Timeline (<span id="eventCount">0</span> events)</h4>
+                  <p class="inspector-subtitle">Click text below to edit words directly</p>
+                </div>
+                <div class="inspector-btn-group">
+                  <button type="button" class="btn-primary-sm hidden" id="saveEditsBtn">💾 Save Edits</button>
+                  <button type="button" class="btn-toggle-json" id="toggleJsonBtn">View JSON</button>
+                </div>
               </div>
 
               <div class="events-timeline-list" id="eventsList"></div>
@@ -245,10 +285,10 @@
       </section>
     </main>
 
-    <!-- Style Gallery Section -->
+    <!-- Style Gallery Section (16 Distinct Styles) -->
     <section class="gallery-section" id="gallerySection">
       <div class="gallery-header">
-        <h2>Style Library</h2>
+        <h2>Style Library (16 Distinct Styles)</h2>
         <p>Dynamic typography treatments engineered to match leading short-form creator aesthetics.</p>
       </div>
 
@@ -260,6 +300,89 @@
           <div class="gallery-meta">
             <h4>title3d</h4>
             <p>Extruded 3D shadow, multi-line vertical gradients, twinkling stars.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-neon">NEON GLOW</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>neon_glow</h4>
+            <p>Cyberpunk pulsing luminous cyan outline with deep dark glass.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-terminal">&gt; deploy_code _</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>typewriter_terminal</h4>
+            <p>Emerald monospace console with prompt token & blinking cursor.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-cutout">STICKY NOTE</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>paper_cutout</h4>
+            <p>Angled kraft paper badge with realistic washi tape header.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-glitch">DISRUPT</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>glitch_kinetic</h4>
+            <p>High-energy RGB chromatic aberration shift with jitter entrance.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-quote">“ Wisdom & Clarity</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>quote_editorial</h4>
+            <p>Luxury Fraunces serif italic quote with warm amber quote mark.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-comic">POW! WHAT?!</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>comic_bubble</h4>
+            <p>Pop-art punchy comic book speech bubble with black stroke & notch.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-gradient-outline">LUMINOUS</div>
+          </div>
+          <div class="gallery-meta">
+            <h4>gradient_outline</h4>
+            <p>Iridescent pink/purple gradient stroke with glass capsule backing.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <div class="preview-underline">
+              <span>FOCUS FORWARD</span>
+              <div class="preview-bar"></div>
+            </div>
+          </div>
+          <div class="gallery-meta">
+            <h4>minimal_underline</h4>
+            <p>Swiss clean typography with expanding gradient baseline accent.</p>
           </div>
         </div>
 
@@ -312,11 +435,31 @@
             <p>Caveat cursive script with soft dark shadow for whispered asides.</p>
           </div>
         </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <span class="preview-pill">Active Subtitle</span>
+          </div>
+          <div class="gallery-meta">
+            <h4>pill_word</h4>
+            <p>Word-synced frosted white pill with smooth keyword coloring.</p>
+          </div>
+        </div>
+
+        <div class="gallery-card">
+          <div class="gallery-preview">
+            <span class="preview-sticker">🩺 Doctor</span>
+          </div>
+          <div class="gallery-meta">
+            <h4>sticker</h4>
+            <p>Pop-in emoji or icon anchor badge for concrete subject concepts.</p>
+          </div>
+        </div>
       </div>
     </section>
 
     <footer class="app-footer">
-      <p>Dynamic Captions Studio • Remotion + faster-whisper + FastAPI • 1080x1920 30fps</p>
+      <p>Dynamic Captions Studio • Remotion + faster-whisper + FastAPI • 1080x1920 30fps • 16 Dynamic Styles</p>
     </footer>
   </div>
 

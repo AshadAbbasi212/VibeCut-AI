@@ -49,7 +49,7 @@ export const BlobCard: React.FC<BlobCardProps> = ({
         justifyContent: "center",
         transform: `scale(${scale * breatheScale})`,
         opacity,
-        padding: "40px 76px",
+        padding: "16px 36px",
         borderRadius: "58% 42% 52% 48% / 44% 56% 44% 56%",
         background: isFrosted
           ? "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42) 0%, rgba(240, 243, 246, 0.28) 100%)"
@@ -57,12 +57,12 @@ export const BlobCard: React.FC<BlobCardProps> = ({
         backdropFilter: isFrosted ? "blur(18px)" : "blur(12px)",
         WebkitBackdropFilter: isFrosted ? "blur(18px)" : "blur(12px)",
         boxShadow: isFrosted
-          ? "0 16px 40px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.6)"
-          : "0 20px 50px rgba(30, 27, 75, 0.5), 0 0 30px rgba(99, 102, 241, 0.35)",
+          ? "0 12px 30px rgba(0, 0, 0, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.6)"
+          : "0 14px 36px rgba(30, 27, 75, 0.5), 0 0 20px rgba(99, 102, 241, 0.35)",
         border: isFrosted
           ? "1.5px solid rgba(255, 255, 255, 0.5)"
           : "1.5px solid rgba(165, 180, 252, 0.25)",
-        maxWidth: "88%",
+        maxWidth: "80%",
         textAlign: "center",
       }}
     >
@@ -70,23 +70,23 @@ export const BlobCard: React.FC<BlobCardProps> = ({
       {!isFrosted && (
         <>
           <Sparkles
-            size={36}
+            size={22}
             color="#FDE047"
             phaseOffset={0}
             style={{
               position: "absolute",
-              top: "16%",
-              left: "-18px",
+              top: "12%",
+              left: "-12px",
             }}
           />
           <Sparkles
-            size={36}
+            size={22}
             color="#FDE047"
             phaseOffset={Math.PI * 0.7}
             style={{
               position: "absolute",
-              bottom: "16%",
-              right: "-18px",
+              bottom: "12%",
+              right: "-12px",
             }}
           />
         </>
@@ -100,9 +100,9 @@ export const BlobCard: React.FC<BlobCardProps> = ({
             key={idx}
             style={{
               fontFamily: fonts.serif,
-              fontSize: "52px",
+              fontSize: "32px",
               fontWeight: 700,
-              lineHeight: 1.3,
+              lineHeight: 1.25,
               color: isFrosted ? "#FFFFFF" : "#FFFFFF",
               textShadow: isFrosted
                 ? "0 2px 8px rgba(0, 0, 0, 0.45)"

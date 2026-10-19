@@ -52,10 +52,10 @@ export const SerifTitle: React.FC<SerifTitleProps> = ({
     >
       {/* Tilted Hand-drawn Ellipse Doodle */}
       <EllipseDoodle
-        width={560}
-        height={220}
+        width={340}
+        height={130}
         strokeColor="#FFFFFF"
-        strokeWidth={3}
+        strokeWidth={2.5}
         progress={ellipseProgress}
         style={{
           top: "48%",
@@ -104,14 +104,14 @@ export const SerifTitle: React.FC<SerifTitleProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: "14px",
-              margin: "4px 0",
+              gap: "10px",
+              margin: "3px 0",
               fontFamily: fonts.serif,
-              fontSize: "56px",
+              fontSize: "36px",
               fontWeight: 800,
               lineHeight: 1.2,
               color: "#FFFFFF",
-              textShadow: "0 4px 16px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.8)",
+              textShadow: "0 3px 12px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.8)",
               letterSpacing: "-0.01em",
             }}
           >
@@ -123,11 +123,11 @@ export const SerifTitle: React.FC<SerifTitleProps> = ({
                     style={{
                       backgroundColor: "#FFFFFF",
                       color: "#E11D48",
-                      padding: "4px 22px",
+                      padding: "2px 14px",
                       borderRadius: "9999px",
                       fontWeight: 900,
                       textTransform: "uppercase",
-                      boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
+                      boxShadow: "0 3px 10px rgba(0, 0, 0, 0.25)",
                       textShadow: "none",
                       display: "inline-block",
                       letterSpacing: "0.02em",

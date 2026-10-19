@@ -93,20 +93,20 @@ const getZoneStyle = (event: TimelineEvent): React.CSSProperties => {
     case "upper":
       return {
         ...base,
-        top: "20%",
+        top: "18%",
         transform: "translateY(-50%)",
       };
     case "center":
       return {
         ...base,
-        top: "48%",
+        top: "50%",
         transform: "translateY(-50%)",
       };
     case "lower":
     default:
       return {
         ...base,
-        top: "74%",
+        top: "79%",
         transform: "translateY(-50%)",
       };
     case "free": {
@@ -224,6 +224,19 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
 
       {/* Dynamic Caption Events */}
       {timeline.events.map((event) => {
+        // When a feature event is active for this phrase window, suppress the redundant
+        // base caption so only one clean, styled caption is visible at a time.
+        if (event.id.startsWith("base_")) {
+          const hasConcurrentFeature = timeline.events.some(
+            (other) =>
+              !other.id.startsWith("base_") &&
+              Math.max(event.start, other.start) < Math.min(event.end, other.end)
+          );
+          if (hasConcurrentFeature) {
+            return null;
+          }
+        }
+
         const from = Math.round(event.start * fps);
         const durationInFrames = Math.max(
           1,

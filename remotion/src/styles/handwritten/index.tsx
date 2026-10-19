@@ -30,14 +30,14 @@ export const Handwritten: React.FC<HandwrittenProps> = ({
         justifyContent: "center",
         transform: `scale(${scale})`,
         opacity,
-        padding: "8px 24px",
+        padding: "6px 18px",
         textAlign: "center",
       }}
     >
       <span
         style={{
           fontFamily: fonts.handwriting,
-          fontSize: "44px",
+          fontSize: "30px",
           fontWeight: 700,
           lineHeight: 1.2,
           color: "#FFFFFF",

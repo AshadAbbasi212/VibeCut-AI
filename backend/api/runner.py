@@ -31,11 +31,75 @@ class JobInfo(BaseModel):
     preset: str = "bold_creator"
     llm_provider: str = "none"
     language: str = "en"
+    concurrency: Optional[int] = None
+    draft: bool = False
+    trim_start: Optional[float] = None
+    trim_end: Optional[float] = None
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
     input_file: str = ""
     output_file: Optional[str] = None
     timeline_file: Optional[str] = None
+
+
+def format_srt_timestamp(sec: float) -> str:
+    h = int(sec // 3600)
+    m = int((sec % 3600) // 60)
+    s = int(sec % 60)
+    ms = int(round((sec - int(sec)) * 1000))
+    return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+
+def format_vtt_timestamp(sec: float) -> str:
+    h = int(sec // 3600)
+    m = int((sec % 3600) // 60)
+    s = int(sec % 60)
+    ms = int(round((sec - int(sec)) * 1000))
+    return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+
+def export_timeline_to_srt(timeline: Timeline) -> str:
+    """Generate standard SubRip (.srt) from timeline events."""
+    lines = []
+    # Use distinct time events (sorted by start)
+    sorted_events = sorted(timeline.events, key=lambda x: (x.start, x.end))
+    # Deduplicate overlapping base/feature with identical text
+    seen = set()
+    counter = 1
+    for ev in sorted_events:
+        key = (round(ev.start, 1), ev.text.strip())
+        if key in seen:
+            continue
+        seen.add(key)
+        start_str = format_srt_timestamp(ev.start)
+        end_str = format_srt_timestamp(ev.end)
+        lines.append(f"{counter}")
+        lines.append(f"{start_str} --> {end_str}")
+        lines.append(ev.text)
+        lines.append("")
+        counter += 1
+    return "\n".join(lines)
+
+
+def export_timeline_to_vtt(timeline: Timeline) -> str:
+    """Generate standard WebVTT (.vtt) from timeline events."""
+    lines = ["WEBVTT", ""]
+    sorted_events = sorted(timeline.events, key=lambda x: (x.start, x.end))
+    seen = set()
+    counter = 1
+    for ev in sorted_events:
+        key = (round(ev.start, 1), ev.text.strip())
+        if key in seen:
+            continue
+        seen.add(key)
+        start_str = format_vtt_timestamp(ev.start)
+        end_str = format_vtt_timestamp(ev.end)
+        lines.append(f"{counter}")
+        lines.append(f"{start_str} --> {end_str}")
+        lines.append(ev.text)
+        lines.append("")
+        counter += 1
+    return "\n".join(lines)
 
 
 class JobManager:
@@ -84,6 +148,10 @@ class JobManager:
         preset: str = "bold_creator",
         llm_provider: str = "none",
         language: str = "en",
+        concurrency: Optional[int] = None,
+        draft: bool = False,
+        trim_start: Optional[float] = None,
+        trim_end: Optional[float] = None,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
         job_id = f"job_{uuid.uuid4().hex[:10]}"
@@ -101,6 +169,10 @@ class JobManager:
             preset=preset,
             llm_provider=llm_provider,
             language=language,
+            concurrency=concurrency,
+            draft=draft,
+            trim_start=trim_start,
+            trim_end=trim_end,
             input_file=str(target_input),
         )
         self.save_job(job)
@@ -128,6 +200,19 @@ class JobManager:
             self.save_job(job)
 
         try:
+            # 0. Optional Clip Trimming (0.00 -> 0.02)
+            if job.trim_start is not None or job.trim_end is not None:
+                update_progress("trimming", 0.01)
+                t_start = max(0.0, float(job.trim_start or 0.0))
+                trimmed_path = job_dir / "trimmed_input.mp4"
+                trim_cmd = ["ffmpeg", "-y", "-ss", f"{t_start:.2f}"]
+                if job.trim_end is not None and float(job.trim_end) > t_start:
+                    trim_cmd.extend(["-to", f"{float(job.trim_end):.2f}"])
+                trim_cmd.extend(["-i", str(input_path), "-c:v", "libx264", "-c:a", "aac", str(trimmed_path)])
+                import subprocess
+                subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                input_path = trimmed_path
+
             # 1. Probing (0.00 -> 0.05)
             update_progress("probing", 0.02)
             probe = probe_video(input_path)
@@ -202,9 +287,12 @@ class JobManager:
                 mapped = 0.56 + (pct * 0.42)
                 update_progress("rendering", mapped)
 
+            concurrency_val = job.concurrency or min(os.cpu_count() or 4, 8)
             render(
                 timeline_input=timeline,
                 output_path=output_mp4,
+                concurrency=concurrency_val,
+                draft=job.draft,
                 progress_callback=on_render_progress,
             )
 

@@ -40,6 +40,10 @@ async def create_job(
     preset: str = Form("bold_creator"),
     llm_provider: Optional[str] = Form(None),
     language: str = Form("en"),
+    concurrency: Optional[int] = Form(None),
+    draft: bool = Form(False),
+    trim_start: Optional[float] = Form(None),
+    trim_end: Optional[float] = Form(None),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -60,6 +64,10 @@ async def create_job(
             preset=preset,
             llm_provider=provider,
             language=language,
+            concurrency=concurrency,
+            draft=draft,
+            trim_start=trim_start,
+            trim_end=trim_end,
         )
         return job
     finally:
@@ -118,6 +126,76 @@ def get_job_timeline(job_id: str):
 
     data = json.loads(Path(job.timeline_file).read_text(encoding="utf-8"))
     return JSONResponse(content=data)
+
+
+@app.put("/api/jobs/{job_id}/timeline")
+async def update_job_timeline(job_id: str, updated_timeline: dict):
+    """Update timeline events/captions before final render or re-render."""
+    from backend.schemas.timeline import Timeline
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+
+    try:
+        validated = Timeline.model_validate(updated_timeline)
+        job_dir = Path("jobs").resolve() / job_id
+        timeline_json = job_dir / "timeline.json"
+        timeline_json.write_text(
+            json.dumps(validated.model_dump(by_alias=True, exclude_none=True), indent=2),
+            encoding="utf-8",
+        )
+        job.timeline_file = str(timeline_json)
+        manager.save_job(job)
+        return {"status": "ok", "message": "Timeline updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid timeline: {e}")
+
+
+@app.get("/api/jobs/{job_id}/export/srt")
+def export_job_srt(job_id: str):
+    """Export video captions as SubRip (.srt) subtitle file."""
+    from fastapi.responses import Response
+    from backend.schemas.timeline import Timeline
+    from backend.api.runner import export_timeline_to_srt
+
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job or not job.timeline_file or not Path(job.timeline_file).exists():
+        raise HTTPException(status_code=404, detail="Timeline not available for export")
+
+    tl_data = json.loads(Path(job.timeline_file).read_text(encoding="utf-8"))
+    timeline = Timeline.model_validate(tl_data)
+    srt_content = export_timeline_to_srt(timeline)
+
+    return Response(
+        content=srt_content,
+        media_type="text/plain; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{job_id}.srt"'},
+    )
+
+
+@app.get("/api/jobs/{job_id}/export/vtt")
+def export_job_vtt(job_id: str):
+    """Export video captions as WebVTT (.vtt) subtitle file."""
+    from fastapi.responses import Response
+    from backend.schemas.timeline import Timeline
+    from backend.api.runner import export_timeline_to_vtt
+
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job or not job.timeline_file or not Path(job.timeline_file).exists():
+        raise HTTPException(status_code=404, detail="Timeline not available for export")
+
+    tl_data = json.loads(Path(job.timeline_file).read_text(encoding="utf-8"))
+    timeline = Timeline.model_validate(tl_data)
+    vtt_content = export_timeline_to_vtt(timeline)
+
+    return Response(
+        content=vtt_content,
+        media_type="text/vtt; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{job_id}.vtt"'},
+    )
 
 
 @app.get("/api/sample")

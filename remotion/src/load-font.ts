@@ -9,6 +9,8 @@ let fontFamilies = {
   condensed: "sans-serif",
   serif: "serif",
   handwriting: "cursive",
+  mono: "monospace",
+  comic: "sans-serif",
 };
 
 export const ensureFontsLoaded = () => {
@@ -41,6 +43,8 @@ export const ensureFontsLoaded = () => {
       condensed: bebas.fontFamily,
       serif: fraunces.fontFamily,
       handwriting: caveat.fontFamily,
+      mono: "'Courier New', Courier, monospace",
+      comic: "Impact, 'Arial Black', sans-serif",
     };
     fontsLoaded = true;
   } catch (err) {

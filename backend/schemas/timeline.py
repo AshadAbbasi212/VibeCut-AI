@@ -12,6 +12,14 @@ VALID_STYLES = {
     "handwritten",
     "arc_letters",
     "sticker",
+    "neon_glow",
+    "typewriter_terminal",
+    "paper_cutout",
+    "glitch_kinetic",
+    "quote_editorial",
+    "comic_bubble",
+    "gradient_outline",
+    "minimal_underline",
 }
 
 VALID_ZONES = {"upper", "center", "lower", "free"}

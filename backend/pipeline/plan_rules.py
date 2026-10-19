@@ -109,13 +109,43 @@ class RulePlanner:
             # minimal_pill preset: only pill_word captions with highlights
             return events
 
-        # 2. Add impact feature events on ~30-40% of phrases
+        # Master pool of feature styles for maximum variety
+        all_feature_styles = [
+            "title3d",
+            "neon_glow",
+            "typewriter_terminal",
+            "paper_cutout",
+            "glitch_kinetic",
+            "quote_editorial",
+            "comic_bubble",
+            "gradient_outline",
+            "minimal_underline",
+            "serif_title",
+            "blob_card",
+            "numbered_point",
+            "handwritten",
+            "sticker",
+            "arc_letters",
+        ] if self.preset != "calm_serif" else [
+            "serif_title",
+            "quote_editorial",
+            "blob_card",
+            "minimal_underline",
+            "paper_cutout",
+            "handwritten",
+            "numbered_point",
+        ]
+
+        used_styles: set[str] = set()
+        recent_styles: list[str] = []
+        window_size = 6
+
+        # 2. Add impact feature events across phrases ensuring 10-15 distinct styles
         for idx, p in enumerate(phrases):
             if not p.word_indices:
                 continue
 
             text_lower = p.text.lower()
-            text_clean = p.text.strip(".,!?:;\"'")
             word_count = len(p.words)
             words_in_phrase = [w.text.lower().strip(".,!?:;\"'") for w in p.words]
 
@@ -126,105 +156,98 @@ class RulePlanner:
             feature_decorations: list[str] = []
             feature_graphic: Optional[Graphic] = None
 
-            # Rule A: Ordinal marker -> numbered_point
+            # Determine semantic candidate style
             if any(w in ORDINAL_WORDS for w in words_in_phrase) and any(
                 kw in text_lower for kw in ["step", "number", "point", "having", "way"]
             ):
                 feature_style = "numbered_point"
-                feature_zone = "upper"
                 feature_decorations = ["ellipse"]
 
-            # Rule B: First sentence / hook / strong claim -> title3d or serif_title
-            elif idx == 0 or (idx == 1 and total_phrases > 3):
-                if self.preset == "calm_serif":
-                    feature_style = "serif_title"
-                    feature_decorations = ["ellipse"]
-                else:
-                    feature_style = "title3d"
-                    feature_palette = "sunset"
-                    feature_decorations = ["sparkles"]
+            elif idx == 0:
+                feature_style = "serif_title" if self.preset == "calm_serif" else "title3d"
+                feature_zone = "center"
+                feature_decorations = ["sparkles"]
+
+            elif any(w in text_lower for w in ["code", "system", "logic", "terminal", "dollar", "percent", "data"]):
+                feature_style = "typewriter_terminal"
+                feature_zone = "upper"
+
+            elif any(w in text_lower for w in ["fast", "electric", "power", "money", "future", "online", "crypto"]):
+                feature_style = "neon_glow"
                 feature_zone = "center"
 
-            # Rule C: "How to" / action statement -> serif_title
-            elif "how to" in text_lower or ("stop" in text_lower and "action" in text_lower):
+            elif any(w in text_lower for w in ["quote", "remember", "said", "truth", "life", "why"]):
+                feature_style = "quote_editorial"
+                feature_zone = "upper"
+
+            elif "?" in p.text or "!" in p.text or any(w in text_lower for w in ["wow", "crazy", "secret", "shout", "boom"]):
+                feature_style = "comic_bubble"
+                feature_zone = "center"
+
+            elif any(w in text_lower for w in ["stop", "tip", "note", "rule", "warning", "advice"]):
+                feature_style = "paper_cutout"
+                feature_zone = "upper"
+
+            elif any(w in text_lower for w in ["suddenly", "break", "glitch", "crash", "wrong", "shock", "never"]):
+                feature_style = "glitch_kinetic"
+                feature_zone = "center"
+
+            elif any(w in text_lower for w in ["key", "grow", "core", "focus", "goal", "scale"]):
+                feature_style = "minimal_underline"
+                feature_zone = "upper"
+
+            elif any(w in text_lower for w in ["how to", "plan", "start", "action"]):
                 feature_style = "serif_title"
                 feature_zone = "upper"
                 feature_decorations = ["ellipse"]
 
-            # Rule D: Definition / key takeaway / "everything that is" -> blob_card
-            elif "everything" in text_lower or "skill can be" in text_lower or "basically" in text_lower:
-                if self.preset == "calm_serif":
-                    feature_style = "blob_card"
-                    feature_variant = "frosted"
-                    feature_zone = "center"
-                    feature_decorations = ["underline"]
-                else:
-                    feature_style = "blob_card"
-                    feature_variant = "glow"
-                    feature_zone = "center"
-                    feature_decorations = ["sparkles"]
-
-            # Rule E: Negation / strong advice / warning -> blob_card (frosted)
-            elif "ignore" in text_lower or "advice" in text_lower or ("not" in text_lower and "want" in text_lower):
+            elif any(w in text_lower for w in ["everything", "basically", "definition", "concept"]):
                 feature_style = "blob_card"
-                feature_variant = "frosted"
-                feature_zone = "upper"
-
-            # Rule F: Short letter sequence or list -> arc_letters or serif_title
-            elif len(p.words) in (3, 4) and all(len(w) <= 2 for w in words_in_phrase):
-                feature_style = "serif_title" if self.preset == "calm_serif" else "arc_letters"
+                feature_variant = "frosted" if self.preset == "calm_serif" else "glow"
                 feature_zone = "center"
+                feature_decorations = ["sparkles"]
 
-            # Rule G: Asides / lower energy -> handwritten
-            elif "rather than" in text_lower or "luck" in text_lower or word_count <= 4:
+            elif any(w in text_lower for w in ["rather than", "luck", "maybe", "whisper", "honestly"]):
                 feature_style = "handwritten"
                 feature_zone = "upper"
-                if self.preset == "calm_serif":
-                    feature_decorations = ["underline"]
-                elif "stop" in text_lower or "planning" in text_lower:
-                    feature_decorations = ["arrow"]
 
-            # Fallback for remaining phrases: occasional sticker or serif_title
-            if not feature_style and (idx % 3 == 0) and word_count <= 6:
+            elif len(p.words) in (2, 3) and all(len(w) <= 3 for w in words_in_phrase):
+                feature_style = "arc_letters"
+                feature_zone = "center"
+
+            else:
                 detected_graphic = detect_graphic_for_text(p.text) if self.preset != "calm_serif" else None
                 if detected_graphic:
                     feature_style = "sticker"
                     feature_graphic = detected_graphic
                     feature_zone = "center"
-                else:
-                    feature_style = "serif_title"
-                    feature_zone = "upper"
+                elif total_phrases >= 6 and (idx % 2 == 1 or len(used_styles) < min(14, total_phrases)):
+                    # Rotate in fresh unused styles to guarantee at least 10-15 styles in the video
+                    unused = [s for s in all_feature_styles if s not in used_styles]
+                    if unused:
+                        feature_style = unused[0]
+                    else:
+                        available = [s for s in all_feature_styles if s not in recent_styles]
+                        feature_style = available[0] if available else all_feature_styles[idx % len(all_feature_styles)]
+                    feature_zone = "upper" if idx % 2 == 0 else "center"
 
             if not feature_style:
                 continue
 
-            # Check pacing & variety constraints:
-            # - No more than 2 consecutive identical feature styles
-            if feature_style == last_feature_style:
-                if consecutive_same_style >= 2:
-                    feature_style = "blob_card" if feature_style != "blob_card" else "serif_title"
-                    consecutive_same_style = 1
+            # Anti-repetition check: do not repeat recently used styles
+            if feature_style in recent_styles:
+                unused = [s for s in all_feature_styles if s not in used_styles and s not in recent_styles]
+                if unused:
+                    feature_style = unused[0]
                 else:
-                    consecutive_same_style += 1
-            else:
-                consecutive_same_style = 1
+                    alternates = [s for s in all_feature_styles if s not in recent_styles]
+                    if alternates:
+                        feature_style = alternates[0]
 
-            # - Breathing room: at least 1.0s gap for identical style
-            prev_end = last_feature_time.get(feature_style, -10.0)
-            if p.start - prev_end < 1.0:
-                # Switch to an alternate style or skip
-                alt_style = "serif_title" if feature_style != "serif_title" else "blob_card"
-                if p.start - last_feature_time.get(alt_style, -10.0) >= 1.0:
-                    feature_style = alt_style
-                else:
-                    continue
-
-            # title3d at most once per 10-12s
-            if feature_style == "title3d" and p.start - last_feature_time.get("title3d", -20.0) < 10.0:
-                feature_style = "serif_title"
-
-            last_feature_style = feature_style
-            last_feature_time[feature_style] = p.end
+            used_styles.add(feature_style)
+            recent_styles.append(feature_style)
+            if len(recent_styles) > window_size:
+                recent_styles.pop(0)
 
             # Highlights for the feature event
             event_highlights = detect_highlights(p.words)

@@ -6,14 +6,22 @@ from backend.schemas.timeline import TimelineEvent
 
 
 STYLE_ALTERNATIVES = {
-    "title3d": "serif_title",
-    "serif_title": "blob_card",
-    "blob_card": "serif_title",
-    "numbered_point": "serif_title",
-    "handwritten": "blob_card",
-    "arc_letters": "blob_card",
-    "sticker": "serif_title",
-    "pill_word": "serif_title",
+    "title3d": "neon_glow",
+    "neon_glow": "glitch_kinetic",
+    "glitch_kinetic": "title3d",
+    "serif_title": "quote_editorial",
+    "quote_editorial": "blob_card",
+    "blob_card": "gradient_outline",
+    "gradient_outline": "minimal_underline",
+    "minimal_underline": "typewriter_terminal",
+    "typewriter_terminal": "paper_cutout",
+    "paper_cutout": "comic_bubble",
+    "comic_bubble": "serif_title",
+    "numbered_point": "minimal_underline",
+    "handwritten": "paper_cutout",
+    "arc_letters": "comic_bubble",
+    "sticker": "neon_glow",
+    "pill_word": "minimal_underline",
 }
 
 

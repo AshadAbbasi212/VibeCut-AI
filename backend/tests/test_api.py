@@ -115,3 +115,84 @@ def test_sample_video_endpoint(client):
     assert sample_resp.status_code == 200
     assert sample_resp.headers["content-type"] == "video/mp4"
     assert len(sample_resp.content) > 0
+
+
+def test_export_srt_and_vtt(client, tmp_path):
+    manager = get_job_manager()
+    job_id = "job_mock_export"
+    job_dir = manager.jobs_dir / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    timeline_content = """{
+      "version": 1,
+      "video": {"src": "input.mp4", "width": 1080, "height": 1920, "fps": 30, "durationSec": 5},
+      "words": [],
+      "events": [
+        {"id": "e1", "style": "pill_word", "start": 0.5, "end": 2.0, "zone": "lower", "text": "First subtitle line"},
+        {"id": "e2", "style": "neon_glow", "start": 2.2, "end": 4.5, "zone": "center", "text": "Second subtitle line"}
+      ]
+    }"""
+    dummy_tl = job_dir / "timeline.json"
+    dummy_tl.write_text(timeline_content)
+
+    job = JobInfo(
+        id=job_id,
+        status="completed",
+        step="completed",
+        progress=1.0,
+        timeline_file=str(dummy_tl),
+    )
+    manager.save_job(job)
+
+    # Test SRT export
+    srt_resp = client.get(f"/api/jobs/{job_id}/export/srt")
+    assert srt_resp.status_code == 200
+    assert "00:00:00,500 --> 00:00:02,000" in srt_resp.text
+    assert "First subtitle line" in srt_resp.text
+    assert "00:00:02,200 --> 00:00:04,500" in srt_resp.text
+    assert "Second subtitle line" in srt_resp.text
+
+    # Test VTT export
+    vtt_resp = client.get(f"/api/jobs/{job_id}/export/vtt")
+    assert vtt_resp.status_code == 200
+    assert "WEBVTT" in vtt_resp.text
+    assert "00:00:00.500 --> 00:00:02.000" in vtt_resp.text
+    assert "First subtitle line" in vtt_resp.text
+
+
+def test_update_timeline(client, tmp_path):
+    manager = get_job_manager()
+    job_id = "job_mock_edit"
+    job_dir = manager.jobs_dir / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    dummy_tl = job_dir / "timeline.json"
+    dummy_tl.write_text('{"version": 1, "video": {"src": "input.mp4", "width": 1080, "height": 1920, "fps": 30, "durationSec": 5}, "words": [], "events": []}')
+
+    job = JobInfo(
+        id=job_id,
+        status="completed",
+        step="completed",
+        timeline_file=str(dummy_tl),
+    )
+    manager.save_job(job)
+
+    updated_payload = {
+        "version": 1,
+        "video": {"src": "input.mp4", "width": 1080, "height": 1920, "fps": 30, "durationSec": 5},
+        "words": [],
+        "events": [
+            {"id": "edited_e1", "style": "typewriter_terminal", "start": 0.5, "end": 2.5, "zone": "center", "text": "Edited caption text"}
+        ]
+    }
+    put_resp = client.put(f"/api/jobs/{job_id}/timeline", json=updated_payload)
+    assert put_resp.status_code == 200
+    assert put_resp.json()["status"] == "ok"
+
+    # Re-fetch timeline
+    get_resp = client.get(f"/api/jobs/{job_id}/timeline")
+    assert get_resp.status_code == 200
+    data = get_resp.json()
+    assert len(data["events"]) == 1
+    assert data["events"][0]["text"] == "Edited caption text"
+
