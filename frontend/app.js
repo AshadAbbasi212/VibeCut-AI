@@ -160,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedBgStyle = "transparent";
   let selectedStylePacing = "sentence";
   let selectedHighlightColor = "#38BDF8";
+  let activeShowcaseStyle = "hormozi_bold";
 
   // Caption Size Chips
   const captionSizeChips = document.querySelectorAll("#captionSizeChips .btn-custom-chip");
@@ -170,11 +171,12 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       selectedCaptionSize = btn.dataset.size;
       const sizeLabels = {
-        small: "Small (38px)",
+        small: "Small (38px Compact)",
         medium: "Medium (52px Sweet Spot)",
-        large: "Large (68px)",
+        large: "Large (68px Bold Pop)",
       };
       if (captionSizeSelectedLabel) captionSizeSelectedLabel.textContent = sizeLabels[selectedCaptionSize] || selectedCaptionSize;
+      if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
       showToast(`Caption font size: ${selectedCaptionSize}`);
     });
   });
@@ -193,6 +195,7 @@ document.addEventListener("DOMContentLoaded", () => {
         solid: "Solid (White Pill)",
       };
       if (bgStyleSelectedLabel) bgStyleSelectedLabel.textContent = bgLabels[selectedBgStyle] || selectedBgStyle;
+      if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
       showToast(`Backdrop: ${selectedBgStyle}`);
     });
   });
@@ -223,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       selectedHighlightColor = btn.dataset.color;
       if (highlightColorSelectedLabel) highlightColorSelectedLabel.textContent = btn.title || selectedHighlightColor;
+      if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
       showToast(`Highlight color: ${btn.title}`);
     });
   });
@@ -313,29 +317,29 @@ document.addEventListener("DOMContentLoaded", () => {
   quickSampleBtn.addEventListener("click", loadSample);
 
   // =========================================================================
-  // 4. Style Pool Multi-Selector & Presets
+  // 4. Style Pool Multi-Selector, Live Examples & Presets
   // =========================================================================
   const ALL_AVAILABLE_STYLES = [
-    { id: "hormozi_bold", name: "Hormozi Bold", icon: "⚡", tag: "Trending", desc: "Alex Hormozi uppercase, yellow pop, heavy drop shadow" },
-    { id: "retro_vaporwave", name: "Retro 80s", icon: "🌴", tag: "Aesthetic", desc: "Dual chrome gradient, glowing grid card" },
-    { id: "karaoke_bounce", name: "Karaoke Bounce", icon: "🎤", tag: "Kinetic", desc: "Word-by-word hopping bounce physics dot with amber glow" },
-    { id: "fire_burn", name: "Fiery Flame", icon: "🔥", tag: "High Energy", desc: "Flame gradient text with flickering fiery red shadow" },
-    { id: "title3d", name: "3D Pop Title", icon: "🧊", tag: "3D Pop", desc: "Extruded multi-layer isometric 3D typography" },
-    { id: "neon_glow", name: "Cyber Neon", icon: "💡", tag: "Glow", desc: "Electric cyan luminous glow with pulsing flicker" },
-    { id: "pill_word", name: "Dynamic Pill", icon: "💊", tag: "Minimal", desc: "Sleek pill badge with word-by-word active pill" },
-    { id: "typewriter_terminal", name: "Hacker Terminal", icon: "💻", tag: "Tech", desc: "Monospace retro terminal console with blinking prompt" },
-    { id: "glitch_kinetic", name: "Kinetic Glitch", icon: "💥", tag: "Glitch", desc: "RGB channel split displacement with kinetic jitter" },
-    { id: "quote_editorial", name: "Editorial Quote", icon: "📰", tag: "Luxury", desc: "Magazine serif typography with amber quotation mark" },
-    { id: "comic_bubble", name: "Comic Bubble", icon: "💬", tag: "Pop Art", desc: "Pop-art dialogue speech bubble with bold black stroke" },
-    { id: "paper_cutout", name: "Paper Cutout", icon: "✂️", tag: "Craft", desc: "Layered kraft-paper torn note with washi tape" },
-    { id: "gradient_outline", name: "Gradient Outline", icon: "🌈", tag: "Modern", desc: "Iridescent gradient-bordered capsule with subtle glow" },
-    { id: "minimal_underline", name: "Minimal Underline", icon: "✨", tag: "Clean", desc: "Swiss minimalist typography with expanding underline" },
-    { id: "blob_card", name: "Blob Card", icon: "🫧", tag: "Glass", desc: "Organic morphing SVG blob card with spring pop-in" },
-    { id: "serif_title", name: "Serif Title", icon: "🏛️", tag: "Editorial", desc: "Editorial Fraunces serif with oval doodle" },
-    { id: "numbered_point", name: "Numbered Step", icon: "🔢", tag: "List", desc: "Italic serif numeral badge with circle doodle" },
-    { id: "handwritten", name: "Marker Script", icon: "✍️", tag: "Script", desc: "Casual expressive handwritten script with soft shadow" },
-    { id: "arc_letters", name: "Arc Curve", icon: "🪐", tag: "Curved", desc: "Curved letter placement along an arching trajectory" },
-    { id: "sticker", name: "Graphic Sticker", icon: "🏷️", tag: "Graphic", desc: "Vector graphic sticker with drop-shadow glow and float" },
+    { id: "hormozi_bold", name: "Hormozi Bold", icon: "⚡", tag: "Trending", sampleText: "VIRAL BOLD", desc: "Alex Hormozi uppercase, yellow pop, heavy drop shadow" },
+    { id: "retro_vaporwave", name: "Retro 80s", icon: "🌴", tag: "Aesthetic", sampleText: "RETRO 80s", desc: "Dual chrome gradient, glowing grid card" },
+    { id: "karaoke_bounce", name: "Karaoke Bounce", icon: "🎤", tag: "Kinetic", sampleText: "KARAOKE •", desc: "Word-by-word hopping bounce physics dot with amber glow" },
+    { id: "fire_burn", name: "Fiery Flame", icon: "🔥", tag: "High Energy", sampleText: "FIRE BLAZE", desc: "Flame gradient text with flickering fiery red shadow" },
+    { id: "title3d", name: "3D Pop Title", icon: "🧊", tag: "3D Pop", sampleText: "POP 3D", desc: "Extruded multi-layer isometric 3D typography" },
+    { id: "neon_glow", name: "Cyber Neon", icon: "💡", tag: "Glow", sampleText: "CYBER NEON", desc: "Electric cyan luminous glow with pulsing flicker" },
+    { id: "pill_word", name: "Dynamic Pill", icon: "💊", tag: "Minimal", sampleText: "CLEAN PILL", desc: "Sleek pill badge with word-by-word active pill" },
+    { id: "typewriter_terminal", name: "Hacker Terminal", icon: "💻", tag: "Tech", sampleText: "> CODE_", desc: "Monospace retro terminal console with blinking prompt" },
+    { id: "glitch_kinetic", name: "Kinetic Glitch", icon: "💥", tag: "Glitch", sampleText: "GLITCH", desc: "RGB channel split displacement with kinetic jitter" },
+    { id: "quote_editorial", name: "Editorial Quote", icon: "📰", tag: "Luxury", sampleText: "“Editorial”", desc: "Magazine serif typography with amber quotation mark" },
+    { id: "comic_bubble", name: "Comic Bubble", icon: "💬", tag: "Pop Art", sampleText: "POW!", desc: "Pop-art dialogue speech bubble with bold black stroke" },
+    { id: "paper_cutout", name: "Paper Cutout", icon: "✂️", tag: "Craft", sampleText: "TORN NOTE", desc: "Layered kraft-paper torn note with washi tape" },
+    { id: "gradient_outline", name: "Gradient Outline", icon: "🌈", tag: "Modern", sampleText: "OUTLINE", desc: "Iridescent gradient-bordered capsule with subtle glow" },
+    { id: "minimal_underline", name: "Minimal Underline", icon: "✨", tag: "Clean", sampleText: "MINIMAL", desc: "Swiss minimalist typography with expanding underline" },
+    { id: "blob_card", name: "Blob Card", icon: "🫧", tag: "Glass", sampleText: "BLOB CARD", desc: "Organic morphing SVG blob card with spring pop-in" },
+    { id: "serif_title", name: "Serif Title", icon: "🏛️", tag: "Editorial", sampleText: "EDITORIAL", desc: "Editorial Fraunces serif with oval doodle" },
+    { id: "numbered_point", name: "Numbered Step", icon: "🔢", tag: "List", sampleText: "01 STEP", desc: "Italic serif numeral badge with circle doodle" },
+    { id: "handwritten", name: "Marker Script", icon: "✍️", tag: "Script", sampleText: "Script", desc: "Casual expressive handwritten script with soft shadow" },
+    { id: "arc_letters", name: "Arc Curve", icon: "🪐", tag: "Curved", sampleText: "ARC CURVE", desc: "Curved letter placement along an arching trajectory" },
+    { id: "sticker", name: "Graphic Sticker", icon: "🏷️", tag: "Graphic", sampleText: "★ STICKER", desc: "Vector graphic sticker with drop-shadow glow and float" },
   ];
 
   // All 20 styles active by default
@@ -350,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       card.className = `style-chip-item ${isSelected ? "active" : ""}`;
       card.dataset.styleId = style.id;
-      card.title = style.desc;
+      card.title = `${style.name} — ${style.desc}`;
 
       card.innerHTML = `
         <div class="style-chip-top">
@@ -358,11 +362,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="style-chip-check">✓</span>
         </div>
         <span class="style-chip-title">${style.name}</span>
-        <span class="style-chip-tag">${style.tag}</span>
+        <div class="style-mini-sample style-sample-${style.id}">
+          ${style.sampleText || style.tag}
+        </div>
       `;
 
       card.addEventListener("click", () => {
         toggleStyleSelection(style.id);
+        updateCaptionShowcase(style.id);
+      });
+
+      card.addEventListener("mouseenter", () => {
+        updateCaptionShowcase(style.id);
       });
 
       stylesPoolGrid.appendChild(card);
@@ -404,37 +415,129 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    updateCaptionShowcase();
+  }
+
+  function updateCaptionShowcase(styleId) {
+    if (styleId) {
+      activeShowcaseStyle = styleId;
+    } else if (selectedStyles.length > 0) {
+      if (!selectedStyles.includes(activeShowcaseStyle)) {
+        activeShowcaseStyle = selectedStyles[0];
+      }
+    }
+
+    const styleObj = ALL_AVAILABLE_STYLES.find((s) => s.id === activeShowcaseStyle) || ALL_AVAILABLE_STYLES[0];
+    const showcaseText = document.getElementById("showcaseCaptionText");
+    const specsPill = document.getElementById("showcaseSpecsPill");
+    const scTagStyle = document.getElementById("scTagStyle");
+    const scTagSize = document.getElementById("scTagSize");
+    const scTagBg = document.getElementById("scTagBg");
+    const scTagColor = document.getElementById("scTagColor");
+    const highlightWord = document.getElementById("showcaseHighlightWord");
+
+    if (showcaseText) {
+      showcaseText.className = `showcase-caption-text style-${styleObj.id} size-${selectedCaptionSize} bg-${selectedBgStyle}`;
+
+      if (highlightWord) {
+        if (styleObj.id === "hormozi_bold") {
+          highlightWord.style.color = "#facc15";
+          highlightWord.style.backgroundColor = "transparent";
+        } else if (styleObj.id === "retro_vaporwave" || styleObj.id === "fire_burn") {
+          highlightWord.style.color = "";
+          highlightWord.style.backgroundColor = "transparent";
+        } else if (styleObj.id === "karaoke_bounce") {
+          highlightWord.style.color = "#fbbf24";
+          highlightWord.style.backgroundColor = "transparent";
+        } else {
+          highlightWord.style.color = selectedHighlightColor;
+          if (selectedBgStyle === "transparent") {
+            highlightWord.style.backgroundColor = `${selectedHighlightColor}22`;
+          } else {
+            highlightWord.style.backgroundColor = "transparent";
+          }
+        }
+      }
+    }
+
+    const sizeLabels = { small: "38px Small", medium: "52px Medium", large: "68px Large" };
+    const bgLabels = { transparent: "Transparent", glass: "Dark Glass", solid: "White Pill" };
+
+    if (specsPill) {
+      specsPill.textContent = `${styleObj.name} • ${sizeLabels[selectedCaptionSize] || selectedCaptionSize} • ${bgLabels[selectedBgStyle] || selectedBgStyle}`;
+    }
+    if (scTagStyle) scTagStyle.textContent = `${styleObj.icon} ${styleObj.name}`;
+    if (scTagSize) scTagSize.textContent = `📏 ${sizeLabels[selectedCaptionSize] || selectedCaptionSize}`;
+    if (scTagBg) scTagBg.textContent = `🔲 ${bgLabels[selectedBgStyle] || selectedBgStyle}`;
+    if (scTagColor) scTagColor.textContent = `🎨 ${highlightColorSelectedLabel ? highlightColorSelectedLabel.textContent : selectedHighlightColor}`;
+
     updateDraggableCaptionPreview();
   }
 
   function updateDraggableCaptionPreview() {
-    if (!dragSampleText) return;
-    if (selectedStyles.length === 1) {
-      const single = selectedStyles[0];
-      if (single === "hormozi_bold") {
-        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #FACC15; background: none; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">DYNAMIC CAPTIONS</span> THAT HOOK`;
-        dragSampleText.style.fontFamily = "'Montserrat', 'Plus Jakarta Sans', sans-serif";
-        dragSampleText.style.fontWeight = "900";
-        dragSampleText.style.textTransform = "uppercase";
-      } else if (single === "retro_vaporwave") {
-        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #38BDF8; background: none;">DYNAMIC CAPTIONS</span> THAT SHINE`;
-        dragSampleText.style.fontFamily = "'Orbitron', sans-serif";
-        dragSampleText.style.fontWeight = "800";
-        dragSampleText.style.textTransform = "uppercase";
-      } else if (single === "fire_burn") {
-        dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #EF4444; background: none;">DYNAMIC CAPTIONS</span> ON FIRE`;
-        dragSampleText.style.fontWeight = "900";
-      } else {
-        dragSampleText.innerHTML = `CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP`;
-        dragSampleText.style.fontFamily = "inherit";
-        dragSampleText.style.fontWeight = "800";
-        dragSampleText.style.textTransform = "none";
-      }
-    } else {
-      dragSampleText.innerHTML = `CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP`;
-      dragSampleText.style.fontFamily = "inherit";
+    if (!dragSampleText || !draggableCaptionBox) return;
+
+    const styleObj = ALL_AVAILABLE_STYLES.find((s) => s.id === activeShowcaseStyle) || ALL_AVAILABLE_STYLES[0];
+    
+    // Sync backdrop styling to draggable box on phoneCanvas
+    if (selectedBgStyle === "transparent") {
+      draggableCaptionBox.style.background = "rgba(17, 19, 26, 0.4)";
+      draggableCaptionBox.style.backdropFilter = "none";
+      draggableCaptionBox.style.border = "1.5px dashed var(--accent)";
+      draggableCaptionBox.style.boxShadow = "none";
+    } else if (selectedBgStyle === "glass") {
+      draggableCaptionBox.style.background = "rgba(15, 23, 42, 0.85)";
+      draggableCaptionBox.style.backdropFilter = "blur(12px)";
+      draggableCaptionBox.style.border = "1.5px solid rgba(56, 189, 248, 0.5)";
+      draggableCaptionBox.style.boxShadow = "0 8px 28px rgba(0,0,0,0.6)";
+    } else if (selectedBgStyle === "solid") {
+      draggableCaptionBox.style.background = "#ffffff";
+      draggableCaptionBox.style.backdropFilter = "none";
+      draggableCaptionBox.style.border = "1.5px solid #ffffff";
+      draggableCaptionBox.style.boxShadow = "0 8px 28px rgba(0,0,0,0.7)";
+    }
+
+    // Update typography
+    if (styleObj.id === "hormozi_bold") {
+      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #FACC15; background: none; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "900";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "retro_vaporwave") {
+      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #38BDF8; background: none;">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
       dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "fire_burn") {
+      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #EF4444; background: none;">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "900";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "typewriter_terminal") {
+      dragSampleText.innerHTML = `&gt; CREATING <span class="highlight" style="color: #22C55E; background: none;">DYNAMIC CAPTIONS</span> THAT POP_`;
+      dragSampleText.style.fontFamily = "'JetBrains Mono', monospace";
+      dragSampleText.style.fontWeight = "700";
       dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "quote_editorial" || styleObj.id === "serif_title") {
+      dragSampleText.innerHTML = `“Creating <span class="highlight" style="color: ${selectedHighlightColor};">Dynamic Captions</span> that pop”`;
+      dragSampleText.style.fontFamily = "'Fraunces', Georgia, serif";
+      dragSampleText.style.fontStyle = "italic";
+      dragSampleText.style.fontWeight = "700";
+      dragSampleText.style.textTransform = "none";
+    } else {
+      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: ${selectedHighlightColor};">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.style.fontFamily = "'Montserrat', 'Plus Jakarta Sans', sans-serif";
+      dragSampleText.style.fontStyle = "normal";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "uppercase";
+    }
+
+    if (selectedBgStyle === "solid") {
+      dragSampleText.style.color = "#090a0f";
+      dragSampleText.style.textShadow = "none";
+    } else {
+      dragSampleText.style.color = "#ffffff";
+      dragSampleText.style.textShadow = "0 2px 8px rgba(0,0,0,0.95)";
     }
   }
 
@@ -442,6 +545,7 @@ document.addEventListener("DOMContentLoaded", () => {
     selectAllStylesBtn.addEventListener("click", () => {
       selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
       renderStylesPool();
+      updateCaptionShowcase("hormozi_bold");
       showToast("Selected all 20 caption styles.");
     });
   }
@@ -450,6 +554,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearAllStylesBtn.addEventListener("click", () => {
       selectedStyles = ["hormozi_bold"];
       renderStylesPool();
+      updateCaptionShowcase("hormozi_bold");
       showToast("Reset to single style: Hormozi Bold.");
     });
   }
@@ -461,8 +566,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const pick = btn.dataset.pick;
         if (pick === "all") {
           selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+          updateCaptionShowcase("hormozi_bold");
         } else if (pick) {
           selectedStyles = [pick];
+          updateCaptionShowcase(pick);
         }
         renderStylesPool();
         showToast(`Preset: ${btn.textContent.trim()}`);
@@ -480,10 +587,13 @@ document.addEventListener("DOMContentLoaded", () => {
         radio.checked = true;
         if (radio.value === "minimal_pill") {
           selectedStyles = ["pill_word", "minimal_underline"];
+          updateCaptionShowcase("pill_word");
         } else if (radio.value === "calm_serif") {
           selectedStyles = ["serif_title", "quote_editorial", "blob_card", "minimal_underline"];
+          updateCaptionShowcase("serif_title");
         } else {
           selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+          updateCaptionShowcase("hormozi_bold");
         }
         renderStylesPool();
       }

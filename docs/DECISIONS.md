@@ -68,6 +68,15 @@
   4. Added direct drag-and-drop caption placement directly onto the video canvas (`#phoneCanvas`) with magnetic snap guidelines (Upper 18%, Center 50%, Lower 79%), live coordinate badges (`Y: 10%-88%`), and fine-tuning slider controls synced bidirectionally with the backend and Remotion renderer.
 - **Why**: Creators need full CapCut-level agency over video selection, typography styling, and spatial placement. Draggable timeline brackets remove guesswork from video trimming, custom style pools prevent unwanted aesthetic switching, and direct canvas dragging lets users position subtitles anywhere without blocking crucial visual elements in the video.
 
+## 2026-10-19: Live Caption Example Showcase, Style Specimens & Size/Backdrop Previews
+- **Decision**:
+  1. Cleaned up the Card 2 header by removing the parenthetical "(Pick 1, 2, or All)" text.
+  2. Integrated visual mini-specimens on each of the 20 style cards (displaying authentic typography such as `VIRAL BOLD`, `RETRO 80s`, `KARAOKE •`, `FIRE BLAZE`, `> CODE_`, etc.) so users see each style's visual aesthetic directly in the selection grid.
+  3. Added visual specimen indicators to the Caption Font Size buttons (`Aa` in small 11px, medium 17px, and large 24px) and Caption Backdrop buttons (visual boxes showing Transparent floating text with shadow, Dark Glass with frosted blur pill, and Solid white pill).
+  4. Implemented a dedicated interactive "Live Caption Example" showcase panel in Card 3 that morphs dynamically with live typography, scaling, backdrops, and active word highlights in real time as creators select or hover any style, font size, backdrop, or color swatch. Synchronized the live styling with the on-canvas `#draggableCaptionBox` overlay.
+- **Why**: Creators should never have to guess what abstract labels like "Hormozi Bold", "52px", or "Dark Glass" look like. Providing immediate visual specimens on the controls and a live animated showcase panel gives creators instant visual feedback and confidence before rendering.
+
+
 
 
 

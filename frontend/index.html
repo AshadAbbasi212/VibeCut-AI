@@ -7,7 +7,7 @@
   <meta name="description" content="Clean, minimalist studio for rendering animated word-synced captions on vertical videos.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=3.1">
   <style>
     /* ==========================================================================
@@ -574,7 +574,7 @@
       background: var(--surface-hover);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px 6px;
+      padding: 10px 6px;
       font-size: 12px;
       font-weight: 700;
       color: var(--text-dim);
@@ -585,7 +585,88 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 3px;
+    }
+
+    .chip-visual-specimen {
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 2px;
+      width: 100%;
+    }
+
+    .size-specimen .specimen-sm {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-sub);
+    }
+
+    .size-specimen .specimen-md {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .size-specimen .specimen-lg {
+      font-size: 24px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .btn-custom-chip.active .size-specimen .specimen-text {
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+
+    .bg-specimen .specimen-box {
+      width: 58px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      transition: all 0.15s ease;
+    }
+
+    .specimen-bg-transparent {
+      background: transparent;
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      text-shadow: 0 1px 4px #000, 0 0 8px rgba(0,0,0,0.9);
+    }
+
+    .specimen-bg-glass {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #38bdf8;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .specimen-bg-solid {
+      background: #ffffff;
+      border: 1px solid #ffffff;
+      color: #090a0f;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .btn-custom-chip.active .specimen-bg-transparent {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-custom-chip.active .specimen-bg-glass {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-custom-chip.active .specimen-bg-solid {
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
     }
 
     .btn-custom-chip .chip-label {
@@ -1457,6 +1538,572 @@
       align-self: flex-start;
     }
 
+    .style-mini-sample {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 6px;
+      border-radius: 4px;
+      margin-top: 3px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      user-select: none;
+      transition: transform 0.15s ease;
+    }
+
+    .style-chip-item:hover .style-mini-sample {
+      transform: scale(1.04);
+    }
+
+    .style-sample-hormozi_bold {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      color: #facc15;
+      background: rgba(0, 0, 0, 0.7);
+      text-shadow: 0 1px 3px #000;
+      border: 1px solid rgba(250, 204, 21, 0.35);
+      text-transform: uppercase;
+    }
+
+    .style-sample-retro_vaporwave {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff2d95 0%, #00f5ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      border: 1px solid rgba(255, 45, 149, 0.35);
+      background-color: rgba(15, 23, 42, 0.6);
+      filter: drop-shadow(0 0 5px rgba(0, 245, 255, 0.5));
+    }
+
+    .style-sample-karaoke_bounce {
+      font-weight: 800;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      text-shadow: 0 0 8px rgba(251, 191, 36, 0.7);
+    }
+
+    .style-sample-fire_burn {
+      font-weight: 900;
+      background: linear-gradient(180deg, #fff200 0%, #ff5500 50%, #cc0000 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      border: 1px solid rgba(255, 85, 0, 0.4);
+      background-color: rgba(0, 0, 0, 0.65);
+      filter: drop-shadow(0 0 6px rgba(255, 85, 0, 0.7));
+    }
+
+    .style-sample-title3d {
+      font-weight: 900;
+      color: #38bdf8;
+      text-shadow: 0 1px #0284c7, 0 2px #0369a1;
+      background: rgba(12, 74, 110, 0.25);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .style-sample-neon_glow {
+      font-weight: 800;
+      color: #00ffff;
+      text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
+      background: rgba(0, 255, 255, 0.08);
+      border: 1px solid rgba(0, 255, 255, 0.35);
+    }
+
+    .style-sample-pill_word {
+      font-weight: 700;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 999px;
+    }
+
+    .style-sample-typewriter_terminal {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #22c55e;
+      background: #000000;
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+
+    .style-sample-glitch_kinetic {
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: -1.5px 0 #ff0055, 1.5px 0 #00ffff;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .style-sample-quote_editorial {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 700;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .style-sample-comic_bubble {
+      font-family: 'Bangers', cursive, sans-serif;
+      font-weight: 900;
+      color: #facc15;
+      -webkit-text-stroke: 0.6px #000;
+      letter-spacing: 1px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #facc15;
+    }
+
+    .style-sample-paper_cutout {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #1c1917;
+      background: #f4ebd9;
+      border: 1px solid #d6c7af;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .style-sample-gradient_outline {
+      font-weight: 800;
+      background: linear-gradient(135deg, #a855f7, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      background-color: rgba(168, 85, 247, 0.1);
+    }
+
+    .style-sample-minimal_underline {
+      font-weight: 700;
+      color: #ffffff;
+      border-bottom: 2px solid #38bdf8;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .style-sample-blob_card {
+      font-weight: 700;
+      color: #e9d5ff;
+      background: rgba(168, 85, 247, 0.2);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 8px;
+    }
+
+    .style-sample-serif_title {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .style-sample-numbered_point {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 700;
+      color: #facc15;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+
+    .style-sample-handwritten {
+      font-style: italic;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .style-sample-arc_letters {
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: 1.5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .style-sample-sticker {
+      font-weight: 900;
+      color: #090a0f;
+      background: #ffffff;
+      border: 1px solid #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    }
+
+    /* Live Interactive Caption Showcase Panel */
+    .caption-showcase-panel {
+      background: rgba(12, 14, 20, 0.95);
+      border: 1px solid var(--border-hover);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 4px;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .caption-showcase-panel::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #38bdf8, #818cf8, #f43f5e, #fbbf24);
+      opacity: 0.85;
+    }
+
+    .showcase-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .showcase-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .showcase-live-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.8s infinite;
+    }
+
+    .showcase-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
+    .showcase-specs-pill {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .showcase-viewport {
+      background: #06070a;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 22px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 95px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.6);
+    }
+
+    .showcase-video-backdrop-grid {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 18px 18px;
+      pointer-events: none;
+    }
+
+    .showcase-caption-container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .showcase-caption-text {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-align: center;
+      line-height: 1.25;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    /* Size Variants for Showcase */
+    .showcase-caption-text.size-small {
+      font-size: 15px;
+    }
+    .showcase-caption-text.size-medium {
+      font-size: 21px;
+    }
+    .showcase-caption-text.size-large {
+      font-size: 28px;
+    }
+
+    /* Backdrop Variants for Showcase */
+    .showcase-caption-text.bg-transparent {
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: none;
+      box-shadow: none;
+    }
+
+    .showcase-caption-text.bg-glass {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 8px 18px;
+      border-radius: 12px;
+    }
+
+    .showcase-caption-text.bg-solid {
+      background: #ffffff;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65);
+      padding: 8px 18px;
+      border-radius: 999px;
+    }
+    .showcase-caption-text.bg-solid .sc-word:not(.sc-highlight) {
+      color: #090a0f !important;
+      text-shadow: none !important;
+    }
+
+    /* Style Variants for Showcase */
+    .showcase-caption-text.style-hormozi_bold {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 2px #000;
+      letter-spacing: 0.04em;
+    }
+    .showcase-caption-text.style-hormozi_bold .sc-highlight {
+      color: #facc15 !important;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.95) !important;
+    }
+
+    .showcase-caption-text.style-retro_vaporwave {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #ff2d95 0%, #00f5ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 6px rgba(0, 245, 255, 0.6));
+      letter-spacing: 0.05em;
+    }
+
+    .showcase-caption-text.style-karaoke_bounce {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    }
+    .showcase-caption-text.style-karaoke_bounce .sc-highlight {
+      position: relative;
+      color: #fbbf24 !important;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.8) !important;
+    }
+    .showcase-caption-text.style-karaoke_bounce .sc-highlight::after {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+      animation: karaokeDotBounce 0.8s infinite alternate ease-in-out;
+    }
+
+    @keyframes karaokeDotBounce {
+      from { transform: translate(-50%, 0) scale(1); }
+      to { transform: translate(-50%, -6px) scale(1.3); }
+    }
+
+    .showcase-caption-text.style-fire_burn {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      text-transform: uppercase;
+      background: linear-gradient(180deg, #fff200 0%, #ff5500 50%, #cc0000 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 8px rgba(255, 68, 0, 0.7));
+      animation: flameFlicker 1.5s infinite alternate;
+    }
+
+    @keyframes flameFlicker {
+      0% { filter: drop-shadow(0 0 6px rgba(255, 68, 0, 0.6)); }
+      100% { filter: drop-shadow(0 0 12px rgba(255, 120, 0, 0.9)); }
+    }
+
+    .showcase-caption-text.style-neon_glow {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #00ffff;
+      text-shadow: 0 0 8px #00ffff, 0 0 18px #00ffff, 0 0 30px rgba(0, 255, 255, 0.6);
+    }
+
+    .showcase-caption-text.style-typewriter_terminal {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #22c55e;
+      text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+      letter-spacing: -0.02em;
+    }
+
+    .showcase-caption-text.style-glitch_kinetic {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      color: #ffffff;
+      text-shadow: -2px 0 #ff0055, 2px 0 #00ffff, 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    .showcase-caption-text.style-quote_editorial {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 700;
+      color: #f8fafc;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .showcase-caption-text.style-quote_editorial .sc-highlight {
+      color: #fbbf24 !important;
+    }
+
+    .showcase-caption-text.style-comic_bubble {
+      font-family: 'Bangers', cursive, sans-serif;
+      font-weight: 900;
+      color: #facc15;
+      -webkit-text-stroke: 1px #000000;
+      letter-spacing: 2px;
+      filter: drop-shadow(0 3px 0 #000);
+    }
+
+    .showcase-caption-text.style-paper_cutout {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #1c1917;
+      background: #f4ebd9 !important;
+      padding: 6px 16px;
+      border-radius: 4px;
+      box-shadow: 2px 3px 10px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .showcase-caption-text.style-gradient_outline {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      background: linear-gradient(135deg, #a855f7, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      border: 1.5px solid rgba(56, 189, 248, 0.5);
+      padding: 6px 14px;
+      border-radius: 8px;
+    }
+
+    .showcase-caption-text.style-minimal_underline {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: #ffffff;
+      border-bottom: 3px solid #38bdf8;
+      padding-bottom: 2px;
+    }
+
+    .showcase-caption-text.style-blob_card {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      color: #e9d5ff;
+      background: rgba(168, 85, 247, 0.25) !important;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      border-radius: 12px;
+      padding: 6px 14px;
+    }
+
+    .showcase-caption-text.style-serif_title {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      color: #f8fafc;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+
+    .showcase-caption-text.style-numbered_point {
+      font-family: 'Fraunces', serif;
+      font-style: italic;
+      font-weight: 700;
+      color: #facc15;
+    }
+
+    .showcase-caption-text.style-handwritten {
+      font-family: cursive;
+      font-style: italic;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+
+    .showcase-caption-text.style-arc_letters {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: 2.5px;
+    }
+
+    .showcase-caption-text.style-sticker {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 900;
+      color: #090a0f;
+      background: #ffffff !important;
+      border: 1px solid #ffffff;
+      border-radius: 6px;
+      padding: 6px 14px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+    }
+
+    .showcase-bottom-bar {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .showcase-indicator-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .showcase-indicator-tags .sc-tag {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .showcase-hint {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
     .styles-summary-banner {
       background: rgba(56, 189, 248, 0.08);
       border: 1px solid rgba(56, 189, 248, 0.2);
@@ -1700,9 +2347,9 @@
             </label>
           </div>
 
-          <!-- Custom Caption Styles Pool (Select 1, 2, or All) -->
+          <!-- Caption Styles Pool -->
           <div class="styles-pool-header">
-            <h4><span>🎨 Style Pool (Pick 1, 2, or All)</span></h4>
+            <h4><span>🎨 Caption Styles</span></h4>
             <div class="styles-pool-actions">
               <button type="button" class="btn-pool-action" id="selectAllStylesBtn">Select All (20)</button>
               <button type="button" class="btn-pool-action" id="clearAllStylesBtn">Clear All</button>
@@ -1737,6 +2384,39 @@
           <div class="card-title">
             <span>3. Options</span>
             <span class="card-badge">Custom</span>
+          </div>
+
+          <!-- Live Interactive Caption Example Showcase -->
+          <div class="caption-showcase-panel" id="captionShowcasePanel">
+            <div class="showcase-topbar">
+              <div class="showcase-title-group">
+                <span class="showcase-live-pulse"></span>
+                <span class="showcase-heading">Live Caption Example</span>
+              </div>
+              <span class="showcase-specs-pill" id="showcaseSpecsPill">Hormozi Bold • Medium (52px) • Transparent</span>
+            </div>
+
+            <div class="showcase-viewport" id="showcaseViewport">
+              <div class="showcase-video-backdrop-grid"></div>
+              <div class="showcase-caption-container" id="showcaseCaptionContainer">
+                <div class="showcase-caption-text style-hormozi_bold size-medium bg-transparent" id="showcaseCaptionText">
+                  <span class="sc-word">VIRAL</span>
+                  <span class="sc-word sc-highlight" id="showcaseHighlightWord">CAPTIONS</span>
+                  <span class="sc-word">THAT</span>
+                  <span class="sc-word sc-pop">POP</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="showcase-bottom-bar">
+              <div class="showcase-indicator-tags">
+                <span class="sc-tag" id="scTagStyle">⚡ Hormozi Bold</span>
+                <span class="sc-tag" id="scTagSize">📏 52px Medium</span>
+                <span class="sc-tag" id="scTagBg">🔲 Transparent</span>
+                <span class="sc-tag" id="scTagColor">🎨 Electric Cyan</span>
+              </div>
+              <span class="showcase-hint">⚡ Updates live on click</span>
+            </div>
           </div>
 
           <!-- CapCut-Style Dual-Handle Visual Video Trimmer -->
@@ -1899,16 +2579,25 @@
             </div>
             <div class="custom-chip-group" id="captionSizeChips">
               <button type="button" class="btn-custom-chip" data-size="small">
+                <div class="chip-visual-specimen size-specimen">
+                  <span class="specimen-text specimen-sm">Aa</span>
+                </div>
                 <span class="chip-label">Small</span>
-                <span class="chip-sub">38px</span>
+                <span class="chip-sub">38px Compact</span>
               </button>
               <button type="button" class="btn-custom-chip active" data-size="medium">
+                <div class="chip-visual-specimen size-specimen">
+                  <span class="specimen-text specimen-md">Aa</span>
+                </div>
                 <span class="chip-label">Medium</span>
-                <span class="chip-sub">52px (Sweet Spot)</span>
+                <span class="chip-sub">52px Sweet Spot</span>
               </button>
               <button type="button" class="btn-custom-chip" data-size="large">
+                <div class="chip-visual-specimen size-specimen">
+                  <span class="specimen-text specimen-lg">Aa</span>
+                </div>
                 <span class="chip-label">Large</span>
-                <span class="chip-sub">68px</span>
+                <span class="chip-sub">68px Bold Pop</span>
               </button>
             </div>
           </div>
@@ -1921,14 +2610,29 @@
             </div>
             <div class="custom-chip-group" id="bgStyleChips">
               <button type="button" class="btn-custom-chip active" data-bg="transparent">
+                <div class="chip-visual-specimen bg-specimen">
+                  <div class="specimen-box specimen-bg-transparent">
+                    <span class="specimen-caption-sample">Aa</span>
+                  </div>
+                </div>
                 <span class="chip-label">Transparent</span>
                 <span class="chip-sub">Clean (No Box)</span>
               </button>
               <button type="button" class="btn-custom-chip" data-bg="glass">
+                <div class="chip-visual-specimen bg-specimen">
+                  <div class="specimen-box specimen-bg-glass">
+                    <span class="specimen-caption-sample">Aa</span>
+                  </div>
+                </div>
                 <span class="chip-label">Dark Glass</span>
                 <span class="chip-sub">Frosted Blur</span>
               </button>
               <button type="button" class="btn-custom-chip" data-bg="solid">
+                <div class="chip-visual-specimen bg-specimen">
+                  <div class="specimen-box specimen-bg-solid">
+                    <span class="specimen-caption-sample">Aa</span>
+                  </div>
+                </div>
                 <span class="chip-label">Solid</span>
                 <span class="chip-sub">White Pill</span>
               </button>
