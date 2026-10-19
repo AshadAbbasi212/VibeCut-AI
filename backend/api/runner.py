@@ -33,6 +33,8 @@ class JobInfo(BaseModel):
     language: str = "en"
     concurrency: Optional[int] = None
     draft: bool = False
+    aspect_ratio: str = "9:16"
+    subtitle_position: str = "lower"
     trim_start: Optional[float] = None
     trim_end: Optional[float] = None
     created_at: float = Field(default_factory=time.time)
@@ -150,6 +152,8 @@ class JobManager:
         language: str = "en",
         concurrency: Optional[int] = None,
         draft: bool = False,
+        aspect_ratio: str = "9:16",
+        subtitle_position: str = "lower",
         trim_start: Optional[float] = None,
         trim_end: Optional[float] = None,
     ) -> JobInfo:
@@ -171,6 +175,8 @@ class JobManager:
             language=language,
             concurrency=concurrency,
             draft=draft,
+            aspect_ratio=aspect_ratio,
+            subtitle_position=subtitle_position,
             trim_start=trim_start,
             trim_end=trim_end,
             input_file=str(target_input),
@@ -326,10 +332,29 @@ class JobManager:
             # Copy input asset to remotion public dir
             rel_src = prepare_video_asset(input_path, job_id=job_id)
 
+            ar_map = {
+                "9:16": (1080, 1920),
+                "16:9": (1920, 1080),
+                "1:1": (1080, 1080),
+                "4:5": (1080, 1350),
+            }
+            target_w, target_h = ar_map.get(job.aspect_ratio, (probe.width, probe.height))
+
+            # Apply custom subtitle position preference if specified without causing collisions
+            if job.subtitle_position in ["upper", "center", "lower"] and job.subtitle_position != "lower":
+                for ev in events:
+                    if ev.id.startswith("base_"):
+                        has_collision = any(
+                            other.zone == job.subtitle_position and max(other.start, ev.start) < min(other.end, ev.end)
+                            for other in events if other.id != ev.id
+                        )
+                        if not has_collision:
+                            ev.zone = job.subtitle_position
+
             tl_video = TimelineVideo(
                 src=rel_src,
-                width=probe.width,
-                height=probe.height,
+                width=target_w,
+                height=target_h,
                 fps=round(probe.fps),
                 durationSec=round(probe.duration, 2),
             )

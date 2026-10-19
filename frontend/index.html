@@ -71,7 +71,7 @@
     .app {
       position: relative;
       z-index: 1;
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       padding: 24px 20px 60px;
     }
@@ -460,8 +460,9 @@
       color: var(--text-sub);
     }
 
-    /* Primary Generate Button */
+    /* Primary Generate Button with Integrated Progress Fill */
     .btn-primary {
+      position: relative;
       width: 100%;
       background: var(--accent-grad);
       border: none;
@@ -474,6 +475,10 @@
       cursor: pointer;
       transition: all 0.15s ease;
       box-shadow: 0 4px 16px var(--accent-glow);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-primary:hover:not(:disabled) {
@@ -482,9 +487,24 @@
     }
 
     .btn-primary:disabled {
-      opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+    }
+
+    .btn-progress-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      background: rgba(255, 255, 255, 0.4);
+      transition: width 0.2s ease;
+      pointer-events: none;
+    }
+
+    .btn-text-label {
+      position: relative;
+      z-index: 2;
     }
 
     /* Stage Panel & Video Canvas */
@@ -516,7 +536,41 @@
       letter-spacing: 0.05em;
     }
 
-    /* Phone / Canvas 9:16 Frame */
+    /* Aspect Ratio Selector (Top Right of Preview Canvas) */
+    .ar-selector {
+      display: flex;
+      gap: 3px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+
+    .btn-ar {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 4px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-ar:hover {
+      color: var(--text);
+    }
+
+    .btn-ar.active {
+      background: var(--surface-hover);
+      color: var(--accent);
+      border-color: var(--border-hover);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Phone / Canvas Container (Morphs to Aspect Ratio) */
     .phone-canvas {
       width: 100%;
       max-width: 380px;
@@ -530,6 +584,27 @@
       align-items: center;
       justify-content: center;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), aspect-ratio 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .phone-canvas.ar-9-16 {
+      aspect-ratio: 9 / 16;
+      max-width: 380px;
+    }
+
+    .phone-canvas.ar-16-9 {
+      aspect-ratio: 16 / 9;
+      max-width: 620px;
+    }
+
+    .phone-canvas.ar-1-1 {
+      aspect-ratio: 1 / 1;
+      max-width: 440px;
+    }
+
+    .phone-canvas.ar-4-5 {
+      aspect-ratio: 4 / 5;
+      max-width: 400px;
     }
 
     /* Idle Mockup */
@@ -557,20 +632,59 @@
       line-height: 1.4;
     }
 
-    /* Processing Box */
+    /* Source Video & Result Video Players */
+    .source-box, .result-box {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .source-box video, .result-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .canvas-tag {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      pointer-events: none;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      z-index: 5;
+    }
+
+    .canvas-tag.captioned {
+      color: var(--accent);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Processing Box (Always centered and prominent) */
     .processing-box {
-      width: 80%;
+      width: 85%;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
+      z-index: 10;
     }
 
     .spinner {
-      width: 44px;
-      height: 44px;
-      border: 3px solid var(--border);
+      width: 48px;
+      height: 48px;
+      border: 3.5px solid var(--border);
       border-top-color: var(--accent);
+      border-right-color: #818cf8;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin-bottom: 16px;
@@ -581,7 +695,7 @@
     }
 
     .proc-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text);
       margin-bottom: 4px;
@@ -589,18 +703,19 @@
 
     .proc-step {
       font-size: 12px;
-      color: var(--text-dim);
+      color: var(--text-sub);
       margin-bottom: 16px;
       min-height: 18px;
     }
 
     .progress-track {
       width: 100%;
-      height: 6px;
+      height: 8px;
       background: var(--surface-hover);
       border-radius: 999px;
       overflow: hidden;
       margin-bottom: 8px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
     }
 
     .progress-fill {
@@ -608,6 +723,7 @@
       width: 5%;
       background: var(--accent-grad);
       transition: width 0.3s ease;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
     }
 
     .proc-meta {
@@ -617,20 +733,6 @@
       font-size: 11px;
       color: var(--text-dim);
       font-family: var(--font-mono);
-    }
-
-    /* Result Video Player */
-    .result-box {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-
-    .result-box video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
     }
 
     /* Result Action Buttons */
@@ -825,7 +927,7 @@
         <div class="card">
           <div class="card-title">
             <span>1. Video Source</span>
-            <span class="card-badge">9:16 Shorts</span>
+            <span class="card-badge" id="sourceBadge">Shorts / Reels</span>
           </div>
 
           <!-- Dropzone -->
@@ -834,7 +936,7 @@
             <div id="dropPrompt">
               <div class="drop-icon">🎬</div>
               <p class="drop-primary">Drop video file here</p>
-              <p class="drop-secondary">MP4, MOV, or WebM (Vertical 1080x1920)</p>
+              <p class="drop-secondary">MP4, MOV, or WebM (Any aspect ratio)</p>
               <button type="button" class="btn-select" id="browseBtn">Browse File</button>
             </div>
             <div class="selected-file hidden" id="fileBadge">
@@ -886,7 +988,7 @@
           </div>
         </div>
 
-        <!-- 3. Trimming & Options -->
+        <!-- 3. Trimming & Positioning Options -->
         <div class="card">
           <div class="card-title">
             <span>3. Options</span>
@@ -913,15 +1015,15 @@
 
           <div class="options-grid">
             <div class="field">
-              <label for="llmProvider">Planner Engine</label>
-              <select id="llmProvider" class="input">
-                <option value="none">Deterministic (10-15 Styles)</option>
-                <option value="gemini">Google Gemini 2.5</option>
-                <option value="anthropic">Anthropic Claude</option>
+              <label for="subPosition">Subtitle Position</label>
+              <select id="subPosition" class="input">
+                <option value="lower" selected>Bottom (79% Safe Zone)</option>
+                <option value="center">Center (Mid-Torso)</option>
+                <option value="upper">Top (18% Safe Zone)</option>
               </select>
             </div>
             <div class="field">
-              <label for="videoLanguage">Language</label>
+              <label for="videoLanguage">Spoken Language</label>
               <select id="videoLanguage" class="input">
                 <option value="en">English (en)</option>
                 <option value="auto">Auto Detect</option>
@@ -932,15 +1034,29 @@
             </div>
           </div>
 
-          <label class="checkbox-row" for="draftToggle">
-            <input type="checkbox" id="draftToggle" checked>
-            <span>⚡ Fast Draft Mode (540p / 0.5 scale for 4x faster rendering)</span>
-          </label>
+          <div class="options-grid">
+            <div class="field">
+              <label for="llmProvider">Planner Intelligence</label>
+              <select id="llmProvider" class="input">
+                <option value="none">Deterministic (10-15 Styles)</option>
+                <option value="gemini">Google Gemini 2.5</option>
+                <option value="anthropic">Anthropic Claude</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="draftToggle">Draft Preview</label>
+              <label class="checkbox-row" for="draftToggle" style="padding-top: 4px; border: none;">
+                <input type="checkbox" id="draftToggle" checked>
+                <span>⚡ 540p Fast Mode</span>
+              </label>
+            </div>
+          </div>
         </div>
 
-        <!-- Action Button -->
+        <!-- Action Button with Dual Progress Fill -->
         <button type="button" class="btn-primary" id="startJobBtn">
-          Generate Captioned Video ⚡
+          <div class="btn-progress-fill" id="btnProgressFill"></div>
+          <span class="btn-text-label" id="btnTextLabel">Generate Captioned Video ⚡</span>
         </button>
       </section>
 
@@ -949,23 +1065,36 @@
         <div class="stage-wrapper">
           <div class="stage-header">
             <span class="stage-title" id="stageStatus">Preview Canvas</span>
-            <span class="card-badge" id="timeElapsedBadge">9:16 Vertical</span>
+            
+            <!-- Aspect Ratio Selector (Top Right Corner) -->
+            <div class="ar-selector" id="arSelector">
+              <button type="button" class="btn-ar active" data-ar="9:16" title="Vertical Shorts / Reels / TikTok (1080x1920)">9:16</button>
+              <button type="button" class="btn-ar" data-ar="16:9" title="Landscape YouTube / Desktop (1920x1080)">16:9</button>
+              <button type="button" class="btn-ar" data-ar="1:1" title="Square Instagram / LinkedIn (1080x1080)">1:1</button>
+              <button type="button" class="btn-ar" data-ar="4:5" title="Portrait Instagram Post (1080x1350)">4:5</button>
+            </div>
           </div>
 
-          <!-- Phone Frame -->
-          <div class="phone-canvas">
-            <!-- State 1: Idle -->
+          <!-- Phone Frame (Aspect ratio morphs dynamically) -->
+          <div class="phone-canvas ar-9-16" id="phoneCanvas">
+            <!-- State 1: Idle (No file selected) -->
             <div class="idle-box" id="viewIdle">
               <div class="idle-icon">🎬</div>
               <h4>No Video Loaded</h4>
-              <p>Upload a vertical video or click "Load Sample Reel" to render dynamic captions.</p>
+              <p>Upload a video or click "Load Sample Reel" to render dynamic captions.</p>
             </div>
 
-            <!-- State 2: Processing -->
+            <!-- State 2: Source Video Preview (Shown immediately upon selecting video) -->
+            <div class="source-box hidden" id="viewSource">
+              <video id="sourceVideoPlayer" controls playsinline></video>
+              <div class="canvas-tag">Raw Source</div>
+            </div>
+
+            <!-- State 3: Processing HUD (Immediate upload progress + rendering progress) -->
             <div class="processing-box hidden" id="viewProcessing">
               <div class="spinner"></div>
-              <h4 class="proc-title" id="procTitle">Rendering Video...</h4>
-              <p class="proc-step" id="procStep">Analyzing audio & video stream</p>
+              <h4 class="proc-title" id="procTitle">Uploading Video...</h4>
+              <p class="proc-step" id="procStep">Transferring video stream to render engine</p>
               
               <div class="progress-track">
                 <div class="progress-fill" id="procFill"></div>
@@ -977,9 +1106,10 @@
               </div>
             </div>
 
-            <!-- State 3: Result Video Player -->
+            <!-- State 4: Result Video Player (Rendered Captioned Video) -->
             <div class="result-box hidden" id="viewResult">
               <video id="resultVideo" controls playsinline></video>
+              <div class="canvas-tag captioned">Captioned MP4</div>
             </div>
           </div>
 

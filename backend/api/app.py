@@ -42,6 +42,8 @@ async def create_job(
     language: str = Form("en"),
     concurrency: Optional[int] = Form(None),
     draft: bool = Form(False),
+    aspect_ratio: str = Form("9:16"),
+    subtitle_position: str = Form("lower"),
     trim_start: Optional[float] = Form(None),
     trim_end: Optional[float] = Form(None),
 ):
@@ -66,6 +68,8 @@ async def create_job(
             language=language,
             concurrency=concurrency,
             draft=draft,
+            aspect_ratio=aspect_ratio,
+            subtitle_position=subtitle_position,
             trim_start=trim_start,
             trim_end=trim_end,
         )

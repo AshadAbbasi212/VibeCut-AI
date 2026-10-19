@@ -1,6 +1,6 @@
 /**
  * Dynamic Captions Studio — Minimalist Frontend Controller
- * Connected directly to FastAPI endpoints.
+ * Fully integrated with Remotion, faster-whisper, and FastAPI backend.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -26,14 +26,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const trim60sBtn = document.getElementById("trim60sBtn");
   const trimResetBtn = document.getElementById("trimResetBtn");
 
-  const llmProvider = document.getElementById("llmProvider");
+  const subPosition = document.getElementById("subPosition");
   const videoLanguage = document.getElementById("videoLanguage");
+  const llmProvider = document.getElementById("llmProvider");
   const draftToggle = document.getElementById("draftToggle");
+
   const startJobBtn = document.getElementById("startJobBtn");
+  const btnProgressFill = document.getElementById("btnProgressFill");
+  const btnTextLabel = document.getElementById("btnTextLabel");
 
   const stageStatus = document.getElementById("stageStatus");
-  const timeElapsedBadge = document.getElementById("timeElapsedBadge");
+  const phoneCanvas = document.getElementById("phoneCanvas");
+  const arButtons = document.querySelectorAll(".btn-ar");
+
   const viewIdle = document.getElementById("viewIdle");
+  const viewSource = document.getElementById("viewSource");
+  const sourceVideoPlayer = document.getElementById("sourceVideoPlayer");
   const viewProcessing = document.getElementById("viewProcessing");
   const viewResult = document.getElementById("viewResult");
 
@@ -56,12 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveEditsBtn = document.getElementById("saveEditsBtn");
   const toast = document.getElementById("toast");
 
-  // State
+  // State Management
   let selectedFile = null;
   let currentJobId = null;
   let pollInterval = null;
   let jobStartTime = null;
   let currentTimeline = null;
+  let selectedAspectRatio = "9:16";
 
   // 1. Health Check
   async function checkHealth() {
@@ -76,7 +85,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   checkHealth();
 
-  // 2. File Selection & Drag & Drop
+  // 2. Aspect Ratio Selector (Top Right of Canvas)
+  arButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      arButtons.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      selectedAspectRatio = btn.dataset.ar;
+
+      // Morphs phone canvas container
+      phoneCanvas.className = "phone-canvas ar-" + selectedAspectRatio.replace(":", "-");
+      stageStatus.textContent = `Preview (${selectedAspectRatio})`;
+      showToast(`Switched canvas to ${selectedAspectRatio}`);
+    });
+  });
+
+  // 3. File Selection & Instant Video Preview
   browseBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     videoFileInput.click();
@@ -115,14 +138,17 @@ document.addEventListener("DOMContentLoaded", () => {
     e.stopPropagation();
     selectedFile = null;
     videoFileInput.value = "";
+    sourceVideoPlayer.pause();
+    sourceVideoPlayer.src = "";
     dropPrompt.classList.remove("hidden");
     fileBadge.classList.add("hidden");
     stageStatus.textContent = "Preview Canvas";
+    showStage("idle");
   });
 
   function handleFile(file) {
-    if (!file.type.startsWith("video/") && !file.name.endsWith(".mp4") && !file.name.endsWith(".mov")) {
-      showToast("Please select a video file (MP4, MOV).");
+    if (!file.type.startsWith("video/") && !file.name.endsWith(".mp4") && !file.name.endsWith(".mov") && !file.name.endsWith(".webm")) {
+      showToast("Please select a video file (MP4, MOV, WebM).");
       return;
     }
     selectedFile = file;
@@ -131,13 +157,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     dropPrompt.classList.add("hidden");
     fileBadge.classList.remove("hidden");
-    stageStatus.textContent = `Ready • ${file.name}`;
-    showToast(`Loaded ${file.name}`);
+    stageStatus.textContent = `Raw Source • ${file.name}`;
+
+    // Instant Preview in Canvas
+    const objectUrl = URL.createObjectURL(file);
+    sourceVideoPlayer.src = objectUrl;
+    sourceVideoPlayer.load();
+    showStage("source");
+
+    showToast(`Loaded ${file.name} • Ready to render`);
   }
 
-  // Sample Clip Loader
+  // Sample Video Loader
   async function loadSample() {
-    showToast("Fetching sample video...");
+    showToast("Fetching synthetic sample clip...");
     try {
       const res = await fetch("/api/sample");
       if (!res.ok) throw new Error("Sample file not found on server");
@@ -151,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadSampleBtn.addEventListener("click", loadSample);
   quickSampleBtn.addEventListener("click", loadSample);
 
-  // 3. Preset Selection
+  // 4. Preset Selection
   presetChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       presetChips.forEach((c) => c.classList.remove("active"));
@@ -166,14 +199,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return checked ? checked.value : "bold_creator";
   }
 
-  // 4. Trimming Presets
+  // 5. Trimming Quick Buttons
   trim15sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "15"; });
   trim30sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "30"; });
   trim60sBtn.addEventListener("click", () => { trimStart.value = "0"; trimEnd.value = "60"; });
   trimResetBtn.addEventListener("click", () => { trimStart.value = ""; trimEnd.value = ""; });
 
-  // 5. Start Job & Polling Pipeline
-  startJobBtn.addEventListener("click", async () => {
+  // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
+  startJobBtn.addEventListener("click", () => {
     if (!selectedFile) {
       showToast("Please upload a video or click 'Load Sample Reel'!");
       return;
@@ -184,11 +217,15 @@ document.addEventListener("DOMContentLoaded", () => {
     stageStatus.textContent = "Rendering...";
     jobStartTime = Date.now();
 
+    // Prepare FormData
     const formData = new FormData();
     formData.append("file", selectedFile);
     formData.append("preset", getSelectedPreset());
     formData.append("llm_provider", llmProvider.value);
     formData.append("language", videoLanguage.value);
+    formData.append("aspect_ratio", selectedAspectRatio);
+    formData.append("subtitle_position", subPosition ? subPosition.value : "lower");
+
     if (draftToggle.checked) {
       formData.append("draft", "true");
     }
@@ -199,29 +236,67 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append("trim_end", trimEnd.value.trim());
     }
 
-    try {
-      const res = await fetch("/api/jobs", {
-        method: "POST",
-        body: formData,
-      });
+    // Use XMLHttpRequest for real-time Upload Progress
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/jobs", true);
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Failed to start job");
+    // Initial Processing State
+    procTitle.textContent = "Uploading Video to Engine...";
+    procStep.textContent = `Streaming ${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB to local studio runner...`;
+    procFill.style.width = "5%";
+    procPct.textContent = "0%";
+    btnTextLabel.textContent = "Uploading Video... 0%";
+    btnProgressFill.style.width = "5%";
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const uploadPct = Math.round((e.loaded / e.total) * 100);
+        const loadedMb = (e.loaded / (1024 * 1024)).toFixed(1);
+        const totalMb = (e.total / (1024 * 1024)).toFixed(1);
+
+        // Map upload to 0% - 25% of overall pipeline
+        const mappedPct = Math.min(25, Math.round(uploadPct * 0.25));
+        procFill.style.width = `${Math.max(5, mappedPct)}%`;
+        procPct.textContent = `${uploadPct}% Uploaded`;
+        procStep.textContent = `Uploaded ${loadedMb} MB / ${totalMb} MB (${uploadPct}%)...`;
+
+        btnTextLabel.textContent = `Uploading Video... ${uploadPct}%`;
+        btnProgressFill.style.width = `${uploadPct}%`;
       }
+    };
 
-      const job = await res.json();
-      currentJobId = job.id;
-      showToast(`Job queued: ${job.id}`);
-      startPolling(currentJobId);
-    } catch (err) {
-      showToast(`Error: ${err.message}`);
-      showStage("idle");
-      startJobBtn.disabled = false;
-      stageStatus.textContent = "Error";
-    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const job = JSON.parse(xhr.responseText);
+          currentJobId = job.id;
+          procTitle.textContent = "Processing Video...";
+          procStep.textContent = "Aligning speech with faster-whisper timestamps...";
+          procFill.style.width = "25%";
+          procPct.textContent = "25%";
+          btnTextLabel.textContent = "Transcribing Speech...";
+          startPolling(currentJobId);
+        } catch (err) {
+          onFailed({ error: "Failed to parse job response" });
+        }
+      } else {
+        let msg = "Upload failed";
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          msg = errData.detail || msg;
+        } catch {}
+        onFailed({ error: msg });
+      }
+    };
+
+    xhr.onerror = () => {
+      onFailed({ error: "Network error during upload" });
+    };
+
+    xhr.send(formData);
   });
 
+  // 7. Polling Pipeline Progress
   function startPolling(jobId) {
     if (pollInterval) clearInterval(pollInterval);
 
@@ -230,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const res = await fetch(`/api/jobs/${jobId}`);
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         const job = await res.json();
-        updateProgress(job);
+        updatePipelineProgress(job);
 
         if (job.status === "completed") {
           clearInterval(pollInterval);
@@ -245,40 +320,51 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   }
 
-  function updateProgress(job) {
-    const pct = Math.round(job.progress * 100);
-    procFill.style.width = `${Math.max(5, pct)}%`;
-    procPct.textContent = `${pct}%`;
+  function updatePipelineProgress(job) {
+    // Map job.progress (0.0 to 1.0) into overall percent (25% to 100%)
+    const jobPct = Math.round(job.progress * 100);
+    const overallPct = Math.min(100, Math.max(25, 25 + Math.round(job.progress * 75)));
+
+    procFill.style.width = `${overallPct}%`;
+    procPct.textContent = `${overallPct}%`;
+    btnProgressFill.style.width = `${overallPct}%`;
 
     const elapsed = Math.floor((Date.now() - jobStartTime) / 1000);
-    procElapsed.textContent = `${elapsed}s`;
-    timeElapsedBadge.textContent = `Elapsed: ${elapsed}s`;
+    procElapsed.textContent = `${elapsed}s elapsed`;
 
-    const steps = {
-      queued: "Queued...",
-      trimming: "Trimming video clip...",
-      probing: "Analyzing dimensions & audio...",
+    const stepLabels = {
+      queued: "Queued in render queue...",
+      trimming: "Trimming video clip to range...",
+      probing: "Analyzing dimensions & audio channels...",
       transcribing: "Aligning speech with faster-whisper...",
       chunking: "Structuring natural cadence & phrases...",
       planning: "Assigning 10–15 distinct styles...",
-      rendering: "Composing animated MP4 with Remotion...",
-      completed: "Finalizing MP4...",
-      failed: "Failed.",
+      rendering: "Composing animated frames in Remotion...",
+      completed: "Finalizing and muxing MP4...",
+      failed: "Render failed.",
     };
 
-    if (job.step === "rendering" && pct >= 95) {
-      procStep.textContent = "Muxing audio & finalizing MP4...";
+    procTitle.textContent = "Rendering Video...";
+    if (job.step === "rendering" && jobPct >= 95) {
+      procStep.textContent = "Muxing audio & finalizing MP4 with FFmpeg...";
+      btnTextLabel.textContent = "Finalizing MP4... 98%";
     } else {
-      procStep.textContent = steps[job.step] || job.step;
+      procStep.textContent = stepLabels[job.step] || job.step;
+      btnTextLabel.textContent = `Rendering... ${overallPct}%`;
     }
   }
 
   async function onCompleted(job) {
-    stageStatus.textContent = "Completed";
+    stageStatus.textContent = `Complete (${selectedAspectRatio})`;
     startJobBtn.disabled = false;
-    showToast("Render complete! Loading video...");
+    btnProgressFill.style.width = "0%";
+    btnTextLabel.textContent = "Generate Captioned Video ⚡";
+    showToast("Render complete! Loading captioned video...");
 
-    // Setup Video
+    // Pause source video if playing
+    sourceVideoPlayer.pause();
+
+    // Setup Result Video
     resultVideo.src = `/api/jobs/${job.id}/output`;
     resultVideo.load();
 
@@ -311,11 +397,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function onFailed(job) {
     stageStatus.textContent = "Failed";
     startJobBtn.disabled = false;
+    btnProgressFill.style.width = "0%";
+    btnTextLabel.textContent = "Generate Captioned Video ⚡";
     showToast(`Error: ${job.error || "Render failed"}`);
-    showStage("idle");
+    showStage(selectedFile ? "source" : "idle");
   }
 
-  // 6. Caption Timeline Inspector & Editor
+  // 8. Caption Timeline Inspector & Editor
   function renderTimeline(timeline) {
     if (!timeline || !timeline.events || timeline.events.length === 0) {
       editorCard.classList.add("hidden");
@@ -382,21 +470,23 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   resetBtn.addEventListener("click", () => {
-    showStage("idle");
-    stageStatus.textContent = "Preview Canvas";
+    showStage(selectedFile ? "source" : "idle");
+    stageStatus.textContent = selectedFile ? `Raw Source • ${selectedFile.name}` : "Preview Canvas";
     resultVideo.pause();
     resultVideo.src = "";
     resultActions.classList.add("hidden");
     editorCard.classList.add("hidden");
   });
 
-  // Helpers
+  // Stage Switcher
   function showStage(stage) {
     viewIdle.classList.toggle("hidden", stage !== "idle");
+    viewSource.classList.toggle("hidden", stage !== "source");
     viewProcessing.classList.toggle("hidden", stage !== "processing");
     viewResult.classList.toggle("hidden", stage !== "result");
   }
 
+  // Toast Helper
   function showToast(msg) {
     toast.textContent = msg;
     toast.classList.add("show");
