@@ -515,7 +515,7 @@
       margin-top: 6px;
     }
 
-    .btn-ar-opt {
+    .btn-ar-opt, .btn-layout-opt {
       background: var(--surface-hover);
       border: 1.5px solid var(--border);
       border-radius: var(--radius-sm);
@@ -529,33 +529,33 @@
       gap: 3px;
     }
 
-    .btn-ar-opt:hover {
+    .btn-ar-opt:hover, .btn-layout-opt:hover {
       border-color: var(--border-hover);
       background: rgba(255, 255, 255, 0.04);
     }
 
-    .btn-ar-opt.active {
+    .btn-ar-opt.active, .btn-layout-opt.active {
       border-color: var(--accent);
       background: rgba(56, 189, 248, 0.14);
       box-shadow: 0 0 12px var(--accent-glow);
     }
 
-    .btn-ar-opt .ar-icon {
+    .btn-ar-opt .ar-icon, .btn-layout-opt .ar-icon {
       font-size: 16px;
     }
 
-    .btn-ar-opt .ar-ratio {
-      font-size: 13px;
+    .btn-ar-opt .ar-ratio, .btn-layout-opt .ar-ratio {
+      font-size: 12px;
       font-weight: 800;
       color: var(--text);
       font-family: var(--font-mono);
     }
 
-    .btn-ar-opt.active .ar-ratio {
+    .btn-ar-opt.active .ar-ratio, .btn-layout-opt.active .ar-ratio {
       color: var(--accent);
     }
 
-    .btn-ar-opt .ar-sub {
+    .btn-ar-opt .ar-sub, .btn-layout-opt .ar-sub {
       font-size: 10px;
       color: var(--text-dim);
       font-weight: 500;
@@ -2523,6 +2523,41 @@
             </div>
           </div>
 
+          <!-- Video Reframe & Framing Layout (Landscape to Reel) -->
+          <div class="field" id="videoLayoutField" style="margin-top: 14px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 700;">Reframe Layout (Landscape to 9:16)</label>
+              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="layoutSelectedLabel">Podcast Split (Dual Cam)</span>
+            </div>
+            <div class="ar-option-grid" id="layoutOptionsGrid">
+              <button type="button" class="btn-layout-opt active" data-layout="split_podcast" title="Top host & bottom guest stacked for 2-person interviews">
+                <span class="ar-icon">👥</span>
+                <span class="ar-ratio">Podcast Split</span>
+                <span class="ar-sub">Dual-Cam Stack</span>
+              </button>
+              <button type="button" class="btn-layout-opt" data-layout="blur_fit" title="Fit full 16:9 frame with ambient blurred mirror background">
+                <span class="ar-icon">✨</span>
+                <span class="ar-ratio">Ambient Blur</span>
+                <span class="ar-sub">Frosted Mirror</span>
+              </button>
+              <button type="button" class="btn-layout-opt" data-layout="focus_left" title="Focus 9:16 vertical crop on left speaker">
+                <span class="ar-icon">👤⬅️</span>
+                <span class="ar-ratio">Left Speaker</span>
+                <span class="ar-sub">Host Focus</span>
+              </button>
+              <button type="button" class="btn-layout-opt" data-layout="focus_right" title="Focus 9:16 vertical crop on right speaker">
+                <span class="ar-icon">➡️👤</span>
+                <span class="ar-ratio">Right Speaker</span>
+                <span class="ar-sub">Guest Focus</span>
+              </button>
+              <button type="button" class="btn-layout-opt" data-layout="fill" title="Standard center zoom crop">
+                <span class="ar-icon">🔍</span>
+                <span class="ar-ratio">Center Zoom</span>
+                <span class="ar-sub">Full Crop</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Caption Placement Drag & Slider -->
           <div style="margin-top: 14px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
@@ -2742,8 +2777,19 @@
 
             <!-- State 2: Source Video Preview (Shown immediately upon selecting video) -->
             <div class="source-box hidden" id="viewSource">
-              <video id="sourceVideoPlayer" controls playsinline></video>
-              <div class="canvas-tag">Raw Source</div>
+              <div id="sourceSingleWrap" style="width: 100%; height: 100%;">
+                <video id="sourceVideoPlayer" controls playsinline style="width: 100%; height: 100%; object-fit: contain; display: block;"></video>
+              </div>
+              <div id="sourceSplitWrap" class="hidden" style="width: 100%; height: 100%; position: relative; overflow: hidden; background: #0b0c10;">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 50%; overflow: hidden;">
+                  <video id="sourceSplitTop" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: 15% center;"></video>
+                </div>
+                <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 50%; overflow: hidden;">
+                  <video id="sourceSplitBottom" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: 85% center;"></video>
+                </div>
+                <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 4px; transform: translateY(-50%); background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05)); box-shadow: 0 0 16px rgba(56, 189, 248, 0.65); z-index: 5;"></div>
+              </div>
+              <div class="canvas-tag" id="sourceCanvasTag">Raw Source</div>
             </div>
 
             <!-- State 3: Processing HUD (Immediate upload progress + rendering progress) -->

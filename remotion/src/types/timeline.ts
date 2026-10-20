@@ -57,6 +57,9 @@ export interface TimelineVideo {
   height: number;
   fps: number;
   durationSec: number;
+  layout?: "split_podcast" | "blur_fit" | "fill" | "focus_left" | "focus_right";
+  originalWidth?: number;
+  originalHeight?: number;
 }
 
 export interface Timeline {
@@ -69,4 +72,5 @@ export interface Timeline {
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
   subtitleY?: number;
+  videoLayout?: "split_podcast" | "blur_fit" | "fill" | "focus_left" | "focus_right";
 }

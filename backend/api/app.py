@@ -64,6 +64,7 @@ async def create_job(
     trim_end: Optional[float] = Form(None),
     selected_styles: Optional[str] = Form(None),
     subtitle_y: Optional[float] = Form(None),
+    video_layout: str = Form("split_podcast"),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -96,6 +97,7 @@ async def create_job(
             trim_end=trim_end,
             selected_styles=selected_styles,
             subtitle_y=subtitle_y,
+            video_layout=video_layout,
         )
         return job
     finally:

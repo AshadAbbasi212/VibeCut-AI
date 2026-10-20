@@ -43,6 +43,7 @@ class JobInfo(BaseModel):
     trim_end: Optional[float] = None
     selected_styles: Optional[str] = None
     subtitle_y: Optional[float] = None
+    video_layout: str = "split_podcast"
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
     input_file: str = ""
@@ -168,6 +169,7 @@ class JobManager:
         trim_end: Optional[float] = None,
         selected_styles: Optional[str] = None,
         subtitle_y: Optional[float] = None,
+        video_layout: str = "split_podcast",
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
         job_id = f"job_{uuid.uuid4().hex[:10]}"
@@ -197,6 +199,7 @@ class JobManager:
             trim_end=trim_end,
             selected_styles=selected_styles,
             subtitle_y=subtitle_y,
+            video_layout=video_layout,
             input_file=str(target_input),
         )
         self.save_job(job)
@@ -380,12 +383,20 @@ class JobManager:
                         if not has_collision:
                             ev.zone = job.subtitle_position
 
+            resolved_layout = getattr(job, "video_layout", "split_podcast") or "split_podcast"
+            # If the video is already vertical or square, split screen is not appropriate; fallback to fill
+            if probe.width <= probe.height and resolved_layout == "split_podcast":
+                resolved_layout = "fill"
+
             tl_video = TimelineVideo(
                 src=rel_src,
                 width=target_w,
                 height=target_h,
                 fps=round(probe.fps),
                 durationSec=round(probe.duration, 2),
+                layout=resolved_layout,
+                originalWidth=probe.width,
+                originalHeight=probe.height,
             )
             tl_words = [
                 TimelineWord(i=w.i, text=w.text, start=round(w.start, 2), end=round(w.end, 2))
@@ -401,6 +412,7 @@ class JobManager:
                 backgroundStyle=job.background_style,
                 highlightColor=job.highlight_color,
                 subtitleY=job.subtitle_y,
+                videoLayout=resolved_layout,
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

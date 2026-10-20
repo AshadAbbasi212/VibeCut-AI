@@ -75,9 +75,13 @@
   3. Added visual specimen indicators to the Caption Font Size buttons (`Aa` in small 11px, medium 17px, and large 24px) and Caption Backdrop buttons (visual boxes showing Transparent floating text with shadow, Dark Glass with frosted blur pill, and Solid white pill).
   4. Implemented a dedicated interactive "Live Caption Example" showcase panel in Card 3 that morphs dynamically with live typography, scaling, backdrops, and active word highlights in real time as creators select or hover any style, font size, backdrop, or color swatch. Synchronized the live styling with the on-canvas `#draggableCaptionBox` overlay.
 - **Why**: Creators should never have to guess what abstract labels like "Hormozi Bold", "52px", or "Dark Glass" look like. Providing immediate visual specimens on the controls and a live animated showcase panel gives creators instant visual feedback and confidence before rendering.
-
-
-
-
+## 2026-10-20: Smart Video Reframe Engine (Podcast Split Stack, Ambient Blur & Speaker Focus)
+- **Decision**: Solved the issue where 16:9 landscape interview/podcast videos had ~70% of the screen cut off when converting to 9:16 vertical reels:
+  1. Saved a complete standalone git bundle (`backup-progress.bundle`) and created a backup branch and tag `backup-before-reframe` before applying any modifications so the user can revert at any point.
+  2. Implemented the industry-standard **Podcast Split-Screen Stack** (Top: Left Host, Bottom: Right Guest) with an ultra-crisp cyan neon dividing line. Muted the bottom video stream in Remotion to guarantee zero audio doubling or echo.
+  3. Added alternative framing modes: `blur_fit` (full 16:9 frame over an ambient dynamic blurred mirror background), `focus_left` (host framing), `focus_right` (guest framing), and `fill` (center zoom for native vertical videos).
+  4. Added `layout`, `originalWidth`, and `originalHeight` to `TimelineVideo`, and `videoLayout` to `Timeline` and `JobInfo`.
+  5. Built synchronized dual-cam live preview in the Studio frontend (`#sourceSplitWrap`) and interactive `Reframe Layout` option buttons in Card 3.
+- **Why**: Amateur tools shrink landscape videos into tiny letterboxes with black bars, or crop the middle seam and cut both speakers in half. The Podcast Split-Screen Stack fills 100% of the 9:16 vertical screen with both speakers clearly visible in high resolution, delivering broadcast-quality reels for Instagram and TikTok.
 
 

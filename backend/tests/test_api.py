@@ -277,4 +277,27 @@ def test_job_submission_customization_options(client, tmp_path, monkeypatch):
     assert job_data["subtitle_y"] == 0.75
 
 
+def test_job_submission_video_layout(client, tmp_path, monkeypatch):
+    manager = get_job_manager()
+    dummy_video = tmp_path / "test_reframe.mp4"
+    dummy_video.write_bytes(b"dummy mp4 container bytes for upload test")
+
+    monkeypatch.setattr(manager.executor, "submit", lambda fn, *args: None)
+
+    with open(dummy_video, "rb") as f:
+        response = client.post(
+            "/api/jobs",
+            files={"file": ("test_reframe.mp4", f, "video/mp4")},
+            data={
+                "aspect_ratio": "9:16",
+                "video_layout": "split_podcast",
+            },
+        )
+
+    assert response.status_code == 201
+    job_data = response.json()
+    assert job_data["aspect_ratio"] == "9:16"
+    assert job_data["video_layout"] == "split_podcast"
+
+
 

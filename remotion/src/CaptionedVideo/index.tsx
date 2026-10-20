@@ -223,19 +223,196 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     return staticFile(raw);
   }, [timeline.video.src]);
 
-  return (
-    <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Background Video */}
-      <AbsoluteFill>
+  const layout = timeline.videoLayout || timeline.video.layout || "fill";
+  const isVerticalComp = (timeline.video.width || 1080) < (timeline.video.height || 1920);
+  const isSourceLandscape =
+    timeline.video.originalWidth && timeline.video.originalHeight
+      ? timeline.video.originalWidth > timeline.video.originalHeight
+      : true;
+
+  const renderVideoLayer = () => {
+    // 1. Podcast Split-Screen (Stacked Dual-Cam: Top Host / Bottom Guest)
+    if (layout === "split_podcast" && isVerticalComp && isSourceLandscape) {
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
+          {/* Top Speaker: Left side of 16:9 frame */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "50%",
+              overflow: "hidden",
+              backgroundColor: "#0d0e15",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "15% center",
+              }}
+            />
+          </div>
+
+          {/* Bottom Speaker: Right side of 16:9 frame */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              width: "100%",
+              height: "50%",
+              overflow: "hidden",
+              backgroundColor: "#0d0e15",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              muted
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "85% center",
+              }}
+            />
+          </div>
+
+          {/* Broadcast Studio Sleek Divider Line with Cyan Neon Glow */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: 0,
+              width: "100%",
+              height: "4px",
+              transform: "translateY(-50%)",
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))",
+              boxShadow:
+                "0 0 16px rgba(56, 189, 248, 0.65), 0 2px 10px rgba(0, 0, 0, 0.8)",
+              zIndex: 3,
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
+
+    // 2. Ambient Frosted Glass Mirror Background
+    if (layout === "blur_fit" && isVerticalComp) {
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#050608", overflow: "hidden" }}>
+          {/* Zoomed & Blurred Mirror Background */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              transform: "scale(1.8)",
+              filter: "blur(45px) brightness(0.42)",
+              overflow: "hidden",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              muted
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </div>
+
+          {/* Foreground Crisp Video with Soft Drop Shadow & Clean Border */}
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "100%",
+              maxHeight: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.85)",
+              zIndex: 2,
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              style={{
+                width: "100%",
+                height: "auto",
+                borderRadius: "14px",
+              }}
+            />
+          </div>
+        </AbsoluteFill>
+      );
+    }
+
+    // 3. Left Speaker Focus (Cover cropped to left third)
+    if (layout === "focus_left") {
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#000" }}>
+          <OffthreadVideo
+            src={videoSrc}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "15% center",
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
+
+    // 4. Right Speaker Focus (Cover cropped to right third)
+    if (layout === "focus_right") {
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#000" }}>
+          <OffthreadVideo
+            src={videoSrc}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "85% center",
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
+
+    // 5. Standard Full Zoom / Center Cover Crop (Default for native 9:16 or fill mode)
+    return (
+      <AbsoluteFill style={{ backgroundColor: "#000" }}>
         <OffthreadVideo
           src={videoSrc}
           style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            objectPosition: "center center",
           }}
         />
       </AbsoluteFill>
+    );
+  };
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: "#000" }}>
+      {/* Background Video Layer */}
+      {renderVideoLayer()}
 
       {/* Dynamic Caption Events */}
       {timeline.events.map((rawEvent) => {

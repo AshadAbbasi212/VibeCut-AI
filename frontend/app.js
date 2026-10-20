@@ -83,10 +83,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const phoneCanvas = document.getElementById("phoneCanvas");
   const arSelectedLabel = document.getElementById("arSelectedLabel");
   const allArButtons = document.querySelectorAll(".btn-ar, .btn-ar-opt");
+  const allLayoutButtons = document.querySelectorAll(".btn-layout-opt");
+  const layoutSelectedLabel = document.getElementById("layoutSelectedLabel");
+  const videoLayoutField = document.getElementById("videoLayoutField");
 
   const viewIdle = document.getElementById("viewIdle");
   const viewSource = document.getElementById("viewSource");
   const sourceVideoPlayer = document.getElementById("sourceVideoPlayer");
+  const sourceSingleWrap = document.getElementById("sourceSingleWrap");
+  const sourceSplitWrap = document.getElementById("sourceSplitWrap");
+  const sourceSplitTop = document.getElementById("sourceSplitTop");
+  const sourceSplitBottom = document.getElementById("sourceSplitBottom");
   const viewProcessing = document.getElementById("viewProcessing");
   const viewResult = document.getElementById("viewResult");
 
@@ -146,6 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (arSelectedLabel) arSelectedLabel.textContent = labels[ar] || ar;
     phoneCanvas.className = "phone-canvas ar-" + ar.replace(":", "-");
     stageStatus.textContent = `Preview (${ar})`;
+    updateSourcePreviewFraming();
     showToast(`Switched canvas to ${ar}`);
   }
 
@@ -154,6 +162,93 @@ document.addEventListener("DOMContentLoaded", () => {
       setAspectRatio(btn.dataset.ar);
     });
   });
+
+  // 2b. Video Reframe Layout Selector & Live Framing Preview
+  let selectedVideoLayout = "split_podcast";
+
+  function setVideoLayout(layout) {
+    selectedVideoLayout = layout;
+    allLayoutButtons.forEach((b) => {
+      b.classList.toggle("active", b.dataset.layout === layout);
+    });
+
+    const layoutLabels = {
+      split_podcast: "Podcast Split (Dual Cam)",
+      blur_fit: "Ambient Blur (Frosted Mirror)",
+      focus_left: "Left Speaker Focus",
+      focus_right: "Right Speaker Focus",
+      fill: "Center Zoom (Full Crop)",
+    };
+    if (layoutSelectedLabel) layoutSelectedLabel.textContent = layoutLabels[layout] || layout;
+    updateSourcePreviewFraming();
+    showToast(`Reframe mode: ${layoutLabels[layout] || layout}`);
+  }
+
+  allLayoutButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setVideoLayout(btn.dataset.layout);
+    });
+  });
+
+  function updateSourcePreviewFraming() {
+    if (!sourceVideoPlayer) return;
+    const isLandscape = sourceVideoPlayer.videoWidth > sourceVideoPlayer.videoHeight;
+    const isVerticalAR = selectedAspectRatio === "9:16";
+
+    if (sourceSplitWrap && sourceSingleWrap) {
+      if (isVerticalAR && isLandscape && selectedVideoLayout === "split_podcast") {
+        sourceSingleWrap.classList.add("hidden");
+        sourceSplitWrap.classList.remove("hidden");
+        if (sourceSplitTop && sourceSplitBottom && sourceVideoPlayer.src) {
+          if (sourceSplitTop.src !== sourceVideoPlayer.src) {
+            sourceSplitTop.src = sourceVideoPlayer.src;
+            sourceSplitBottom.src = sourceVideoPlayer.src;
+          }
+        }
+      } else {
+        sourceSplitWrap.classList.add("hidden");
+        sourceSingleWrap.classList.remove("hidden");
+        if (sourceVideoPlayer) {
+          if (selectedVideoLayout === "focus_left") {
+            sourceVideoPlayer.style.objectFit = "cover";
+            sourceVideoPlayer.style.objectPosition = "15% center";
+          } else if (selectedVideoLayout === "focus_right") {
+            sourceVideoPlayer.style.objectFit = "cover";
+            sourceVideoPlayer.style.objectPosition = "85% center";
+          } else if (selectedVideoLayout === "fill") {
+            sourceVideoPlayer.style.objectFit = "cover";
+            sourceVideoPlayer.style.objectPosition = "center center";
+          } else {
+            sourceVideoPlayer.style.objectFit = "contain";
+            sourceVideoPlayer.style.objectPosition = "center center";
+          }
+        }
+      }
+    }
+  }
+
+  // Synchronize playback between main source video and dual-cam split preview
+  if (sourceVideoPlayer && sourceSplitTop && sourceSplitBottom) {
+    sourceVideoPlayer.addEventListener("play", () => {
+      if (sourceSplitWrap && !sourceSplitWrap.classList.contains("hidden")) {
+        sourceSplitTop.currentTime = sourceVideoPlayer.currentTime;
+        sourceSplitBottom.currentTime = sourceVideoPlayer.currentTime;
+        sourceSplitTop.play().catch(() => {});
+        sourceSplitBottom.play().catch(() => {});
+      }
+    });
+    sourceVideoPlayer.addEventListener("pause", () => {
+      sourceSplitTop.pause();
+      sourceSplitBottom.pause();
+    });
+    sourceVideoPlayer.addEventListener("seeked", () => {
+      sourceSplitTop.currentTime = sourceVideoPlayer.currentTime;
+      sourceSplitBottom.currentTime = sourceVideoPlayer.currentTime;
+    });
+    sourceVideoPlayer.addEventListener("loadedmetadata", () => {
+      updateSourcePreviewFraming();
+    });
+  }
 
   // 2b. Creator Customization Options State & Wiring
   let selectedCaptionSize = "medium";
@@ -272,6 +367,8 @@ document.addEventListener("DOMContentLoaded", () => {
     videoFileInput.value = "";
     sourceVideoPlayer.pause();
     sourceVideoPlayer.src = "";
+    if (sourceSplitTop) { sourceSplitTop.pause(); sourceSplitTop.src = ""; }
+    if (sourceSplitBottom) { sourceSplitBottom.pause(); sourceSplitBottom.src = ""; }
     dropPrompt.classList.remove("hidden");
     fileBadge.classList.add("hidden");
     stageStatus.textContent = "Preview Canvas";
@@ -294,6 +391,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Instant Preview in Canvas
     const objectUrl = URL.createObjectURL(file);
     sourceVideoPlayer.src = objectUrl;
+    if (sourceSplitTop) { sourceSplitTop.src = objectUrl; sourceSplitTop.load(); }
+    if (sourceSplitBottom) { sourceSplitBottom.src = objectUrl; sourceSplitBottom.load(); }
     sourceVideoPlayer.load();
     showStage("source");
 
@@ -988,6 +1087,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("highlight_color", selectedHighlightColor);
     formData.append("selected_styles", selectedStyles.join(","));
     formData.append("subtitle_y", currentSubtitleY.toFixed(2));
+    formData.append("video_layout", selectedVideoLayout);
 
     if (draftToggle.checked) {
       formData.append("draft", "true");
