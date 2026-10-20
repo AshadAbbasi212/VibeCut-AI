@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 2b. Video Reframe Layout Selector & Live Framing Preview
-  let selectedVideoLayout = "split_podcast";
+  let selectedVideoLayout = "active_speaker";
 
   function setVideoLayout(layout) {
     selectedVideoLayout = layout;
@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
           } else if (selectedVideoLayout === "focus_right") {
             sourceVideoPlayer.style.objectFit = "cover";
             sourceVideoPlayer.style.objectPosition = "85% center";
-          } else if (selectedVideoLayout === "fill") {
+          } else if (selectedVideoLayout === "fill" || selectedVideoLayout === "active_speaker") {
             sourceVideoPlayer.style.objectFit = "cover";
             sourceVideoPlayer.style.objectPosition = "center center";
           } else {
