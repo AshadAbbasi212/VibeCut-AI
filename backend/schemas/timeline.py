@@ -38,7 +38,7 @@ class TimelineVideo(BaseModel):
     height: int = Field(default=1920, description="Video height in pixels")
     fps: float = Field(default=30.0, description="Frames per second")
     durationSec: float = Field(..., description="Total duration in seconds")
-    layout: Optional[Literal["split_podcast", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
+    layout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
         default="split_podcast", description="Video framing layout for landscape to vertical conversion"
     )
     originalWidth: Optional[int] = Field(default=None, description="Original source video width")
@@ -138,7 +138,7 @@ class Timeline(BaseModel):
     subtitleY: Optional[float] = Field(
         default=None, description="Global custom Y position (0.0 to 1.0) dragged by user"
     )
-    videoLayout: Optional[Literal["split_podcast", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
+    videoLayout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
         default="split_podcast", description="Video framing layout for landscape to vertical conversion"
     )
 

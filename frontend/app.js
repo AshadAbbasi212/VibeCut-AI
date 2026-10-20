@@ -174,6 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const layoutLabels = {
       split_podcast: "Podcast Split (Dual Cam)",
+      split_triple: "3-Way Stack (Panel Trio)",
       blur_fit: "Ambient Blur (Frosted Mirror)",
       focus_left: "Left Speaker Focus",
       focus_right: "Right Speaker Focus",

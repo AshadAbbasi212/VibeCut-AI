@@ -302,6 +302,116 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       );
     }
 
+    // 1b. 3-Person Panel Stack (Top / Middle / Bottom: Left, Center, Right)
+    if (layout === "split_triple" && isVerticalComp && isSourceLandscape) {
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
+          {/* Top Speaker: Left side of 16:9 frame */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "33.33%",
+              overflow: "hidden",
+              backgroundColor: "#0d0e15",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "15% center",
+              }}
+            />
+          </div>
+
+          {/* Middle Speaker: Center of 16:9 frame */}
+          <div
+            style={{
+              position: "absolute",
+              top: "33.33%",
+              left: 0,
+              width: "100%",
+              height: "33.34%",
+              overflow: "hidden",
+              backgroundColor: "#0d0e15",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              muted
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "center center",
+              }}
+            />
+          </div>
+
+          {/* Bottom Speaker: Right side of 16:9 frame */}
+          <div
+            style={{
+              position: "absolute",
+              top: "66.67%",
+              left: 0,
+              width: "100%",
+              height: "33.33%",
+              overflow: "hidden",
+              backgroundColor: "#0d0e15",
+            }}
+          >
+            <OffthreadVideo
+              src={videoSrc}
+              muted
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "85% center",
+              }}
+            />
+          </div>
+
+          {/* Divider 1 at 33.33% */}
+          <div
+            style={{
+              position: "absolute",
+              top: "33.33%",
+              left: 0,
+              width: "100%",
+              height: "3px",
+              transform: "translateY(-50%)",
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))",
+              boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)",
+              zIndex: 3,
+            }}
+          />
+
+          {/* Divider 2 at 66.67% */}
+          <div
+            style={{
+              position: "absolute",
+              top: "66.67%",
+              left: 0,
+              width: "100%",
+              height: "3px",
+              transform: "translateY(-50%)",
+              background:
+                "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))",
+              boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)",
+              zIndex: 3,
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
+
     // 2. Ambient Frosted Glass Mirror Background
     if (layout === "blur_fit" && isVerticalComp) {
       return (
