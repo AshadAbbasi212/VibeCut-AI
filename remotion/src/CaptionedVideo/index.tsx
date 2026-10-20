@@ -223,6 +223,9 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     return staticFile(raw);
   }, [timeline.video.src]);
 
+  const frame = useCurrentFrame();
+  const currentTime = frame / fps;
+
   const layout = timeline.videoLayout || timeline.video.layout || "fill";
   const isVerticalComp = (timeline.video.width || 1080) < (timeline.video.height || 1920);
   const isSourceLandscape =
@@ -231,6 +234,63 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       : true;
 
   const renderVideoLayer = () => {
+    // 0. Active Speaker Auto-Tracking (Dynamic Speaker Cuts with Cross-Talk Fallback)
+    if (layout === "active_speaker" && isVerticalComp && isSourceLandscape) {
+      const activeCut = timeline.cameraCuts?.find(
+        (cut) => currentTime >= cut.start && currentTime < cut.end
+      ) || timeline.cameraCuts?.[0];
+
+      const currentFocusX = activeCut ? activeCut.focusX : 0.5;
+      const currentCutLayout = activeCut ? activeCut.layout : "solo";
+
+      // If cross-talk or interruption, cut to Split Stack
+      if (currentCutLayout === "split_duo") {
+        return (
+          <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
+              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "15% center" }} />
+            </div>
+            <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "85% center" }} />
+            </div>
+            <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "4px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 16px rgba(56, 189, 248, 0.65), 0 2px 10px rgba(0, 0, 0, 0.8)", zIndex: 3 }} />
+          </AbsoluteFill>
+        );
+      }
+
+      if (currentCutLayout === "split_trio") {
+        return (
+          <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
+              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "15% center" }} />
+            </div>
+            <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "33.34%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }} />
+            </div>
+            <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "85% center" }} />
+            </div>
+            <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
+            <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
+          </AbsoluteFill>
+        );
+      }
+
+      // Solo Active Speaker Broadcast Shot
+      return (
+        <AbsoluteFill style={{ backgroundColor: "#000" }}>
+          <OffthreadVideo
+            src={videoSrc}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: `${currentFocusX * 100}% center`,
+            }}
+          />
+        </AbsoluteFill>
+      );
+    }
     // 1. Podcast Split-Screen (Stacked Dual-Cam: Top Host / Bottom Guest)
     if (layout === "split_podcast" && isVerticalComp && isSourceLandscape) {
       return (

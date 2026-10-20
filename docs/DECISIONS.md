@@ -84,4 +84,13 @@
   5. Built synchronized dual-cam live preview in the Studio frontend (`#sourceSplitWrap`) and interactive `Reframe Layout` option buttons in Card 3.
 - **Why**: Amateur tools shrink landscape videos into tiny letterboxes with black bars, or crop the middle seam and cut both speakers in half. The Podcast Split-Screen Stack fills 100% of the 9:16 vertical screen with both speakers clearly visible in high resolution, delivering broadcast-quality reels for Instagram and TikTok.
 
+## 2026-10-20: Active Speaker Auto-Tracking & Dynamic Auto-Reframe Engine
+- **Decision**: Implemented an automated speaker-tracking engine (`backend/pipeline/reframe.py`) that cuts between active speakers on sentence boundaries while adhering to professional broadcast pacing:
+  1. **Broadcast Pacing Rules (Hysteresis)**: Enforces a minimum shot duration of 1.8 seconds so the camera never jerks back and forth on short laughs or 0.3s interjections ("camera whip-lash").
+  2. **Hold / Reaction Buffer**: Holds the camera on the speaker for 0.6 seconds after speech finishes to prevent unnatural cut-offs.
+  3. **Cross-Talk & Interruption Handling**: Automatically switches to the dual-cam Split Stack whenever speakers talk simultaneously, ensuring both reactions are visible before returning to solo framing.
+  4. **Dynamic Remotion Camera**: `CaptionedVideo` dynamically evaluates active `CameraCut` timeline events and cuts cleanly to the speaker's horizontal position (`15%` left, `50%` center, `85%` right) in 9:16 vertical orientation.
+  5. **UI Integration**: Added `⚡ Active Speaker (Auto-Tracking)` button to the Reframe Layout selector in the creator options dock.
+- **Why**: Multi-person videos require dynamic visual direction. Rather than statically letterboxing or cutting speakers down the center, automated speaker tracking delivers high-energy, broadcast-quality cuts ideal for TikTok and Reels without manual timeline keyframing.
+
 

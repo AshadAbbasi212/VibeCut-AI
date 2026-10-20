@@ -402,6 +402,14 @@ class JobManager:
                 TimelineWord(i=w.i, text=w.text, start=round(w.start, 2), end=round(w.end, 2))
                 for w in transcript.words
             ]
+            camera_cuts = None
+            if resolved_layout == "active_speaker":
+                from backend.pipeline.reframe import build_active_speaker_cuts
+                camera_cuts = build_active_speaker_cuts(
+                    phrases=phrases_doc.phrases,
+                    video_duration=probe.duration,
+                )
+
             timeline = Timeline(
                 version=1,
                 video=tl_video,
@@ -413,6 +421,7 @@ class JobManager:
                 highlightColor=job.highlight_color,
                 subtitleY=job.subtitle_y,
                 videoLayout=resolved_layout,
+                cameraCuts=camera_cuts,
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

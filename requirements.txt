@@ -11,3 +11,4 @@ google-genai
 anthropic
 # optional: synthesize a speech test clip when no sample video is provided
 edge-tts
+opencv-python-headless

@@ -173,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const layoutLabels = {
+      active_speaker: "Active Speaker (Auto-Tracking)",
       split_podcast: "Podcast Split (Dual Cam)",
       split_triple: "3-Way Stack (Panel Trio)",
       blur_fit: "Ambient Blur (Frosted Mirror)",

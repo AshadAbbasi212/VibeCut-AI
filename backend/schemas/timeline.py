@@ -32,13 +32,23 @@ VALID_DECORATIONS = {"sparkles", "ellipse", "underline_scribble", "arrow", "none
 VALID_GRAPHIC_KINDS = {"emoji", "icon", "image"}
 
 
+class CameraCut(BaseModel):
+    start: float = Field(..., description="Cut start time in seconds")
+    end: float = Field(..., description="Cut end time in seconds")
+    focusX: float = Field(default=0.5, description="Horizontal center focus (0.0 to 1.0)")
+    speakerId: Optional[str] = Field(default="speaker_0", description="Identifier of the active speaker")
+    layout: Optional[Literal["solo", "split_duo", "split_trio", "wide"]] = Field(
+        default="solo", description="Layout mode for this cut segment"
+    )
+
+
 class TimelineVideo(BaseModel):
     src: str = Field(..., description="Path or relative URL to the video source")
     width: int = Field(default=1080, description="Video width in pixels")
     height: int = Field(default=1920, description="Video height in pixels")
     fps: float = Field(default=30.0, description="Frames per second")
     durationSec: float = Field(..., description="Total duration in seconds")
-    layout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
+    layout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right", "active_speaker"]] = Field(
         default="split_podcast", description="Video framing layout for landscape to vertical conversion"
     )
     originalWidth: Optional[int] = Field(default=None, description="Original source video width")
@@ -138,8 +148,11 @@ class Timeline(BaseModel):
     subtitleY: Optional[float] = Field(
         default=None, description="Global custom Y position (0.0 to 1.0) dragged by user"
     )
-    videoLayout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right"]] = Field(
+    videoLayout: Optional[Literal["split_podcast", "split_triple", "blur_fit", "fill", "focus_left", "focus_right", "active_speaker"]] = Field(
         default="split_podcast", description="Video framing layout for landscape to vertical conversion"
+    )
+    cameraCuts: Optional[list[CameraCut]] = Field(
+        default=None, description="Dynamic camera cut timeline for active speaker tracking"
     )
 
     @model_validator(mode="after")

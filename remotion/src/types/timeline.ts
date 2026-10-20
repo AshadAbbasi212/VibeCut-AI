@@ -51,13 +51,21 @@ export interface TimelineWord {
   end: number;
 }
 
+export interface CameraCut {
+  start: number;
+  end: number;
+  focusX: number;
+  speakerId?: string;
+  layout?: "solo" | "split_duo" | "split_trio" | "wide";
+}
+
 export interface TimelineVideo {
   src: string;
   width: number;
   height: number;
   fps: number;
   durationSec: number;
-  layout?: "split_podcast" | "split_triple" | "blur_fit" | "fill" | "focus_left" | "focus_right";
+  layout?: "split_podcast" | "split_triple" | "blur_fit" | "fill" | "focus_left" | "focus_right" | "active_speaker";
   originalWidth?: number;
   originalHeight?: number;
 }
@@ -72,5 +80,6 @@ export interface Timeline {
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
   subtitleY?: number;
-  videoLayout?: "split_podcast" | "split_triple" | "blur_fit" | "fill" | "focus_left" | "focus_right";
+  videoLayout?: "split_podcast" | "split_triple" | "blur_fit" | "fill" | "focus_left" | "focus_right" | "active_speaker";
+  cameraCuts?: CameraCut[];
 }
