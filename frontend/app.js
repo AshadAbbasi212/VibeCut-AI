@@ -84,16 +84,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const arSelectedLabel = document.getElementById("arSelectedLabel");
   const allArButtons = document.querySelectorAll(".btn-ar, .btn-ar-opt");
   const allLayoutButtons = document.querySelectorAll(".btn-layout-opt");
+  const allLayoutCards = document.querySelectorAll(".layout-style-card");
   const layoutSelectedLabel = document.getElementById("layoutSelectedLabel");
   const videoLayoutField = document.getElementById("videoLayoutField");
+  const btnOpenPhotoModal = document.getElementById("btnOpenPhotoModal");
+  const btnClosePhotoModal = document.getElementById("btnClosePhotoModal");
+  const layoutPhotoModal = document.getElementById("layoutPhotoModal");
+  const modalSelectButtons = document.querySelectorAll("[data-select-layout]");
 
   const viewIdle = document.getElementById("viewIdle");
   const viewSource = document.getElementById("viewSource");
   const sourceVideoPlayer = document.getElementById("sourceVideoPlayer");
   const sourceSingleWrap = document.getElementById("sourceSingleWrap");
+  
+  const sourceBlurWrap = document.getElementById("sourceBlurWrap");
+  const sourceBlurBg = document.getElementById("sourceBlurBg");
+  const sourceBlurMain = document.getElementById("sourceBlurMain");
+
   const sourceSplitWrap = document.getElementById("sourceSplitWrap");
   const sourceSplitTop = document.getElementById("sourceSplitTop");
   const sourceSplitBottom = document.getElementById("sourceSplitBottom");
+
+  const sourceTripleWrap = document.getElementById("sourceTripleWrap");
+  const sourceTripleTop = document.getElementById("sourceTripleTop");
+  const sourceTripleMid = document.getElementById("sourceTripleMid");
+  const sourceTripleBot = document.getElementById("sourceTripleBot");
+
+  const sourcePhotoPreview = document.getElementById("sourcePhotoPreview");
+  const sourcePhotoPreviewBadge = document.getElementById("sourcePhotoPreviewBadge");
+
   const viewProcessing = document.getElementById("viewProcessing");
   const viewResult = document.getElementById("viewResult");
 
@@ -163,90 +182,262 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 2b. Video Reframe Layout Selector & Live Framing Preview
+  // 2b. Video Reframe Layout Selector & Live Framing Preview Engine
   let selectedVideoLayout = "active_speaker";
+
+  const layoutPhotoMap = {
+    active_speaker: "/assets/layouts/solo_fullscreen.png",
+    blur_fit: "/assets/layouts/blur_fit.png",
+    split_podcast: "/assets/layouts/split_podcast.png",
+    split_triple: "/assets/layouts/split_triple.png",
+    focus_left: "/assets/layouts/solo_fullscreen.png",
+    focus_right: "/assets/layouts/solo_fullscreen.png",
+    fill: "/assets/layouts/solo_fullscreen.png",
+  };
+
+  const layoutLabels = {
+    active_speaker: "Solo Full-Screen (Active Speaker)",
+    blur_fit: "Ambient Frosted Blur (Zero Crop)",
+    split_podcast: "Podcast Split (Dual-Cam Stack)",
+    split_triple: "3-Way Panel Stack (Trio)",
+    focus_left: "Left Speaker Focus",
+    focus_right: "Right Speaker Focus",
+    fill: "Center Zoom (Full Crop)",
+  };
 
   function setVideoLayout(layout) {
     selectedVideoLayout = layout;
-    allLayoutButtons.forEach((b) => {
-      b.classList.toggle("active", b.dataset.layout === layout);
+
+    // Toggle active state on 4 visual photo cards
+    allLayoutCards.forEach((card) => {
+      card.classList.toggle("active", card.dataset.layout === layout);
     });
 
-    const layoutLabels = {
-      active_speaker: "Active Speaker (Auto-Tracking)",
-      split_podcast: "Podcast Split (Dual Cam)",
-      split_triple: "3-Way Stack (Panel Trio)",
-      blur_fit: "Ambient Blur (Frosted Mirror)",
-      focus_left: "Left Speaker Focus",
-      focus_right: "Right Speaker Focus",
-      fill: "Center Zoom (Full Crop)",
-    };
-    if (layoutSelectedLabel) layoutSelectedLabel.textContent = layoutLabels[layout] || layout;
+    // Toggle active state on manual override buttons
+    allLayoutButtons.forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.layout === layout);
+    });
+
+    if (layoutSelectedLabel) {
+      layoutSelectedLabel.textContent = layoutLabels[layout] || layout;
+    }
+
     updateSourcePreviewFraming();
-    showToast(`Reframe mode: ${layoutLabels[layout] || layout}`);
+    showToast(`Selected Layout: ${layoutLabels[layout] || layout}`);
   }
 
+  // Bind 4 visual photo cards
+  allLayoutCards.forEach((card) => {
+    card.addEventListener("click", () => {
+      setVideoLayout(card.dataset.layout);
+    });
+  });
+
+  // Bind manual static crop buttons
   allLayoutButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       setVideoLayout(btn.dataset.layout);
     });
   });
 
-  function updateSourcePreviewFraming() {
-    if (!sourceVideoPlayer) return;
-    const isLandscape = sourceVideoPlayer.videoWidth > sourceVideoPlayer.videoHeight;
-    const isVerticalAR = selectedAspectRatio === "9:16";
+  // Initial layout synchronization
+  allLayoutCards.forEach((card) => {
+    card.classList.toggle("active", card.dataset.layout === selectedVideoLayout);
+  });
+  if (layoutSelectedLabel) {
+    layoutSelectedLabel.textContent = layoutLabels[selectedVideoLayout] || selectedVideoLayout;
+  }
+  updateSourcePreviewFraming();
 
-    if (sourceSplitWrap && sourceSingleWrap) {
-      if (isVerticalAR && isLandscape && selectedVideoLayout === "split_podcast") {
-        sourceSingleWrap.classList.add("hidden");
-        sourceSplitWrap.classList.remove("hidden");
-        if (sourceSplitTop && sourceSplitBottom && sourceVideoPlayer.src) {
-          if (sourceSplitTop.src !== sourceVideoPlayer.src) {
-            sourceSplitTop.src = sourceVideoPlayer.src;
-            sourceSplitBottom.src = sourceVideoPlayer.src;
-          }
+  // Photo Comparison Modal Handlers
+  if (btnOpenPhotoModal && layoutPhotoModal) {
+    btnOpenPhotoModal.addEventListener("click", () => {
+      layoutPhotoModal.classList.add("open");
+    });
+  }
+
+  if (btnClosePhotoModal && layoutPhotoModal) {
+    btnClosePhotoModal.addEventListener("click", () => {
+      layoutPhotoModal.classList.remove("open");
+    });
+  }
+
+  if (layoutPhotoModal) {
+    layoutPhotoModal.addEventListener("click", (e) => {
+      if (e.target === layoutPhotoModal) {
+        layoutPhotoModal.classList.remove("open");
+      }
+    });
+  }
+
+  modalSelectButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const chosen = btn.dataset.selectLayout;
+      if (chosen) {
+        setVideoLayout(chosen);
+        if (layoutPhotoModal) layoutPhotoModal.classList.remove("open");
+      }
+    });
+  });
+
+  function updateSourcePreviewFraming() {
+    const isVerticalAR = selectedAspectRatio === "9:16";
+    const hasSource = sourceVideoPlayer && sourceVideoPlayer.src && sourceVideoPlayer.src.length > 0 && !sourceVideoPlayer.src.endsWith("#");
+    const isLandscape = hasSource && sourceVideoPlayer.videoWidth > sourceVideoPlayer.videoHeight;
+
+    // When NO video is loaded yet, show the high-res photo still right in phoneCanvas
+    if (!hasSource) {
+      if (sourcePhotoPreview && sourcePhotoPreviewBadge) {
+        if (viewIdle && !viewIdle.classList.contains("hidden")) {
+          // If in idle state, we can display the selected photo in viewSource
+          viewIdle.classList.add("hidden");
+          if (viewSource) viewSource.classList.remove("hidden");
         }
-      } else {
-        sourceSplitWrap.classList.add("hidden");
-        sourceSingleWrap.classList.remove("hidden");
-        if (sourceVideoPlayer) {
-          if (selectedVideoLayout === "focus_left") {
-            sourceVideoPlayer.style.objectFit = "cover";
-            sourceVideoPlayer.style.objectPosition = "15% center";
-          } else if (selectedVideoLayout === "focus_right") {
-            sourceVideoPlayer.style.objectFit = "cover";
-            sourceVideoPlayer.style.objectPosition = "85% center";
-          } else if (selectedVideoLayout === "fill" || selectedVideoLayout === "active_speaker") {
-            sourceVideoPlayer.style.objectFit = "cover";
-            sourceVideoPlayer.style.objectPosition = "center center";
-          } else {
-            sourceVideoPlayer.style.objectFit = "contain";
-            sourceVideoPlayer.style.objectPosition = "center center";
-          }
+        sourcePhotoPreview.src = layoutPhotoMap[selectedVideoLayout] || layoutPhotoMap.active_speaker;
+        sourcePhotoPreview.classList.remove("hidden");
+        sourcePhotoPreviewBadge.classList.remove("hidden");
+        sourcePhotoPreviewBadge.textContent = `📸 ${layoutLabels[selectedVideoLayout] || "Style"} Preview`;
+
+        if (sourceSingleWrap) sourceSingleWrap.classList.add("hidden");
+        if (sourceBlurWrap) sourceBlurWrap.classList.add("hidden");
+        if (sourceSplitWrap) sourceSplitWrap.classList.add("hidden");
+        if (sourceTripleWrap) sourceTripleWrap.classList.add("hidden");
+      }
+      return;
+    }
+
+    // Video IS loaded: Hide static photo overlay and display dynamic video layout
+    if (sourcePhotoPreview) sourcePhotoPreview.classList.add("hidden");
+    if (sourcePhotoPreviewBadge) sourcePhotoPreviewBadge.classList.add("hidden");
+
+    // Hide all layout wraps initially
+    if (sourceSingleWrap) sourceSingleWrap.classList.add("hidden");
+    if (sourceBlurWrap) sourceBlurWrap.classList.add("hidden");
+    if (sourceSplitWrap) sourceSplitWrap.classList.add("hidden");
+    if (sourceTripleWrap) sourceTripleWrap.classList.add("hidden");
+
+    // Layout 1: Ambient Frosted Blur (16:9 contained with dynamic blurred mirror backdrop)
+    if (isVerticalAR && isLandscape && selectedVideoLayout === "blur_fit") {
+      if (sourceBlurWrap) {
+        sourceBlurWrap.classList.remove("hidden");
+        if (sourceBlurBg && sourceBlurBg.src !== sourceVideoPlayer.src) {
+          sourceBlurBg.src = sourceVideoPlayer.src;
+        }
+        if (sourceBlurMain && sourceBlurMain.src !== sourceVideoPlayer.src) {
+          sourceBlurMain.src = sourceVideoPlayer.src;
+        }
+        if (sourceBlurBg) sourceBlurBg.currentTime = sourceVideoPlayer.currentTime;
+        if (sourceBlurMain) sourceBlurMain.currentTime = sourceVideoPlayer.currentTime;
+      }
+      return;
+    }
+
+    // Layout 2: Podcast Split (Dual-Cam Stack)
+    if (isVerticalAR && isLandscape && selectedVideoLayout === "split_podcast") {
+      if (sourceSplitWrap) {
+        sourceSplitWrap.classList.remove("hidden");
+        if (sourceSplitTop && sourceSplitTop.src !== sourceVideoPlayer.src) {
+          sourceSplitTop.src = sourceVideoPlayer.src;
+        }
+        if (sourceSplitBottom && sourceSplitBottom.src !== sourceVideoPlayer.src) {
+          sourceSplitBottom.src = sourceVideoPlayer.src;
+        }
+        if (sourceSplitTop) sourceSplitTop.currentTime = sourceVideoPlayer.currentTime;
+        if (sourceSplitBottom) sourceSplitBottom.currentTime = sourceVideoPlayer.currentTime;
+      }
+      return;
+    }
+
+    // Layout 3: 3-Way Panel Stack (Trio)
+    if (isVerticalAR && isLandscape && selectedVideoLayout === "split_triple") {
+      if (sourceTripleWrap) {
+        sourceTripleWrap.classList.remove("hidden");
+        if (sourceTripleTop && sourceTripleTop.src !== sourceVideoPlayer.src) {
+          sourceTripleTop.src = sourceVideoPlayer.src;
+        }
+        if (sourceTripleMid && sourceTripleMid.src !== sourceVideoPlayer.src) {
+          sourceTripleMid.src = sourceVideoPlayer.src;
+        }
+        if (sourceTripleBot && sourceTripleBot.src !== sourceVideoPlayer.src) {
+          sourceTripleBot.src = sourceVideoPlayer.src;
+        }
+        if (sourceTripleTop) sourceTripleTop.currentTime = sourceVideoPlayer.currentTime;
+        if (sourceTripleMid) sourceTripleMid.currentTime = sourceVideoPlayer.currentTime;
+        if (sourceTripleBot) sourceTripleBot.currentTime = sourceVideoPlayer.currentTime;
+      }
+      return;
+    }
+
+    // Layout 4 & Overrides: Solo Full-Screen (Active Speaker, Fill, Left/Right Focus)
+    if (sourceSingleWrap) {
+      sourceSingleWrap.classList.remove("hidden");
+      if (sourceVideoPlayer) {
+        if (selectedVideoLayout === "focus_left") {
+          sourceVideoPlayer.style.objectFit = "cover";
+          sourceVideoPlayer.style.objectPosition = "15% center";
+        } else if (selectedVideoLayout === "focus_right") {
+          sourceVideoPlayer.style.objectFit = "cover";
+          sourceVideoPlayer.style.objectPosition = "85% center";
+        } else if (selectedVideoLayout === "fill" || selectedVideoLayout === "active_speaker") {
+          sourceVideoPlayer.style.objectFit = "cover";
+          sourceVideoPlayer.style.objectPosition = "center center";
+        } else {
+          sourceVideoPlayer.style.objectFit = "contain";
+          sourceVideoPlayer.style.objectPosition = "center center";
         }
       }
     }
   }
 
-  // Synchronize playback between main source video and dual-cam split preview
-  if (sourceVideoPlayer && sourceSplitTop && sourceSplitBottom) {
-    sourceVideoPlayer.addEventListener("play", () => {
+  // Synchronize playback between main source video and multi-layer preview wraps
+  if (sourceVideoPlayer) {
+    const getActiveChildVideos = () => {
+      const active = [];
       if (sourceSplitWrap && !sourceSplitWrap.classList.contains("hidden")) {
-        sourceSplitTop.currentTime = sourceVideoPlayer.currentTime;
-        sourceSplitBottom.currentTime = sourceVideoPlayer.currentTime;
-        sourceSplitTop.play().catch(() => {});
-        sourceSplitBottom.play().catch(() => {});
+        if (sourceSplitTop) active.push(sourceSplitTop);
+        if (sourceSplitBottom) active.push(sourceSplitBottom);
       }
+      if (sourceBlurWrap && !sourceBlurWrap.classList.contains("hidden")) {
+        if (sourceBlurBg) active.push(sourceBlurBg);
+        if (sourceBlurMain) active.push(sourceBlurMain);
+      }
+      if (sourceTripleWrap && !sourceTripleWrap.classList.contains("hidden")) {
+        if (sourceTripleTop) active.push(sourceTripleTop);
+        if (sourceTripleMid) active.push(sourceTripleMid);
+        if (sourceTripleBot) active.push(sourceTripleBot);
+      }
+      return active;
+    };
+
+    sourceVideoPlayer.addEventListener("play", () => {
+      const children = getActiveChildVideos();
+      children.forEach((v) => {
+        v.currentTime = sourceVideoPlayer.currentTime;
+        v.play().catch(() => {});
+      });
     });
+
     sourceVideoPlayer.addEventListener("pause", () => {
-      sourceSplitTop.pause();
-      sourceSplitBottom.pause();
+      const children = getActiveChildVideos();
+      children.forEach((v) => v.pause());
     });
+
     sourceVideoPlayer.addEventListener("seeked", () => {
-      sourceSplitTop.currentTime = sourceVideoPlayer.currentTime;
-      sourceSplitBottom.currentTime = sourceVideoPlayer.currentTime;
+      const children = getActiveChildVideos();
+      children.forEach((v) => {
+        v.currentTime = sourceVideoPlayer.currentTime;
+      });
     });
+
+    sourceVideoPlayer.addEventListener("timeupdate", () => {
+      const children = getActiveChildVideos();
+      children.forEach((v) => {
+        if (Math.abs(v.currentTime - sourceVideoPlayer.currentTime) > 0.25) {
+          v.currentTime = sourceVideoPlayer.currentTime;
+        }
+      });
+    });
+
     sourceVideoPlayer.addEventListener("loadedmetadata", () => {
       updateSourcePreviewFraming();
     });
@@ -371,10 +562,16 @@ document.addEventListener("DOMContentLoaded", () => {
     sourceVideoPlayer.src = "";
     if (sourceSplitTop) { sourceSplitTop.pause(); sourceSplitTop.src = ""; }
     if (sourceSplitBottom) { sourceSplitBottom.pause(); sourceSplitBottom.src = ""; }
+    if (sourceBlurBg) { sourceBlurBg.pause(); sourceBlurBg.src = ""; }
+    if (sourceBlurMain) { sourceBlurMain.pause(); sourceBlurMain.src = ""; }
+    if (sourceTripleTop) { sourceTripleTop.pause(); sourceTripleTop.src = ""; }
+    if (sourceTripleMid) { sourceTripleMid.pause(); sourceTripleMid.src = ""; }
+    if (sourceTripleBot) { sourceTripleBot.pause(); sourceTripleBot.src = ""; }
     dropPrompt.classList.remove("hidden");
     fileBadge.classList.add("hidden");
     stageStatus.textContent = "Preview Canvas";
     showStage("idle");
+    updateSourcePreviewFraming();
   });
 
   function handleFile(file) {
@@ -390,13 +587,19 @@ document.addEventListener("DOMContentLoaded", () => {
     fileBadge.classList.remove("hidden");
     stageStatus.textContent = `Raw Source • ${file.name}`;
 
-    // Instant Preview in Canvas
+    // Instant Preview in Canvas across all layout layers
     const objectUrl = URL.createObjectURL(file);
     sourceVideoPlayer.src = objectUrl;
     if (sourceSplitTop) { sourceSplitTop.src = objectUrl; sourceSplitTop.load(); }
     if (sourceSplitBottom) { sourceSplitBottom.src = objectUrl; sourceSplitBottom.load(); }
+    if (sourceBlurBg) { sourceBlurBg.src = objectUrl; sourceBlurBg.load(); }
+    if (sourceBlurMain) { sourceBlurMain.src = objectUrl; sourceBlurMain.load(); }
+    if (sourceTripleTop) { sourceTripleTop.src = objectUrl; sourceTripleTop.load(); }
+    if (sourceTripleMid) { sourceTripleMid.src = objectUrl; sourceTripleMid.load(); }
+    if (sourceTripleBot) { sourceTripleBot.src = objectUrl; sourceTripleBot.load(); }
     sourceVideoPlayer.load();
     showStage("source");
+    updateSourcePreviewFraming();
 
     showToast(`Loaded ${file.name} • Ready to render`);
   }

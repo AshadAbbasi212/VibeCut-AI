@@ -562,6 +562,247 @@
       white-space: nowrap;
     }
 
+    /* Visual Layout Style Cards with Real Photo Previews */
+    .layout-style-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .layout-style-card {
+      background: var(--surface-hover);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      text-align: left;
+    }
+
+    .layout-style-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    .layout-style-card.active {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.08);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+
+    .layout-style-thumb-box {
+      width: 100%;
+      height: 105px;
+      position: relative;
+      background: #090a0f;
+      overflow: hidden;
+    }
+
+    .layout-style-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 25%;
+      transition: transform 0.35s ease;
+      display: block;
+    }
+
+    .layout-style-card:hover .layout-style-thumb {
+      transform: scale(1.08);
+    }
+
+    .layout-style-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2.5px 8px;
+      border-radius: 999px;
+      background: rgba(9, 10, 15, 0.88);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      letter-spacing: 0.3px;
+    }
+
+    .layout-style-check {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .layout-style-card.active .layout-style-check {
+      display: flex;
+    }
+
+    .layout-style-body {
+      padding: 9px 10px 10px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .layout-style-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .layout-style-card.active .layout-style-title {
+      color: var(--accent);
+    }
+
+    .layout-style-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+      line-height: 1.35;
+    }
+
+    .layout-btn-compare {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 6px;
+      padding: 4px 9px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .layout-btn-compare:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--accent);
+    }
+
+    /* Layout Photo Comparison Modal */
+    .layout-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(14px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .layout-modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .layout-modal-box {
+      background: #11131a;
+      border: 1.5px solid var(--border-hover);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 1080px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.18);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .layout-modal-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .layout-modal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      padding: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .layout-modal-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .layout-modal-item {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+    }
+
+    .layout-modal-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+
+    .layout-modal-item-img {
+      width: 100%;
+      aspect-ratio: 9/16;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    .layout-modal-item-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .layout-modal-btn-select {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .layout-modal-btn-select:hover {
+      opacity: 0.9;
+    }
+
     /* Creator Customization Group Styles */
     .custom-chip-group {
       display: flex;
@@ -2525,47 +2766,92 @@
 
           <!-- Video Reframe & Framing Layout (Landscape to Reel) -->
           <div class="field" id="videoLayoutField" style="margin-top: 14px; margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <label style="margin: 0; font-size: 13px; font-weight: 700;">Reframe Layout (Landscape to 9:16)</label>
-              <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="layoutSelectedLabel">Active Speaker (Auto-Tracking)</span>
-            </div>
-            <div class="ar-option-grid" id="layoutOptionsGrid">
-              <button type="button" class="btn-layout-opt active" data-layout="active_speaker" title="Automatically cuts to whoever is actively speaking with broadcast pacing">
-                <span class="ar-icon">⚡</span>
-                <span class="ar-ratio">Active Speaker</span>
-                <span class="ar-sub">Auto-Tracking</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="split_podcast" title="Top host & bottom guest stacked for 2-person interviews">
-                <span class="ar-icon">👥</span>
-                <span class="ar-ratio">Podcast Split</span>
-                <span class="ar-sub">Dual-Cam Stack</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="split_triple" title="3-person panel stacked into top, middle, and bottom">
-                <span class="ar-icon">👥👤</span>
-                <span class="ar-ratio">3-Way Stack</span>
-                <span class="ar-sub">Panel Trio</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="blur_fit" title="Fit full 16:9 frame with ambient blurred mirror background">
-                <span class="ar-icon">✨</span>
-                <span class="ar-ratio">Ambient Blur</span>
-                <span class="ar-sub">Frosted Mirror</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="focus_left" title="Focus 9:16 vertical crop on left speaker">
-                <span class="ar-icon">👤⬅️</span>
-                <span class="ar-ratio">Left Speaker</span>
-                <span class="ar-sub">Host Focus</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="focus_right" title="Focus 9:16 vertical crop on right speaker">
-                <span class="ar-icon">➡️👤</span>
-                <span class="ar-ratio">Right Speaker</span>
-                <span class="ar-sub">Guest Focus</span>
-              </button>
-              <button type="button" class="btn-layout-opt" data-layout="fill" title="Standard center zoom crop">
-                <span class="ar-icon">🔍</span>
-                <span class="ar-ratio">Center Zoom</span>
-                <span class="ar-sub">Full Crop</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div>
+                <label style="margin: 0; font-size: 13px; font-weight: 700; display: block;">Reframe Layout (Landscape to 9:16)</label>
+                <span style="font-size: 11px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="layoutSelectedLabel">Solo Full-Screen (Active Speaker)</span>
+              </div>
+              <button type="button" class="layout-btn-compare" id="btnOpenPhotoModal" title="See real comparison photos for all 4 styles">
+                📸 Compare Photos
               </button>
             </div>
+
+            <!-- The 4 Primary Professional Layout Cards with Photo Previews -->
+            <div class="layout-style-cards" id="layoutStyleCardsGrid">
+              <!-- Style 1: Solo Full-Screen (Active Speaker) -->
+              <div class="layout-style-card active" data-layout="active_speaker">
+                <div class="layout-style-thumb-box">
+                  <img src="/assets/layouts/solo_fullscreen.png" class="layout-style-thumb" alt="Solo Full-Screen" />
+                  <span class="layout-style-badge">👤 1 Person / Solo</span>
+                  <div class="layout-style-check">✓</div>
+                </div>
+                <div class="layout-style-body">
+                  <span class="layout-style-title">Solo Full-Screen</span>
+                  <span class="layout-style-desc">100% full-screen vertical frame. No duplicate speaker, no split line.</span>
+                </div>
+              </div>
+
+              <!-- Style 2: Ambient Frosted Blur (Zero-Crop Fit) -->
+              <div class="layout-style-card" data-layout="blur_fit">
+                <div class="layout-style-thumb-box">
+                  <img src="/assets/layouts/blur_fit.png" class="layout-style-thumb" alt="Ambient Frosted Blur" />
+                  <span class="layout-style-badge">✨ 3+ People / Panel</span>
+                  <div class="layout-style-check">✓</div>
+                </div>
+                <div class="layout-style-body">
+                  <span class="layout-style-title">Ambient Frosted Blur</span>
+                  <span class="layout-style-desc">Full 16:9 width visible over dynamic blurred mirror backdrop.</span>
+                </div>
+              </div>
+
+              <!-- Style 3: Podcast Split (Dual-Cam Stack) -->
+              <div class="layout-style-card" data-layout="split_podcast">
+                <div class="layout-style-thumb-box">
+                  <img src="/assets/layouts/split_podcast.png" class="layout-style-thumb" alt="Podcast Split Dual-Cam" />
+                  <span class="layout-style-badge">👥 2-Person Wide</span>
+                  <div class="layout-style-check">✓</div>
+                </div>
+                <div class="layout-style-body">
+                  <span class="layout-style-title">Podcast Split</span>
+                  <span class="layout-style-desc">Top Host & Bottom Guest stacked with glowing cyan neon divider.</span>
+                </div>
+              </div>
+
+              <!-- Style 4: 3-Way Panel Stack (Trio Panel) -->
+              <div class="layout-style-card" data-layout="split_triple">
+                <div class="layout-style-thumb-box">
+                  <img src="/assets/layouts/split_triple.png" class="layout-style-thumb" alt="3-Way Panel Stack" />
+                  <span class="layout-style-badge">👥👤 3-Way Stack</span>
+                  <div class="layout-style-check">✓</div>
+                </div>
+                <div class="layout-style-body">
+                  <span class="layout-style-title">3-Way Stack</span>
+                  <span class="layout-style-desc">Top, Middle & Bottom tiers with dual neon studio divider lines.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Manual Static Crop Overrides (Collapsible) -->
+            <details style="margin-top: 10px; font-size: 11px;">
+              <summary style="cursor: pointer; color: var(--text-dim); font-weight: 600;">Manual Static Crop Overrides (Optional)</summary>
+              <div class="ar-option-grid" style="margin-top: 8px;">
+                <button type="button" class="btn-layout-opt" data-layout="focus_left" title="Lock 9:16 vertical crop to left speaker">
+                  <span class="ar-icon">👤⬅️</span>
+                  <span class="ar-ratio">Left Speaker</span>
+                  <span class="ar-sub">Host Focus</span>
+                </button>
+                <button type="button" class="btn-layout-opt" data-layout="focus_right" title="Lock 9:16 vertical crop to right speaker">
+                  <span class="ar-icon">➡️👤</span>
+                  <span class="ar-ratio">Right Speaker</span>
+                  <span class="ar-sub">Guest Focus</span>
+                </button>
+                <button type="button" class="btn-layout-opt" data-layout="fill" title="Standard center zoom crop">
+                  <span class="ar-icon">🔍</span>
+                  <span class="ar-ratio">Center Zoom</span>
+                  <span class="ar-sub">Full Crop</span>
+                </button>
+              </div>
+            </details>
           </div>
 
           <!-- Caption Placement Drag & Slider -->
@@ -2787,9 +3073,20 @@
 
             <!-- State 2: Source Video Preview (Shown immediately upon selecting video) -->
             <div class="source-box hidden" id="viewSource">
+              <!-- 1. Solo / Full-Screen Crop Wrap -->
               <div id="sourceSingleWrap" style="width: 100%; height: 100%;">
                 <video id="sourceVideoPlayer" controls playsinline style="width: 100%; height: 100%; object-fit: contain; display: block;"></video>
               </div>
+
+              <!-- 2. Ambient Frosted Glass Blur Wrap -->
+              <div id="sourceBlurWrap" class="hidden" style="width: 100%; height: 100%; position: relative; overflow: hidden; background: #000;">
+                <video id="sourceBlurBg" playsinline muted style="position: absolute; top: -20%; left: -20%; width: 140%; height: 140%; object-fit: cover; filter: blur(28px) brightness(0.65) saturate(1.2); pointer-events: none; z-index: 1;"></video>
+                <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                  <video id="sourceBlurMain" playsinline muted style="width: 100%; max-height: 100%; object-fit: contain;"></video>
+                </div>
+              </div>
+
+              <!-- 3. Podcast Split (Dual-Cam Stack) Wrap -->
               <div id="sourceSplitWrap" class="hidden" style="width: 100%; height: 100%; position: relative; overflow: hidden; background: #0b0c10;">
                 <div style="position: absolute; top: 0; left: 0; width: 100%; height: 50%; overflow: hidden;">
                   <video id="sourceSplitTop" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: 15% center;"></video>
@@ -2799,6 +3096,26 @@
                 </div>
                 <div style="position: absolute; top: 50%; left: 0; width: 100%; height: 4px; transform: translateY(-50%); background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05)); box-shadow: 0 0 16px rgba(56, 189, 248, 0.65); z-index: 5;"></div>
               </div>
+
+              <!-- 4. 3-Way Panel Stack Wrap -->
+              <div id="sourceTripleWrap" class="hidden" style="width: 100%; height: 100%; position: relative; overflow: hidden; background: #0b0c10;">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 33.33%; overflow: hidden;">
+                  <video id="sourceTripleTop" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: 15% center;"></video>
+                </div>
+                <div style="position: absolute; top: 33.33%; left: 0; width: 100%; height: 33.34%; overflow: hidden;">
+                  <video id="sourceTripleMid" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: center center;"></video>
+                </div>
+                <div style="position: absolute; top: 66.67%; left: 0; width: 100%; height: 33.33%; overflow: hidden;">
+                  <video id="sourceTripleBot" playsinline muted style="width: 100%; height: 100%; object-fit: cover; object-position: 85% center;"></video>
+                </div>
+                <div style="position: absolute; top: 33.33%; left: 0; width: 100%; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05)); box-shadow: 0 0 12px rgba(56, 189, 248, 0.65); z-index: 5;"></div>
+                <div style="position: absolute; top: 66.67%; left: 0; width: 100%; height: 3px; transform: translateY(-50%); background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05)); box-shadow: 0 0 12px rgba(56, 189, 248, 0.65); z-index: 5;"></div>
+              </div>
+
+              <!-- Instant High-Res Photo Style Preview Overlay -->
+              <img id="sourcePhotoPreview" class="hidden" alt="Layout Photo Preview" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 4;" />
+              <div id="sourcePhotoPreviewBadge" class="hidden" style="position: absolute; top: 10px; right: 10px; z-index: 6; background: rgba(11,12,16,0.92); backdrop-filter: blur(8px); border: 1px solid var(--accent); color: var(--accent); font-size: 10.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.3px;">📸 Style Photo Preview</div>
+
               <div class="canvas-tag" id="sourceCanvasTag">Raw Source</div>
             </div>
 
@@ -2872,6 +3189,73 @@
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Layout Photo Comparison Modal -->
+  <div class="layout-modal-backdrop" id="layoutPhotoModal">
+    <div class="layout-modal-box">
+      <div class="layout-modal-header">
+        <div>
+          <h3 style="font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 2px;">Visual Layout Styles (9:16 Reel Stills)</h3>
+          <p style="font-size: 12px; color: var(--text-dim); margin: 0;">Compare how each framing style handles single speakers, multi-person shots, and wide panels.</p>
+        </div>
+        <button type="button" id="btnClosePhotoModal" style="background: none; border: 1px solid var(--border); border-radius: 50%; width: 32px; height: 32px; color: var(--text-dim); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;">✕</button>
+      </div>
+
+      <div class="layout-modal-grid">
+        <!-- Option 1: Solo Full-Screen -->
+        <div class="layout-modal-item">
+          <img src="/assets/layouts/solo_fullscreen.png" class="layout-modal-item-img" alt="Solo Full-Screen" />
+          <div class="layout-modal-item-content">
+            <div>
+              <div style="font-size: 10px; font-weight: 800; color: var(--accent); margin-bottom: 4px;">RECOMMENDED FOR 1-PERSON</div>
+              <h4 style="font-size: 13.5px; font-weight: 800; margin-bottom: 6px;">Solo Full-Screen (Active Speaker)</h4>
+              <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Fills 100% of the vertical screen in crisp HD. No duplicate person, no split line, and captions animate in the safe zone.</p>
+            </div>
+            <button type="button" class="layout-modal-btn-select" data-select-layout="active_speaker">Select Solo Full-Screen</button>
+          </div>
+        </div>
+
+        <!-- Option 2: Ambient Frosted Blur -->
+        <div class="layout-modal-item">
+          <img src="/assets/layouts/blur_fit.png" class="layout-modal-item-img" alt="Ambient Frosted Blur" />
+          <div class="layout-modal-item-content">
+            <div>
+              <div style="font-size: 10px; font-weight: 800; color: #a78bfa; margin-bottom: 4px;">BEST FOR 3+ PEOPLE & PANELS</div>
+              <h4 style="font-size: 13.5px; font-weight: 800; margin-bottom: 6px;">Ambient Frosted Blur (Zero Crop)</h4>
+              <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Retains 100% of the original wide 16:9 frame over an animated frosted glass mirror background. Zero black bars.</p>
+            </div>
+            <button type="button" class="layout-modal-btn-select" data-select-layout="blur_fit">Select Ambient Blur</button>
+          </div>
+        </div>
+
+        <!-- Option 3: Podcast Split Dual-Cam -->
+        <div class="layout-modal-item">
+          <img src="/assets/layouts/split_podcast.png" class="layout-modal-item-img" alt="Podcast Split Dual-Cam" />
+          <div class="layout-modal-item-content">
+            <div>
+              <div style="font-size: 10px; font-weight: 800; color: #38bdf8; margin-bottom: 4px;">FOR WIDE 2-PERSON SHOTS</div>
+              <h4 style="font-size: 13.5px; font-weight: 800; margin-bottom: 6px;">Podcast Split (Dual-Cam Stack)</h4>
+              <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Stacks Top Host and Bottom Guest with a glowing cyan neon studio line. Perfect when both people sit side-by-side.</p>
+            </div>
+            <button type="button" class="layout-modal-btn-select" data-select-layout="split_podcast">Select Podcast Split</button>
+          </div>
+        </div>
+
+        <!-- Option 4: 3-Way Panel Stack -->
+        <div class="layout-modal-item">
+          <img src="/assets/layouts/split_triple.png" class="layout-modal-item-img" alt="3-Way Panel Stack" />
+          <div class="layout-modal-item-content">
+            <div>
+              <div style="font-size: 10px; font-weight: 800; color: #f59e0b; margin-bottom: 4px;">FOR 3-PERSON DISCUSSIONS</div>
+              <h4 style="font-size: 13.5px; font-weight: 800; margin-bottom: 6px;">3-Way Panel Stack (Trio)</h4>
+              <p style="font-size: 11px; color: var(--text-dim); line-height: 1.4;">Stacks Left, Center, and Right speakers horizontally across 3 tiers with glowing studio dividers.</p>
+            </div>
+            <button type="button" class="layout-modal-btn-select" data-select-layout="split_triple">Select 3-Way Stack</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Toast Notification -->
