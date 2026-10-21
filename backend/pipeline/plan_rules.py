@@ -252,6 +252,10 @@ class RulePlanner:
             "handwritten",
             "sticker",
             "arc_letters",
+            "beast_impact",
+            "highlighter_marker",
+            "cinematic_minimal",
+            "cyber_hud",
         ] if self.preset != "calm_serif" else [
             "serif_title",
             "quote_editorial",

@@ -173,7 +173,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     if (arSelectedLabel) arSelectedLabel.textContent = labels[ar] || ar;
     phoneCanvas.className = "phone-canvas ar-" + ar.replace(":", "-");
-    stageStatus.textContent = `Preview (${ar})`;
+    const resolutionMap = {
+      "9:16": "1080×1920 • 30 FPS • 9:16",
+      "16:9": "1920×1080 • 30 FPS • 16:9",
+      "1:1": "1080×1080 • 30 FPS • 1:1",
+      "4:5": "1080×1350 • 30 FPS • 4:5",
+    };
+    if (stageStatus) stageStatus.textContent = resolutionMap[ar] || `${ar} • 30 FPS`;
     updateSourcePreviewFraming();
     showToast(`Switched canvas to ${ar}`);
   }
@@ -188,13 +194,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedVideoLayout = "active_speaker";
 
   const layoutPhotoMap = {
-    active_speaker: "/assets/layouts/solo_fullscreen_v2.png",
-    blur_fit: "/assets/layouts/blur_fit_v2.png",
-    split_podcast: "/assets/layouts/split_podcast_v2.png",
-    split_triple: "/assets/layouts/split_triple_v2.png",
-    focus_left: "/assets/layouts/solo_fullscreen_v2.png",
-    focus_right: "/assets/layouts/solo_fullscreen_v2.png",
-    fill: "/assets/layouts/solo_fullscreen_v2.png",
+    active_speaker: "/assets/layouts/solo_fullscreen_clean.jpg?v=clean3",
+    blur_fit: "/assets/layouts/blur_fit_clean.jpg?v=clean3",
+    split_podcast: "/assets/layouts/split_podcast_clean.jpg?v=clean3",
+    split_triple: "/assets/layouts/split_triple_clean.jpg?v=clean3",
+    focus_left: "/assets/layouts/solo_fullscreen_clean.jpg?v=clean3",
+    focus_right: "/assets/layouts/solo_fullscreen_clean.jpg?v=clean3",
+    fill: "/assets/layouts/solo_fullscreen_clean.jpg?v=clean3",
   };
 
   const layoutLabels = {
@@ -299,6 +305,9 @@ document.addEventListener("DOMContentLoaded", () => {
         sourcePhotoPreview.classList.remove("hidden");
         sourcePhotoPreviewBadge.classList.remove("hidden");
         sourcePhotoPreviewBadge.textContent = `📸 ${layoutLabels[selectedVideoLayout] || "Style"} Preview`;
+        if (sourceCanvasTag) {
+          sourceCanvasTag.innerHTML = `<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-right: 4px; box-shadow: 0 0 6px #22c55e;"></span>Framing Preview`;
+        }
 
         if (sourceSingleWrap) sourceSingleWrap.classList.add("hidden");
         if (sourceBlurWrap) sourceBlurWrap.classList.add("hidden");
@@ -311,6 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Video IS loaded: Hide static photo overlay and display dynamic video layout
     if (sourcePhotoPreview) sourcePhotoPreview.classList.add("hidden");
     if (sourcePhotoPreviewBadge) sourcePhotoPreviewBadge.classList.add("hidden");
+    if (sourceCanvasTag) {
+      sourceCanvasTag.innerHTML = `<span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #38bdf8; margin-right: 4px; box-shadow: 0 0 6px #38bdf8;"></span>Live Stream`;
+    }
 
     // Hide all layout wraps initially
     if (sourceSingleWrap) sourceSingleWrap.classList.add("hidden");
@@ -676,6 +688,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   const ALL_AVAILABLE_STYLES = [
     { id: "hormozi_bold", name: "Hormozi Bold", icon: "⚡", tag: "Trending", sampleText: "VIRAL BOLD", desc: "Alex Hormozi uppercase, yellow pop, heavy drop shadow" },
+    { id: "beast_impact", name: "MrBeast Impact", icon: "⚡", tag: "Viral Hook", sampleText: "RETENTION POP", desc: "MrBeast pop, 3D black stroke, lime & cyber-yellow punch" },
+    { id: "highlighter_marker", name: "Ali Marker", icon: "🖍️", tag: "Educational", sampleText: "SMART HIGHLIGHT", desc: "Ali Abdaal text with animated pastel highlighter sweep" },
+    { id: "cinematic_minimal", name: "Cinematic A24", icon: "🎬", tag: "Documentary", sampleText: "LETTERBOX SUB", desc: "A24 / Netflix widescreen frosted glass subtitle pill" },
+    { id: "cyber_hud", name: "Cyberpunk HUD", icon: "🤖", tag: "Sci-Fi HUD", sampleText: "[HUD TARGET]", desc: "Futuristic telemetry brackets, monospace console, cyan glow" },
     { id: "retro_vaporwave", name: "Retro 80s", icon: "🌴", tag: "Aesthetic", sampleText: "RETRO 80s", desc: "Dual chrome gradient, glowing grid card" },
     { id: "karaoke_bounce", name: "Karaoke Bounce", icon: "🎤", tag: "Kinetic", sampleText: "KARAOKE •", desc: "Word-by-word hopping bounce physics dot with amber glow" },
     { id: "fire_burn", name: "Fiery Flame", icon: "🔥", tag: "High Energy", sampleText: "FIRE BLAZE", desc: "Flame gradient text with flickering fiery red shadow" },
@@ -697,7 +713,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { id: "sticker", name: "Graphic Sticker", icon: "🏷️", tag: "Graphic", sampleText: "★ STICKER", desc: "Vector graphic sticker with drop-shadow glow and float" },
   ];
 
-  // All 20 styles active by default
+  // All 24 styles active by default
   let selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
 
   function renderStylesPool() {
@@ -714,7 +730,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.innerHTML = `
         <div class="style-chip-top">
           <span class="style-chip-icon">${style.icon}</span>
-          <span class="style-chip-check">✓</span>
+          <span class="style-chip-check" title="Toggle style inclusion">✓</span>
         </div>
         <span class="style-chip-title">${style.name}</span>
         <div class="style-mini-sample style-sample-${style.id}">
@@ -722,8 +738,15 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      card.addEventListener("click", () => {
-        toggleStyleSelection(style.id);
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".style-chip-check")) {
+          toggleStyleSelection(style.id);
+        } else {
+          if (!selectedStyles.includes(style.id)) {
+            selectedStyles.push(style.id);
+            renderStylesPool();
+          }
+        }
         updateCaptionShowcase(style.id);
       });
 
@@ -762,8 +785,8 @@ document.addEventListener("DOMContentLoaded", () => {
         stylesSummaryBadge.textContent = "SINGLE STYLE MODE";
         stylesSummaryText.textContent = `All video captions will consistently use ${found ? found.name : selectedStyles[0]}.`;
       } else if (count === ALL_AVAILABLE_STYLES.length) {
-        stylesSummaryBadge.textContent = "DYNAMIC MIX (ALL 20)";
-        stylesSummaryText.textContent = "Rotating smoothly through all 20 creator styles sentence-by-sentence.";
+        stylesSummaryBadge.textContent = "DYNAMIC MIX (ALL 24)";
+        stylesSummaryText.textContent = "Rotating smoothly through all 24 creator styles sentence-by-sentence.";
       } else {
         stylesSummaryBadge.textContent = `${count} STYLES POOL`;
         stylesSummaryText.textContent = `Custom pool: video rotates exclusively through your ${count} chosen styles.`;
@@ -783,39 +806,70 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const styleObj = ALL_AVAILABLE_STYLES.find((s) => s.id === activeShowcaseStyle) || ALL_AVAILABLE_STYLES[0];
-    const showcaseText = document.getElementById("showcaseCaptionText");
+    const showcaseContainer = document.getElementById("showcaseCaptionContainer");
     const specsPill = document.getElementById("showcaseSpecsPill");
     const scTagStyle = document.getElementById("scTagStyle");
     const scTagSize = document.getElementById("scTagSize");
     const scTagBg = document.getElementById("scTagBg");
     const scTagColor = document.getElementById("scTagColor");
-    const highlightWord = document.getElementById("showcaseHighlightWord");
     const numericPx = getNumericCaptionSize(selectedCaptionSize);
     const sizeLabels = { small: "38px Small", medium: "52px Medium", large: "68px Large" };
     const displaySizeStr = sizeLabels[selectedCaptionSize] || `${numericPx}px Custom`;
 
-    if (showcaseText) {
-      showcaseText.className = `showcase-caption-text style-${styleObj.id} bg-${selectedBgStyle}`;
-      showcaseText.style.fontSize = `${Math.round(numericPx * 0.404)}px`;
+    if (showcaseContainer) {
+      let wordsHtml = "";
+      if (styleObj.id === "beast_impact") {
+        wordsHtml = `<div class="showcase-caption-text style-beast_impact bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">MASSIVE</span> <span class="sc-word sc-highlight">RETENTION</span> <span class="sc-word">HOOK</span></div>`;
+      } else if (styleObj.id === "highlighter_marker") {
+        wordsHtml = `<div class="showcase-caption-text style-highlighter_marker bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">Smart</span> <span class="sc-word sc-highlight">Educational</span> <span class="sc-word">Highlighter</span></div>`;
+      } else if (styleObj.id === "cinematic_minimal") {
+        wordsHtml = `<div class="showcase-caption-text style-cinematic_minimal bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">A24</span> <span class="sc-word sc-highlight">WIDESCREEN</span> <span class="sc-word">SUBTITLE</span></div>`;
+      } else if (styleObj.id === "cyber_hud") {
+        wordsHtml = `<div class="showcase-caption-text style-cyber_hud bg-${selectedBgStyle}" id="showcaseCaptionText"><span style="color:#00F5FF;font-weight:900;margin-right:4px;">[HUD]</span> <span class="sc-word">TARGET</span> <span class="sc-word sc-highlight">LOCKED</span> <span style="color:#00F5FF;font-weight:900;margin-left:4px;">01</span></div>`;
+      } else if (styleObj.id === "typewriter_terminal") {
+        wordsHtml = `<div class="showcase-caption-text style-typewriter_terminal bg-${selectedBgStyle}" id="showcaseCaptionText">&gt; <span class="sc-word">CODE</span> <span class="sc-word sc-highlight">EXECUTE</span><span class="cursor-blink" style="animation:pulse-dot 0.8s infinite;">_</span></div>`;
+      } else if (styleObj.id === "quote_editorial" || styleObj.id === "serif_title") {
+        wordsHtml = `<div class="showcase-caption-text style-${styleObj.id} bg-${selectedBgStyle}" id="showcaseCaptionText">“<span class="sc-word">Inspiring</span> <span class="sc-word sc-highlight">Editorial</span> <span class="sc-word">Thought</span>”</div>`;
+      } else if (styleObj.id === "comic_bubble") {
+        wordsHtml = `<div class="showcase-caption-text style-comic_bubble bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">VIRAL</span> <span class="sc-word sc-highlight">POW!</span> <span class="sc-word">COMIC</span></div>`;
+      } else if (styleObj.id === "paper_cutout") {
+        wordsHtml = `<div class="showcase-caption-text style-paper_cutout bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">TORN</span> <span class="sc-word sc-highlight">KRAFT</span> <span class="sc-word">NOTE</span></div>`;
+      } else if (styleObj.id === "gradient_outline") {
+        wordsHtml = `<div class="showcase-caption-text style-gradient_outline bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">IRIDESCENT</span> <span class="sc-word sc-highlight">GRADIENT</span> <span class="sc-word">CAPSULE</span></div>`;
+      } else if (styleObj.id === "minimal_underline") {
+        wordsHtml = `<div class="showcase-caption-text style-minimal_underline bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">Swiss</span> <span class="sc-word sc-highlight">Minimal</span> <span class="sc-word">Underline</span></div>`;
+      } else if (styleObj.id === "numbered_point") {
+        wordsHtml = `<div class="showcase-caption-text style-numbered_point bg-${selectedBgStyle}" id="showcaseCaptionText"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#000;font-size:12px;font-weight:900;margin-right:6px;">01</span> <span class="sc-word">ACTIONABLE</span> <span class="sc-word sc-highlight">STEP</span></div>`;
+      } else if (styleObj.id === "handwritten") {
+        wordsHtml = `<div class="showcase-caption-text style-handwritten bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">Expressive</span> <span class="sc-word sc-highlight">Handwritten</span> <span class="sc-word">Script</span></div>`;
+      } else if (styleObj.id === "arc_letters") {
+        wordsHtml = `<div class="showcase-caption-text style-arc_letters bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">CURVED</span> <span class="sc-word sc-highlight">ARC</span> <span class="sc-word">BOUNCE</span></div>`;
+      } else if (styleObj.id === "sticker") {
+        wordsHtml = `<div class="showcase-caption-text style-sticker bg-${selectedBgStyle}" id="showcaseCaptionText"><span style="margin-right:6px;">🏷️</span> <span class="sc-word">STICKER</span> <span class="sc-word sc-highlight">BADGE</span></div>`;
+      } else if (styleObj.id === "blob_card") {
+        wordsHtml = `<div class="showcase-caption-text style-blob_card bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">ORGANIC</span> <span class="sc-word sc-highlight">BLOB</span> <span class="sc-word">CARD</span></div>`;
+      } else if (styleObj.id === "pill_word") {
+        wordsHtml = `<div class="showcase-caption-text style-pill_word bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">CLEAN</span> <span class="sc-word sc-highlight">SPOKEN</span> <span class="sc-word">PILL</span></div>`;
+      } else if (styleObj.id === "title3d") {
+        wordsHtml = `<div class="showcase-caption-text style-title3d bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">EXTRUDED</span> <span class="sc-word sc-highlight">3D POP</span> <span class="sc-word">TITLE</span></div>`;
+      } else if (styleObj.id === "retro_vaporwave") {
+        wordsHtml = `<div class="showcase-caption-text style-retro_vaporwave bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">SYNTHWAVE</span> <span class="sc-word sc-highlight">RETRO</span> <span class="sc-word">80S</span></div>`;
+      } else if (styleObj.id === "fire_burn") {
+        wordsHtml = `<div class="showcase-caption-text style-fire_burn bg-${selectedBgStyle}" id="showcaseCaptionText">🔥 <span class="sc-word">BLAZING</span> <span class="sc-word sc-highlight">FIRE</span> <span class="sc-word">FLAME</span></div>`;
+      } else if (styleObj.id === "karaoke_bounce") {
+        wordsHtml = `<div class="showcase-caption-text style-karaoke_bounce bg-${selectedBgStyle}" id="showcaseCaptionText">🎤 <span class="sc-word">KARAOKE</span> <span class="sc-word sc-highlight">• BOUNCE</span> <span class="sc-word">SYNC</span></div>`;
+      } else if (styleObj.id === "neon_glow") {
+        wordsHtml = `<div class="showcase-caption-text style-neon_glow bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">ELECTRIC</span> <span class="sc-word sc-highlight">NEON</span> <span class="sc-word">GLOW</span></div>`;
+      } else if (styleObj.id === "glitch_kinetic") {
+        wordsHtml = `<div class="showcase-caption-text style-glitch_kinetic bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">KINETIC</span> <span class="sc-word sc-highlight">RGB</span> <span class="sc-word">GLITCH</span></div>`;
+      } else {
+        wordsHtml = `<div class="showcase-caption-text style-${styleObj.id} bg-${selectedBgStyle}" id="showcaseCaptionText"><span class="sc-word">VIRAL</span> <span class="sc-word sc-highlight" id="showcaseHighlightWord">CAPTIONS</span> <span class="sc-word">THAT</span> <span class="sc-word sc-pop">POP</span></div>`;
+      }
+      showcaseContainer.innerHTML = wordsHtml;
 
-      if (highlightWord) {
-        if (styleObj.id === "hormozi_bold") {
-          highlightWord.style.color = "#facc15";
-          highlightWord.style.backgroundColor = "transparent";
-        } else if (styleObj.id === "retro_vaporwave" || styleObj.id === "fire_burn") {
-          highlightWord.style.color = "";
-          highlightWord.style.backgroundColor = "transparent";
-        } else if (styleObj.id === "karaoke_bounce") {
-          highlightWord.style.color = "#fbbf24";
-          highlightWord.style.backgroundColor = "transparent";
-        } else {
-          highlightWord.style.color = selectedHighlightColor;
-          if (selectedBgStyle === "transparent") {
-            highlightWord.style.backgroundColor = `${selectedHighlightColor}22`;
-          } else {
-            highlightWord.style.backgroundColor = "transparent";
-          }
-        }
+      const showcaseText = document.getElementById("showcaseCaptionText");
+      if (showcaseText) {
+        showcaseText.style.fontSize = `${Math.round(numericPx * 0.404)}px`;
       }
     }
 
@@ -846,13 +900,13 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Sync backdrop styling to draggable box on phoneCanvas
     if (selectedBgStyle === "transparent") {
-      draggableCaptionBox.style.background = "rgba(17, 19, 26, 0.4)";
-      draggableCaptionBox.style.backdropFilter = "none";
+      draggableCaptionBox.style.background = "rgba(10, 12, 18, 0.45)";
+      draggableCaptionBox.style.backdropFilter = "blur(8px)";
       draggableCaptionBox.style.border = "1.5px dashed var(--accent)";
       draggableCaptionBox.style.boxShadow = "none";
     } else if (selectedBgStyle === "glass") {
       draggableCaptionBox.style.background = "rgba(15, 23, 42, 0.85)";
-      draggableCaptionBox.style.backdropFilter = "blur(12px)";
+      draggableCaptionBox.style.backdropFilter = "blur(14px)";
       draggableCaptionBox.style.border = "1.5px solid rgba(56, 189, 248, 0.5)";
       draggableCaptionBox.style.boxShadow = "0 8px 28px rgba(0,0,0,0.6)";
     } else if (selectedBgStyle === "solid") {
@@ -862,37 +916,98 @@ document.addEventListener("DOMContentLoaded", () => {
       draggableCaptionBox.style.boxShadow = "0 8px 28px rgba(0,0,0,0.7)";
     }
 
-    // Update typography
-    if (styleObj.id === "hormozi_bold") {
+    // Reset default properties
+    dragSampleText.style.fontStyle = "normal";
+    dragSampleText.style.letterSpacing = "normal";
+    dragSampleText.style.transform = "none";
+
+    // Style-specific typography for canvas draggable overlay
+    if (styleObj.id === "beast_impact") {
+      dragSampleText.innerHTML = `MASSIVE <span class="highlight" style="color: #22C55E; background: none; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">RETENTION HOOK</span> POP`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "900";
+      dragSampleText.style.textTransform = "uppercase";
+      dragSampleText.style.transform = "rotate(-2deg)";
+    } else if (styleObj.id === "highlighter_marker") {
+      dragSampleText.innerHTML = `Smart <span class="highlight" style="background: #FEF08A; color: #0A0A0B; padding: 1px 6px; border-radius: 3px; text-shadow: none;">Educational</span> Marker`;
+      dragSampleText.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "cinematic_minimal") {
+      dragSampleText.innerHTML = `A24 <span class="highlight" style="color: #F59E0B; font-weight: 800;">WIDESCREEN</span> SUBTITLE`;
+      dragSampleText.style.fontFamily = "'Inter', sans-serif";
+      dragSampleText.style.fontWeight = "600";
+      dragSampleText.style.letterSpacing = "0.14em";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "cyber_hud") {
+      dragSampleText.innerHTML = `[HUD] <span class="highlight" style="color: #00F5FF; text-shadow: 0 0 8px #00F5FF;">TARGET LOCKED</span> 01`;
+      dragSampleText.style.fontFamily = "'JetBrains Mono', monospace";
+      dragSampleText.style.fontWeight = "700";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "hormozi_bold") {
       dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #FACC15; background: none; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;">DYNAMIC CAPTIONS</span> THAT POP`;
       dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
       dragSampleText.style.fontWeight = "900";
       dragSampleText.style.textTransform = "uppercase";
     } else if (styleObj.id === "retro_vaporwave") {
-      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #38BDF8; background: none;">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.innerHTML = `SYNTHWAVE <span class="highlight" style="color: #38BDF8; background: none;">DYNAMIC CAPTIONS</span> 80S`;
       dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
       dragSampleText.style.fontWeight = "800";
       dragSampleText.style.textTransform = "uppercase";
     } else if (styleObj.id === "fire_burn") {
-      dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: #EF4444; background: none;">DYNAMIC CAPTIONS</span> THAT POP`;
+      dragSampleText.innerHTML = `🔥 BLAZING <span class="highlight" style="color: #EF4444; background: none; text-shadow: 0 0 10px #EF4444;">FIRE FLAME</span> POP`;
       dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
       dragSampleText.style.fontWeight = "900";
       dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "karaoke_bounce") {
+      dragSampleText.innerHTML = `🎤 KARAOKE <span class="highlight" style="color: #FBBF24; background: none;">• BOUNCE</span> SYNC`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "uppercase";
     } else if (styleObj.id === "typewriter_terminal") {
-      dragSampleText.innerHTML = `&gt; CREATING <span class="highlight" style="color: #22C55E; background: none;">DYNAMIC CAPTIONS</span> THAT POP_`;
+      dragSampleText.innerHTML = `&gt; CODE <span class="highlight" style="color: #22C55E; background: none; text-decoration: underline;">EXECUTE</span>_`;
       dragSampleText.style.fontFamily = "'JetBrains Mono', monospace";
       dragSampleText.style.fontWeight = "700";
       dragSampleText.style.textTransform = "none";
     } else if (styleObj.id === "quote_editorial" || styleObj.id === "serif_title") {
-      dragSampleText.innerHTML = `“Creating <span class="highlight" style="color: ${selectedHighlightColor};">Dynamic Captions</span> that pop”`;
+      dragSampleText.innerHTML = `“Creating <span class="highlight" style="color: #F59E0B;">Dynamic Captions</span> that pop”`;
       dragSampleText.style.fontFamily = "'Fraunces', Georgia, serif";
       dragSampleText.style.fontStyle = "italic";
       dragSampleText.style.fontWeight = "700";
       dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "comic_bubble") {
+      dragSampleText.innerHTML = `VIRAL <span class="highlight" style="color: #EF4444; background: none;">POW!</span> COMIC`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "900";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "handwritten") {
+      dragSampleText.innerHTML = `Expressive <span class="highlight" style="color: #38BDF8;">Handwritten</span> Script`;
+      dragSampleText.style.fontFamily = "'Caveat', cursive";
+      dragSampleText.style.fontWeight = "700";
+      dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "neon_glow") {
+      dragSampleText.innerHTML = `ELECTRIC <span class="highlight" style="color: #FFFFFF; text-shadow: 0 0 12px #38BDF8;">NEON GLOW</span> CAPTIONS`;
+      dragSampleText.style.fontFamily = "'Montserrat', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "uppercase";
+    } else if (styleObj.id === "minimal_underline") {
+      dragSampleText.innerHTML = `Swiss <span class="highlight" style="border-bottom: 2.5px solid var(--accent); padding-bottom: 1px;">Minimal Underline</span>`;
+      dragSampleText.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "pill_word") {
+      dragSampleText.innerHTML = `CLEAN <span class="highlight" style="background: var(--accent); color: #0A0A0B; padding: 2px 8px; border-radius: 9999px; text-shadow: none;">SPOKEN PILL</span>`;
+      dragSampleText.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "none";
+    } else if (styleObj.id === "sticker") {
+      dragSampleText.innerHTML = `🏷️ STICKER <span class="highlight" style="color: #22C55E;">BADGE</span> POP`;
+      dragSampleText.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+      dragSampleText.style.fontWeight = "800";
+      dragSampleText.style.textTransform = "uppercase";
     } else {
       dragSampleText.innerHTML = `CREATING <span class="highlight" style="color: ${selectedHighlightColor};">DYNAMIC CAPTIONS</span> THAT POP`;
       dragSampleText.style.fontFamily = "'Montserrat', 'Plus Jakarta Sans', sans-serif";
-      dragSampleText.style.fontStyle = "normal";
       dragSampleText.style.fontWeight = "800";
       dragSampleText.style.textTransform = "uppercase";
     }
@@ -911,7 +1026,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
       renderStylesPool();
       updateCaptionShowcase("hormozi_bold");
-      showToast("Selected all 20 caption styles.");
+      showToast("Selected all 24 caption styles.");
     });
   }
 
@@ -951,14 +1066,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (radio) {
         radio.checked = true;
         if (radio.value === "minimal_pill") {
-          selectedStyles = ["pill_word", "minimal_underline"];
-          updateCaptionShowcase("pill_word");
+          selectedStyles = ["pill_word", "minimal_underline", "highlighter_marker"];
+          updateCaptionShowcase("highlighter_marker");
         } else if (radio.value === "calm_serif") {
-          selectedStyles = ["serif_title", "quote_editorial", "blob_card", "minimal_underline"];
-          updateCaptionShowcase("serif_title");
+          selectedStyles = ["cinematic_minimal", "serif_title", "quote_editorial", "blob_card", "minimal_underline"];
+          updateCaptionShowcase("cinematic_minimal");
         } else {
           selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
-          updateCaptionShowcase("hormozi_bold");
+          updateCaptionShowcase("beast_impact");
         }
         renderStylesPool();
       }

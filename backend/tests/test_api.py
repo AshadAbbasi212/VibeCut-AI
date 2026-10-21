@@ -202,7 +202,7 @@ def test_list_styles(client):
     assert resp.status_code == 200
     data = resp.json()
     assert "styles" in data
-    assert data["total"] == 20
+    assert data["total"] == 24
     style_ids = [s["id"] for s in data["styles"]]
     assert "neon_glow" in style_ids
     assert "typewriter_terminal" in style_ids
@@ -212,6 +212,10 @@ def test_list_styles(client):
     assert "retro_vaporwave" in style_ids
     assert "karaoke_bounce" in style_ids
     assert "fire_burn" in style_ids
+    assert "beast_impact" in style_ids
+    assert "highlighter_marker" in style_ids
+    assert "cinematic_minimal" in style_ids
+    assert "cyber_hud" in style_ids
 
 
 def test_rerender_endpoint(client, monkeypatch):

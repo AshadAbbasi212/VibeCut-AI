@@ -93,6 +93,38 @@ box-shadow glow), and gradient-masked headline text.
 Swiss modernist minimalist typography with an energetic animated horizontal underline bar that draws in
 from left to right beneath the text using gradient accents.
 
+### `hormozi_bold`
+Ultra-punchy Alex Hormozi signature short-form typography: heavy condensed uppercase sans-serif with
+aggressive black borders, radioactive neon yellow keyword pop, and rapid phrase flashing.
+
+### `retro_vaporwave`
+80s synthwave / aesthetic video styling: chrome gradient typography, soft neon magenta-to-cyan backdrop
+haze, and a retro perspective grid glow.
+
+### `karaoke_bounce`
+Dynamic karaoke rhythm caption: active spoken words are highlighted with a glowing golden bouncing dot
+following exact word timings with spring physics.
+
+### `fire_burn`
+High-octane fiery energy captions: blazing amber-to-crimson animated gradient with flickering ambient
+glow and burning heat distortion aesthetics.
+
+### `beast_impact`
+MrBeast viral retention styling: dynamic -2° tilt, multi-layer 3D extruded black drop-shadow, explosive
+spring pop scaling, and high-visibility lime & cyber-yellow keyword punch.
+
+### `highlighter_marker`
+Ali Abdaal / Vox video essay aesthetic: clean editorial typography with an animated pastel highlighter
+stroke sweep that draws dynamically behind key spoken words.
+
+### `cinematic_minimal`
+A24 / Netflix widescreen subtitle aesthetic: clean letterbox typography with warm amber letter-spacing,
+subtle dark frosted glass backing pill, and gentle fade cadence.
+
+### `cyber_hud`
+Sci-fi HUD telemetry display: monospace tech font with bracket telemetry `[ ]`, scanline overlay,
+and pulsing electric cyan holographic glow.
+
 ### Doodles & decorations (shared)
 - `ellipse`: SVG path stroke draw-on (stroke-dashoffset or `@remotion/paths` evolve-path), 2-3px white,
   slightly irregular, overlaps text.

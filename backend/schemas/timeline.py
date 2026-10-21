@@ -24,6 +24,10 @@ VALID_STYLES = {
     "retro_vaporwave",
     "karaoke_bounce",
     "fire_burn",
+    "beast_impact",
+    "highlighter_marker",
+    "cinematic_minimal",
+    "cyber_hud",
 }
 
 VALID_ZONES = {"upper", "center", "lower", "free"}

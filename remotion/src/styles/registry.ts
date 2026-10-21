@@ -20,6 +20,10 @@ import { HormoziBold } from "./hormozi_bold";
 import { RetroVaporwave } from "./retro_vaporwave";
 import { KaraokeBounce } from "./karaoke_bounce";
 import { FireBurn } from "./fire_burn";
+import { BeastImpact } from "./beast_impact";
+import { HighlighterMarker } from "./highlighter_marker";
+import { CinematicMinimal } from "./cinematic_minimal";
+import { CyberHud } from "./cyber_hud";
 
 export interface StyleComponentProps {
   event: TimelineEvent;
@@ -64,6 +68,10 @@ export const STYLE_REGISTRY: Record<string, React.FC<StyleComponentProps>> = {
   retro_vaporwave: RetroVaporwave,
   karaoke_bounce: KaraokeBounce,
   fire_burn: FireBurn,
+  beast_impact: BeastImpact,
+  highlighter_marker: HighlighterMarker,
+  cinematic_minimal: CinematicMinimal,
+  cyber_hud: CyberHud,
 };
 
 export const getStyleComponent = (styleId: string): React.FC<StyleComponentProps> => {

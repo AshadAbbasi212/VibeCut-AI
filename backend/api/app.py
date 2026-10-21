@@ -227,6 +227,10 @@ def list_styles():
         {"id": "arc_letters", "name": "Arc Letters", "category": "pop", "tag": "Curved", "icon": "🪐", "description": "Curved letter placement along an arc with pastel colors and floating bounce"},
         {"id": "sticker", "name": "Sticker Badge", "category": "pop", "tag": "Graphic", "icon": "🏷️", "description": "Lucide vector icon badge with drop-shadow glow and spring float"},
         {"id": "pill_word", "name": "Pill Word", "category": "minimal", "tag": "Synced Sub", "icon": "💊", "description": "Word-synced high-contrast spoken-word active pill"},
+        {"id": "beast_impact", "name": "MrBeast Impact", "category": "bold", "tag": "Viral Hook", "icon": "⚡", "description": "MrBeast high-energy pop with 3D black stroke, lime & cyber-yellow punch"},
+        {"id": "highlighter_marker", "name": "Ali Marker", "category": "minimal", "tag": "Educational", "icon": "🖍️", "description": "Ali Abdaal clean minimal text with animated pastel yellow highlighter sweep"},
+        {"id": "cinematic_minimal", "name": "Cinematic A24", "category": "editorial", "tag": "Documentary", "icon": "🎬", "description": "A24 / Netflix widescreen frosted glass subtitle pill with amber warmth"},
+        {"id": "cyber_hud", "name": "Cyberpunk HUD", "category": "tech", "tag": "Sci-Fi HUD", "icon": "🤖", "description": "Futuristic telemetry brackets, monospace console font, and electric cyan scanlines"},
     ]
     return {"styles": styles_meta, "total": len(styles_meta)}
 

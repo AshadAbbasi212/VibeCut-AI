@@ -102,5 +102,21 @@
   5. Pipeline speed optimization: Transcribed only trimmed sections in `backend/api/runner.py` and optimized Whisper CPU thread count and default model.
 - **Why**: Creators need granular pixel-level control over font sizes instead of being locked to 3 discrete options. Displaying the font size badge and dynamically scaling text on the video canvas provides immediate WYSIWYG feedback before rendering.
 
+## 2026-10-21: 24-Style Expansion, Clean Studio Layout Stills, Studio Monitor Canvas & Live Showcase Sync
+- **Decision**:
+  1. **Clean Studio-Grade Layout Stills (Zero Overlap)**: Replaced mockups containing baked-in captions with clean studio photography (`solo_fullscreen_clean.jpg`, `blur_fit_clean.jpg`, `split_podcast_clean.jpg`, `split_triple_clean.jpg` and updated `.png` targets). All backgrounds now feature clean plates with zero baked-in text, completely resolving text collisions with the on-screen draggable caption overlay (`Y: 79%`).
+  2. **Studio Monitor Preview Overhaul**: Redesigned the right-hand canvas into a sleek, dark-glass broadcast "STUDIO MONITOR" with a glowing amber/emerald live status LED, dynamic resolution telemetry badge (`1080×1920 • 30 FPS • 9:16`), rounded bezel framing, and streamlined mode pill badge (`🎥 Clean Plate / Framing Preview`).
+  3. **4 Top Viral Caption Styles Added (24 Styles Total)**:
+     - `beast_impact`: MrBeast high-energy viral retention styling with -2° tilt, 3D extruded drop-shadow, and lime/cyber-yellow punch.
+     - `highlighter_marker`: Ali Abdaal / Vox video essay style featuring an animated pastel yellow marker stroke sweep behind active keywords.
+     - `cinematic_minimal`: A24 / Netflix widescreen subtitle design with warm amber tracking and dark frosted glass pill.
+     - `cyber_hud`: Cyberpunk sci-fi HUD telemetry display with `[ ]` brackets, monospace typography, and cyan holographic glow.
+  4. **Live Caption Example Showcase & Canvas Preview Synchronization**:
+     - Built dedicated CSS styling classes (`.style-<id>`) in `frontend/index.html` for all 24 styles with imported Google Fonts (`Plus Jakarta Sans`, `Caveat`, `Bangers`, `Montserrat`, `Fraunces`, `JetBrains Mono`).
+     - Overhauled `updateCaptionShowcase(styleId)` and `updateDraggableCaptionPreview()` in `frontend/app.js` to render authentic typography, marker sweeps, and accents for every style when clicked or selected.
+     - Added quick-preset buttons in Card 2 for new viral styles (`⚡ MrBeast Only`, `🖍️ Ali Marker Only`, `🎬 Cinematic Only`, `🤖 Cyber HUD Only`).
+- **Why**: Creators expect an ultra-professional, distraction-free preview interface where framing plates never clash with subtitle mockups, typography faithfully previews before rendering, and trending viral subtitle treatments from MrBeast, Ali Abdaal, and cinematic releases are instantly accessible.
+
+
 
 

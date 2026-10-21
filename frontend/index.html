@@ -7,7 +7,7 @@
   <meta name="description" content="Professional studio for rendering animated word-synced captions on vertical videos. 20+ styles, real-time preview, one-click export.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Montserrat:wght@700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Montserrat:wght@700;800;900&family=Plus+Jakarta+Sans:wght@600;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,700;1,9..144,600&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=5.0">
   <style>
     /* ==========================================================================
@@ -425,6 +425,10 @@
 
     /* Style Mini Specimens */
     .style-sample-hormozi_bold { color: #FACC15; font-family: 'Montserrat', sans-serif; text-transform: uppercase; text-shadow: 1px 1px 0 #000; }
+    .style-sample-beast_impact { color: #22C55E; font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; text-shadow: 1.5px 1.5px 0 #000; }
+    .style-sample-highlighter_marker { background: #FEF08A; color: #0A0A0B; font-weight: 800; border-radius: 3px; padding: 1px 5px; }
+    .style-sample-cinematic_minimal { background: rgba(15,23,42,0.85); color: #F59E0B; border: 1px solid rgba(255,255,255,0.15); border-radius: 9999px; letter-spacing: 0.08em; padding: 2px 7px; }
+    .style-sample-cyber_hud { color: #00F5FF; font-family: var(--font-mono); border: 1px solid #00F5FF; border-radius: 3px; padding: 1px 4px; text-shadow: 0 0 6px #00F5FF; }
     .style-sample-retro_vaporwave { background: linear-gradient(135deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .style-sample-karaoke_bounce { color: #FBBF24; }
     .style-sample-fire_burn { color: #EF4444; text-shadow: 0 0 6px rgba(239,68,68,0.5); }
@@ -856,19 +860,81 @@
     .showcase-caption-text .sc-highlight { color: var(--accent); }
     .showcase-caption-text .sc-pop { color: #EF4444; }
 
-    /* Showcase style classes */
-    .style-hormozi_bold { font-family: 'Montserrat', sans-serif; text-transform: uppercase; }
-    .style-hormozi_bold .sc-highlight { color: #FACC15 !important; }
-    .style-retro_vaporwave { font-family: 'Montserrat', sans-serif; text-transform: uppercase; background: linear-gradient(135deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
-    .style-retro_vaporwave .sc-highlight { -webkit-text-fill-color: #38BDF8; }
-    .style-fire_burn { font-family: 'Montserrat', sans-serif; text-transform: uppercase; color: #fca5a5; }
-    .style-fire_burn .sc-highlight { color: #EF4444 !important; text-shadow: 0 0 16px rgba(239,68,68,0.5); }
-    .style-karaoke_bounce .sc-highlight { color: #FBBF24 !important; }
-    .style-typewriter_terminal { font-family: var(--font-mono); text-transform: none; color: #22C55E; }
-    .style-quote_editorial, .style-serif_title { font-family: 'Fraunces', serif; font-style: italic; text-transform: none; }
-    .style-neon_glow { color: #38BDF8; text-shadow: 0 0 16px rgba(56,189,248,0.5), 0 0 32px rgba(56,189,248,0.25); }
-    .style-comic_bubble { background: #fff; color: #000; border: 2px solid #000; border-radius: 12px; padding: 4px 14px; text-shadow: none; }
+    /* Showcase style classes — ALL 24 Distinct Styles */
+    .style-hormozi_bold { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; }
+    .style-hormozi_bold .sc-highlight { color: #FACC15 !important; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; }
+
+    .style-beast_impact { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; transform: rotate(-2deg); display: inline-block; }
+    .style-beast_impact .sc-highlight { color: #22C55E !important; text-shadow: -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000, 3px 3px 0 #000, 0 4px 0 #000; }
+    .style-beast_impact .sc-word { text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; }
+
+    .style-highlighter_marker { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+    .style-highlighter_marker .sc-highlight { background: #FEF08A; color: #0A0A0B !important; padding: 2px 8px; border-radius: 4px; box-shadow: 0 2px 10px rgba(254,240,138,0.5); text-shadow: none !important; }
+
+    .style-cinematic_minimal { font-family: 'Inter', sans-serif; text-transform: uppercase; font-weight: 600; letter-spacing: 0.14em; background: rgba(10, 12, 18, 0.82); backdrop-filter: blur(16px); padding: 8px 24px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.14); box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    .style-cinematic_minimal .sc-highlight { color: #F59E0B !important; font-weight: 800; }
+
+    .style-cyber_hud { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; font-weight: 700; color: #E2E8F0; background: rgba(5, 10, 20, 0.9); border: 1.5px solid #00F5FF; border-radius: 4px; padding: 6px 18px; box-shadow: 0 0 24px rgba(0,245,255,0.35), inset 0 0 12px rgba(0,245,255,0.2); }
+    .style-cyber_hud .sc-highlight { color: #00F5FF !important; text-shadow: 0 0 12px #00F5FF; }
+
+    .style-retro_vaporwave { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 800; background: linear-gradient(135deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; }
+    .style-retro_vaporwave .sc-highlight { -webkit-text-fill-color: #38BDF8; filter: drop-shadow(0 0 8px rgba(56,189,248,0.8)); }
+
+    .style-fire_burn { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; color: #fed7aa; }
+    .style-fire_burn .sc-highlight { color: #EF4444 !important; text-shadow: 0 0 16px rgba(239,68,68,0.8), 0 0 32px rgba(249,115,22,0.6); }
+
+    .style-karaoke_bounce { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 800; }
+    .style-karaoke_bounce .sc-highlight { color: #FBBF24 !important; text-shadow: 0 0 12px rgba(251,191,36,0.6); }
+
+    .style-typewriter_terminal { font-family: 'JetBrains Mono', monospace; text-transform: none; font-weight: 700; color: #22C55E; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
+    .style-typewriter_terminal .sc-highlight { color: #4ADE80 !important; text-decoration: underline; }
+
+    .style-title3d { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; color: #FFFFFF; text-shadow: 0 1px 0 #bbb, 0 2px 0 #999, 0 3px 0 #777, 0 4px 0 #555, 0 6px 12px rgba(0,0,0,0.7); }
+    .style-title3d .sc-highlight { color: #FACC15 !important; }
+
+    .style-neon_glow { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 800; color: #38BDF8; text-shadow: 0 0 12px rgba(56,189,248,0.8), 0 0 28px rgba(56,189,248,0.5); }
+    .style-neon_glow .sc-highlight { color: #FFFFFF !important; text-shadow: 0 0 16px #38BDF8, 0 0 32px #38BDF8; }
+
+    .style-pill_word { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; }
+    .style-pill_word .sc-highlight { background: var(--accent); color: #0A0A0B !important; padding: 3px 12px; border-radius: 9999px; text-shadow: none !important; box-shadow: 0 2px 10px var(--accent-glow); }
+
+    .style-glitch_kinetic { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; text-shadow: -2px 0 #FF0055, 2px 0 #00FFFF; }
+    .style-glitch_kinetic .sc-highlight { color: #FACC15 !important; text-shadow: -3px 0 #EF4444, 3px 0 #38BDF8; }
+
+    .style-quote_editorial { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 700; text-transform: none; color: #F1F5F9; }
+    .style-quote_editorial .sc-highlight { color: #F59E0B !important; font-style: normal; font-weight: 800; }
+
+    .style-comic_bubble { font-family: 'Montserrat', sans-serif; font-weight: 900; text-transform: uppercase; background: #FFFFFF; color: #000000 !important; border: 3px solid #000000; border-radius: 16px; padding: 6px 18px; box-shadow: 4px 4px 0 #000000; text-shadow: none !important; }
     .style-comic_bubble .sc-highlight { color: #EF4444 !important; }
+    .style-comic_bubble .sc-word { color: #000000 !important; text-shadow: none !important; }
+
+    .style-paper_cutout { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; background: #FEF9C3; color: #1E293B !important; border-radius: 4px; padding: 6px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transform: rotate(1.5deg); text-shadow: none !important; }
+    .style-paper_cutout .sc-highlight { color: #B45309 !important; font-weight: 900; }
+    .style-paper_cutout .sc-word { color: #1E293B !important; text-shadow: none !important; }
+
+    .style-gradient_outline { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 800; border: 2px solid transparent; background: linear-gradient(rgba(15,23,42,0.92), rgba(15,23,42,0.92)) padding-box, linear-gradient(135deg, #38BDF8, #A855F7, #EC4899) border-box; border-radius: 9999px; padding: 6px 20px; box-shadow: 0 0 20px rgba(168,85,247,0.3); }
+    .style-gradient_outline .sc-highlight { color: #38BDF8 !important; text-shadow: 0 0 10px rgba(56,189,248,0.7); }
+
+    .style-minimal_underline { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+    .style-minimal_underline .sc-highlight { color: #FFFFFF !important; border-bottom: 3.5px solid var(--accent); padding-bottom: 2px; }
+
+    .style-blob_card { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border-radius: 20px 6px 20px 6px; padding: 8px 22px; border: 1.5px solid rgba(255,255,255,0.18); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .style-blob_card .sc-highlight { color: #38BDF8 !important; }
+
+    .style-serif_title { font-family: 'Fraunces', Georgia, serif; font-style: italic; font-weight: 700; color: #FAF5FF; }
+    .style-serif_title .sc-highlight { color: #F59E0B !important; font-style: normal; font-weight: 800; }
+
+    .style-numbered_point { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
+    .style-numbered_point .sc-highlight { color: var(--accent) !important; }
+
+    .style-handwritten { font-family: 'Caveat', cursive; font-size: 28px !important; font-weight: 700; color: #FDE047; text-shadow: 0 2px 8px rgba(0,0,0,0.85); line-height: 1.1; }
+    .style-handwritten .sc-highlight { color: #38BDF8 !important; }
+
+    .style-arc_letters { font-family: 'Montserrat', sans-serif; text-transform: uppercase; font-weight: 900; letter-spacing: 0.08em; }
+    .style-arc_letters .sc-highlight { color: #F472B6 !important; text-shadow: 0 0 12px rgba(244,114,182,0.6); }
+
+    .style-sticker { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; background: rgba(15,23,42,0.85); backdrop-filter: blur(8px); padding: 6px 18px; border-radius: 9999px; border: 1.5px solid rgba(255,255,255,0.2); box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+    .style-sticker .sc-highlight { color: #22C55E !important; }
 
     /* Size classes */
     .size-small { font-size: 15px !important; }
@@ -938,25 +1004,69 @@
 
     .progress-card-bottom { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--text-dim); }
 
-    /* ── Stage / Preview Panel ── */
+    /* ── Stage / Preview Studio Monitor ── */
     .stage-col { position: sticky; top: 20px; }
 
     .stage-wrapper {
-      background: var(--surface-card);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(24, 24, 27, 0.75) 0%, rgba(15, 17, 23, 0.85) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius);
       padding: 16px;
-      box-shadow: var(--shadow-elevated);
+      box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      position: relative;
     }
 
-    .stage-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .stage-title { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .stage-header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .stage-live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stage-live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 8px #22C55E;
+      animation: pulse-dot 1.8s ease infinite;
+    }
+    .stage-title-primary {
+      font-size: 11px;
+      font-weight: 800;
+      color: #E2E8F0;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-family: var(--font-mono);
+    }
+    .stage-status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
 
-    .ar-selector { display: flex; gap: 4px; }
+    .ar-selector { display: flex; gap: 4px; background: rgba(0, 0, 0, 0.35); padding: 2px; border-radius: var(--radius-xs); border: 1px solid rgba(255,255,255,0.06); }
     .btn-ar {
-      background: var(--surface-hover);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: 1px solid transparent;
       color: var(--text-dim);
       font-size: 11px;
       font-weight: 700;
@@ -964,19 +1074,26 @@
       border-radius: var(--radius-xs);
       cursor: pointer;
       font-family: var(--font-mono);
-      transition: all 0.15s;
+      transition: all 0.15s ease;
     }
-    .btn-ar:hover { border-color: var(--border-hover); color: var(--text); }
-    .btn-ar.active { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); box-shadow: 0 0 8px var(--accent-glow); }
+    .btn-ar:hover { color: #fff; background: rgba(255,255,255,0.06); }
+    .btn-ar.active {
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+    }
 
     /* Phone Canvas */
     .phone-canvas {
       position: relative;
       background: #000;
-      border-radius: var(--radius-sm);
+      border-radius: 14px;
       overflow: hidden;
       margin: 0 auto;
       transition: all 0.3s ease;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
     }
 
     .phone-canvas.ar-9-16 { aspect-ratio: 9/16; max-height: 580px; width: 100%; }
@@ -994,20 +1111,26 @@
 
     .canvas-tag {
       position: absolute;
-      bottom: 10px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 700;
-      color: var(--text-dim);
-      background: rgba(10,10,11,0.85);
-      backdrop-filter: blur(6px);
-      padding: 3px 10px;
+      color: #E2E8F0;
+      background: rgba(10, 12, 18, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 4px 12px;
       border-radius: 9999px;
-      border: 1px solid rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       z-index: 8;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.02em;
     }
-    .canvas-tag.captioned { color: var(--accent); border-color: rgba(245,158,11,0.3); }
+    .canvas-tag.captioned { color: var(--accent); border-color: rgba(245,158,11,0.4); background: rgba(15, 23, 42, 0.9); }
 
     .processing-box { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 40px 20px; text-align: center; }
     .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 20px; }
@@ -1345,7 +1468,7 @@
         <div class="card">
           <div class="card-title">
             <span>2. Caption Styles</span>
-            <span class="card-badge" id="stylesBadgeCount">20 Styles Available</span>
+            <span class="card-badge" id="stylesBadgeCount">24 Styles Available</span>
           </div>
 
           <div class="presets-row">
@@ -1353,38 +1476,40 @@
               <input type="radio" name="preset" value="bold_creator" checked>
               <div class="p-icon">⚡</div>
               <span class="p-name">Bold Creator</span>
-              <span class="p-desc">Hormozi, Neon, Fire</span>
+              <span class="p-desc">MrBeast, Hormozi, Fire</span>
             </label>
             <label class="preset-chip" id="chipCalm">
               <input type="radio" name="preset" value="calm_serif">
               <div class="p-icon">📖</div>
               <span class="p-name">Calm Serif</span>
-              <span class="p-desc">Editorial, Blobs</span>
+              <span class="p-desc">Cinematic, Editorial</span>
             </label>
             <label class="preset-chip" id="chipMinimal">
               <input type="radio" name="preset" value="minimal_pill">
               <div class="p-icon">💊</div>
               <span class="p-name">Minimal Pill</span>
-              <span class="p-desc">Clean Word Sync</span>
+              <span class="p-desc">Highlighter, Pill Sync</span>
             </label>
           </div>
 
           <div class="styles-pool-header">
             <h4><span>🎨 Caption Styles</span></h4>
             <div class="styles-pool-actions">
-              <button type="button" class="btn-pool-action" id="selectAllStylesBtn">Select All (20)</button>
+              <button type="button" class="btn-pool-action" id="selectAllStylesBtn">Select All (24)</button>
               <button type="button" class="btn-pool-action" id="clearAllStylesBtn">Clear All</button>
             </div>
           </div>
 
           <div class="styles-preset-quick-row">
+            <button type="button" class="btn-style-preset-quick" data-pick="beast_impact">⚡ MrBeast Only</button>
+            <button type="button" class="btn-style-preset-quick" data-pick="highlighter_marker">🖍️ Ali Marker Only</button>
+            <button type="button" class="btn-style-preset-quick" data-pick="cinematic_minimal">🎬 Cinematic Only</button>
+            <button type="button" class="btn-style-preset-quick" data-pick="cyber_hud">🤖 Cyber HUD Only</button>
             <button type="button" class="btn-style-preset-quick" data-pick="hormozi_bold">⚡ Hormozi Only</button>
-            <button type="button" class="btn-style-preset-quick" data-pick="retro_vaporwave">🌴 Retro 80s Only</button>
-            <button type="button" class="btn-style-preset-quick" data-pick="karaoke_bounce">🎤 Karaoke Only</button>
             <button type="button" class="btn-style-preset-quick" data-pick="fire_burn">🔥 Fire Only</button>
             <button type="button" class="btn-style-preset-quick" data-pick="neon_glow">💡 Neon Only</button>
-            <button type="button" class="btn-style-preset-quick" data-pick="minimal_underline">✨ Minimal Only</button>
-            <button type="button" class="btn-style-preset-quick" data-pick="all">🌟 Dynamic Mix (All 20)</button>
+            <button type="button" class="btn-style-preset-quick" data-pick="retro_vaporwave">🌴 Retro 80s Only</button>
+            <button type="button" class="btn-style-preset-quick" data-pick="all">🌟 Dynamic Mix (All 24)</button>
           </div>
 
           <div class="styles-grid" id="stylesPoolGrid">
@@ -1392,8 +1517,8 @@
           </div>
 
           <div class="styles-summary-banner" id="stylesSummaryBanner">
-            <span class="badge" id="stylesSummaryBadge">ALL 20 ACTIVE</span>
-            <span id="stylesSummaryText">Dynamic Mix: rotating through all 20 styles sentence-by-sentence.</span>
+            <span class="badge" id="stylesSummaryBadge">ALL 24 ACTIVE</span>
+            <span id="stylesSummaryText">Dynamic Mix: rotating through all 24 styles sentence-by-sentence.</span>
           </div>
         </div>
 
@@ -1545,7 +1670,7 @@
             <div class="layout-style-cards" id="layoutStyleCardsGrid">
               <div class="layout-style-card active" data-layout="active_speaker">
                 <div class="layout-style-thumb-box">
-                  <img src="/assets/layouts/solo_fullscreen_v2.png" class="layout-style-thumb" alt="Solo Full-Screen">
+                  <img src="/assets/layouts/solo_fullscreen_clean.jpg?v=clean3" class="layout-style-thumb" alt="Solo Full-Screen">
                   <span class="layout-style-badge">👤 Solo</span>
                   <div class="layout-style-check">✓</div>
                 </div>
@@ -1556,7 +1681,7 @@
               </div>
               <div class="layout-style-card" data-layout="blur_fit">
                 <div class="layout-style-thumb-box">
-                  <img src="/assets/layouts/blur_fit_v2.png" class="layout-style-thumb" alt="Ambient Blur">
+                  <img src="/assets/layouts/blur_fit_clean.jpg?v=clean3" class="layout-style-thumb" alt="Ambient Blur">
                   <span class="layout-style-badge">✨ Panel</span>
                   <div class="layout-style-check">✓</div>
                 </div>
@@ -1567,7 +1692,7 @@
               </div>
               <div class="layout-style-card" data-layout="split_podcast">
                 <div class="layout-style-thumb-box">
-                  <img src="/assets/layouts/split_podcast_v2.png" class="layout-style-thumb" alt="Podcast Split">
+                  <img src="/assets/layouts/split_podcast_clean.jpg?v=clean3" class="layout-style-thumb" alt="Podcast Split">
                   <span class="layout-style-badge">👥 Duo</span>
                   <div class="layout-style-check">✓</div>
                 </div>
@@ -1578,7 +1703,7 @@
               </div>
               <div class="layout-style-card" data-layout="split_triple">
                 <div class="layout-style-thumb-box">
-                  <img src="/assets/layouts/split_triple_v2.png" class="layout-style-thumb" alt="3-Way Stack">
+                  <img src="/assets/layouts/split_triple_clean.jpg?v=clean3" class="layout-style-thumb" alt="3-Way Stack">
                   <span class="layout-style-badge">👥👤 Trio</span>
                   <div class="layout-style-check">✓</div>
                 </div>
@@ -1792,7 +1917,13 @@
       <section class="stage-col">
         <div class="stage-wrapper">
           <div class="stage-header">
-            <span class="stage-title" id="stageStatus">Preview Canvas</span>
+            <div class="stage-header-left">
+              <div class="stage-live-indicator">
+                <span class="stage-live-dot"></span>
+                <span class="stage-title-primary">STUDIO MONITOR</span>
+              </div>
+              <span class="stage-status-badge" id="stageStatus">1080×1920 • 30 FPS</span>
+            </div>
             <div class="ar-selector" id="arSelector">
               <button type="button" class="btn-ar active" data-ar="9:16" title="Vertical Shorts / Reels / TikTok">9:16</button>
               <button type="button" class="btn-ar" data-ar="16:9" title="Landscape YouTube">16:9</button>
@@ -1847,9 +1978,9 @@
               </div>
 
               <img id="sourcePhotoPreview" class="hidden" alt="Layout Photo Preview" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 4;" />
-              <div id="sourcePhotoPreviewBadge" class="hidden" style="position: absolute; top: 10px; right: 10px; z-index: 6; background: rgba(10,10,11,0.92); backdrop-filter: blur(8px); border: 1px solid var(--accent); color: var(--accent); font-size: 10.5px; font-weight: 800; padding: 4px 10px; border-radius: 9999px; letter-spacing: 0.3px;">📸 Style Photo Preview</div>
+              <div id="sourcePhotoPreviewBadge" class="hidden" style="position: absolute; top: 12px; right: 12px; z-index: 6; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 9999px; letter-spacing: 0.3px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);">📸 Style Photo Preview</div>
 
-              <div class="canvas-tag" id="sourceCanvasTag">Raw Source</div>
+              <div class="canvas-tag" id="sourceCanvasTag"><span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-right: 2px; box-shadow: 0 0 6px #22c55e;"></span>Framing Preview</div>
             </div>
 
             <!-- State 3: Processing -->
@@ -1933,7 +2064,7 @@
       </div>
       <div class="layout-modal-grid">
         <div class="layout-modal-item">
-          <img src="/assets/layouts/solo_fullscreen_v2.png" class="layout-modal-item-img" alt="Solo Full-Screen" />
+          <img src="/assets/layouts/solo_fullscreen_clean.jpg?v=clean3" class="layout-modal-item-img" alt="Solo Full-Screen" />
           <div class="layout-modal-item-content">
             <div>
               <div style="font-size: 10px; font-weight: 800; color: var(--accent); margin-bottom: 4px;">RECOMMENDED FOR 1-PERSON</div>
@@ -1944,7 +2075,7 @@
           </div>
         </div>
         <div class="layout-modal-item">
-          <img src="/assets/layouts/blur_fit_v2.png" class="layout-modal-item-img" alt="Ambient Frosted Blur" />
+          <img src="/assets/layouts/blur_fit_clean.jpg?v=clean3" class="layout-modal-item-img" alt="Ambient Frosted Blur" />
           <div class="layout-modal-item-content">
             <div>
               <div style="font-size: 10px; font-weight: 800; color: #a78bfa; margin-bottom: 4px;">BEST FOR 3+ PEOPLE</div>
@@ -1955,7 +2086,7 @@
           </div>
         </div>
         <div class="layout-modal-item">
-          <img src="/assets/layouts/split_podcast_v2.png" class="layout-modal-item-img" alt="Podcast Split" />
+          <img src="/assets/layouts/split_podcast_clean.jpg?v=clean3" class="layout-modal-item-img" alt="Podcast Split" />
           <div class="layout-modal-item-content">
             <div>
               <div style="font-size: 10px; font-weight: 800; color: #38bdf8; margin-bottom: 4px;">FOR 2-PERSON SHOTS</div>
@@ -1966,7 +2097,7 @@
           </div>
         </div>
         <div class="layout-modal-item">
-          <img src="/assets/layouts/split_triple_v2.png" class="layout-modal-item-img" alt="3-Way Stack" />
+          <img src="/assets/layouts/split_triple_clean.jpg?v=clean3" class="layout-modal-item-img" alt="3-Way Stack" />
           <div class="layout-modal-item-content">
             <div>
               <div style="font-size: 10px; font-weight: 800; color: #f59e0b; margin-bottom: 4px;">FOR 3-PERSON DISCUSSIONS</div>

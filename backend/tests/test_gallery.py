@@ -22,6 +22,20 @@ def test_styles_in_schema():
         assert style in VALID_STYLES, f"Style '{style}' missing from VALID_STYLES"
 
 
+def test_all_24_styles_in_schema():
+    all_24 = [
+        "title3d", "blob_card", "pill_word", "serif_title", "numbered_point",
+        "handwritten", "arc_letters", "sticker", "neon_glow", "typewriter_terminal",
+        "paper_cutout", "glitch_kinetic", "quote_editorial", "comic_bubble",
+        "gradient_outline", "minimal_underline", "hormozi_bold", "retro_vaporwave",
+        "karaoke_bounce", "fire_burn", "beast_impact", "highlighter_marker",
+        "cinematic_minimal", "cyber_hud"
+    ]
+    assert len(all_24) == 24
+    for s in all_24:
+        assert s in VALID_STYLES, f"Style '{s}' missing from VALID_STYLES"
+
+
 def test_gallery_stills_exist():
     gallery_dir = Path("out/gallery")
     if not gallery_dir.exists():
