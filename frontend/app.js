@@ -188,13 +188,13 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedVideoLayout = "active_speaker";
 
   const layoutPhotoMap = {
-    active_speaker: "/assets/layouts/solo_fullscreen.png",
-    blur_fit: "/assets/layouts/blur_fit.png",
-    split_podcast: "/assets/layouts/split_podcast.png",
-    split_triple: "/assets/layouts/split_triple.png",
-    focus_left: "/assets/layouts/solo_fullscreen.png",
-    focus_right: "/assets/layouts/solo_fullscreen.png",
-    fill: "/assets/layouts/solo_fullscreen.png",
+    active_speaker: "/assets/layouts/solo_fullscreen_v2.png",
+    blur_fit: "/assets/layouts/blur_fit_v2.png",
+    split_podcast: "/assets/layouts/split_podcast_v2.png",
+    split_triple: "/assets/layouts/split_triple_v2.png",
+    focus_left: "/assets/layouts/solo_fullscreen_v2.png",
+    focus_right: "/assets/layouts/solo_fullscreen_v2.png",
+    fill: "/assets/layouts/solo_fullscreen_v2.png",
   };
 
   const layoutLabels = {
