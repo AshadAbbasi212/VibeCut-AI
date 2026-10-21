@@ -86,7 +86,20 @@ def resolve_device_and_compute_type(device: str = "auto", compute_type: str = "a
     """Dynamically determine valid device and compute_type supported by ctranslate2."""
     import ctranslate2
     if device == "auto":
-        device = "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
+        can_use_cuda = False
+        if ctranslate2.get_cuda_device_count() > 0:
+            try:
+                import ctypes
+                # Check for either CUDA 12 or CUDA 11 runtime BLAS DLLs on Windows
+                try:
+                    ctypes.cdll.LoadLibrary("cublas64_12.dll")
+                    can_use_cuda = True
+                except Exception:
+                    ctypes.cdll.LoadLibrary("cublas64_11.dll")
+                    can_use_cuda = True
+            except Exception:
+                can_use_cuda = False
+        device = "cuda" if can_use_cuda else "cpu"
 
     try:
         supported = ctranslate2.get_supported_compute_types(device)

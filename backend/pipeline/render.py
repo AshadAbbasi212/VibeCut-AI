@@ -260,14 +260,21 @@ def render(
         if not line_clean:
             continue
         logs.append(line_clean)
-        # Check for progress percentage in output
-        if "%" in line_clean and progress_callback:
+        # Check for progress percentage or frame count in Remotion output
+        if progress_callback:
             try:
                 import re
-                match = re.search(r"(\d+)%", line_clean)
-                if match:
-                    pct = int(match.group(1)) / 100.0
-                    progress_callback(pct)
+                if "Rendered " in line_clean:
+                    frame_match = re.search(r"Rendered\s+(\d+)/(\d+)", line_clean)
+                    if frame_match:
+                        cur_f = int(frame_match.group(1))
+                        tot_f = max(1, int(frame_match.group(2)))
+                        progress_callback(cur_f / tot_f)
+                elif "%" in line_clean:
+                    match = re.search(r"(\d+)%", line_clean)
+                    if match:
+                        pct = int(match.group(1)) / 100.0
+                        progress_callback(pct)
             except Exception:
                 pass
 
