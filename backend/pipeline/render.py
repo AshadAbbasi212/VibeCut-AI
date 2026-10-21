@@ -220,6 +220,8 @@ def render(
         "--crf=18",
         "--bundle-cache",
         "--offthreadvideo-cache-size-in-bytes=1073741824",
+        "--timeout=60000",
+        "--disable-web-security",
     ])
 
     # Enable DirectX hardware GPU acceleration on Windows
