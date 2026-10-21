@@ -2451,13 +2451,14 @@
     }
 
     .drag-sample-text {
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 800;
       text-align: center;
       line-height: 1.3;
       color: #ffffff;
       text-shadow: 0 2px 8px rgba(0,0,0,0.8);
       pointer-events: none;
+      transition: font-size 0.15s ease;
     }
 
     .drag-sample-text span.highlight {
@@ -2931,6 +2932,11 @@
                 <span class="chip-sub">68px Bold Pop</span>
               </button>
             </div>
+            <div class="pos-slider-row" style="margin-top: 8px;">
+              <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">24px</span>
+              <input type="range" id="captionSizeSlider" class="pos-slider" min="24" max="96" value="52" step="1" title="Manually adjust caption font size in pixels (24px - 96px)">
+              <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">96px</span>
+            </div>
           </div>
 
           <!-- Caption Backdrop Controls -->
@@ -3157,6 +3163,7 @@
               <div class="drag-pill-indicator">
                 <span>⠿ DRAG CAPTION</span>
                 <span class="drag-coord-badge" id="dragCoordBadge">Y: 79%</span>
+                <span class="drag-coord-badge drag-size-badge" id="dragSizeBadge" style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.4);" title="Caption font size">52px</span>
               </div>
               <div class="drag-sample-text" id="dragSampleText">
                 CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP

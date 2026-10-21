@@ -106,8 +106,8 @@ class TimelineEvent(BaseModel):
     graphic: Optional[Graphic] = Field(default=None)
     animation: Optional[AnimationConfig] = Field(default=None)
     variant: Optional[str] = Field(default=None, description="Optional style variant e.g. 'glow' or 'frosted'")
-    captionSize: Optional[Literal["small", "medium", "large"]] = Field(
-        default=None, description="Optional caption size override"
+    captionSize: Optional[str] = Field(
+        default=None, description="Optional caption size override (small, medium, large, or custom px)"
     )
     backgroundStyle: Optional[Literal["transparent", "glass", "solid"]] = Field(
         default=None, description="Caption background style: transparent, glass, solid"
@@ -136,8 +136,8 @@ class Timeline(BaseModel):
     language: str = Field(default="en")
     words: list[TimelineWord] = Field(default_factory=list)
     events: list[TimelineEvent] = Field(default_factory=list)
-    captionSize: Optional[Literal["small", "medium", "large"]] = Field(
-        default="medium", description="Global caption size"
+    captionSize: Optional[str] = Field(
+        default="medium", description="Global caption size (small, medium, large, or custom px)"
     )
     backgroundStyle: Optional[Literal["transparent", "glass", "solid"]] = Field(
         default="transparent", description="Global background style"

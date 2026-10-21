@@ -93,4 +93,14 @@
   5. **UI Integration**: Added `⚡ Active Speaker (Auto-Tracking)` button to the Reframe Layout selector in the creator options dock.
 - **Why**: Multi-person videos require dynamic visual direction. Rather than statically letterboxing or cutting speakers down the center, automated speaker tracking delivers high-energy, broadcast-quality cuts ideal for TikTok and Reels without manual timeline keyframing.
 
+## 2026-10-21: Caption Font Size Slider, Real-Time On-Screen Display, and Copyright-Free Stills
+- **Decision**:
+  1. Replaced layout preview thumbnails with 4 custom AI-generated copyright-free illustrations (`solo_fullscreen.png`, `blur_fit.png`, `split_podcast.png`, `split_triple.png`).
+  2. Implemented an interactive Caption Font Size range slider (24px to 96px, default 52px) alongside the Small (38px), Medium (52px), and Large (68px) preset chips.
+  3. Integrated real-time on-screen display on the video canvas preview: added a live font size badge (`#dragSizeBadge`, e.g. `52px`) directly in the draggable overlay and dynamically scaled `#dragSampleText` font size on screen as the slider or chips move.
+  4. Extended `backend/schemas/timeline.py` and Remotion `TimelineEvent` / `Timeline` types so `captionSize` allows custom numeric pixel values (e.g. `"44"`), scaling all 20 styles via `getCaptionFontSize`.
+  5. Pipeline speed optimization: Transcribed only trimmed sections in `backend/api/runner.py` and optimized Whisper CPU thread count and default model.
+- **Why**: Creators need granular pixel-level control over font sizes instead of being locked to 3 discrete options. Displaying the font size badge and dynamically scaling text on the video canvas provides immediate WYSIWYG feedback before rendering.
+
+
 

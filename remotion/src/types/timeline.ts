@@ -38,7 +38,7 @@ export interface TimelineEvent {
   graphic?: TimelineGraphic | null;
   animation?: TimelineAnimation | null;
   variant?: string;
-  captionSize?: "small" | "medium" | "large";
+  captionSize?: "small" | "medium" | "large" | string;
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
   sentenceId?: string;
@@ -76,7 +76,7 @@ export interface Timeline {
   language: string;
   words: TimelineWord[];
   events: TimelineEvent[];
-  captionSize?: "small" | "medium" | "large";
+  captionSize?: "small" | "medium" | "large" | string;
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
   subtitleY?: number;

@@ -107,7 +107,7 @@ def resolve_device_and_compute_type(device: str = "auto", compute_type: str = "a
 
 def transcribe(
     path: str | Path,
-    model: str = "small",
+    model: Optional[str] = None,
     device: str = "auto",
     compute_type: str = "auto",
     language: Optional[str] = None,
@@ -120,6 +120,9 @@ def transcribe(
     media_path = Path(path).resolve()
     if not media_path.exists():
         raise FileNotFoundError(f"Media file not found: {media_path}")
+
+    if not model:
+        model = os.getenv("WHISPER_MODEL", "base")
 
     device, compute_type = resolve_device_and_compute_type(device, compute_type)
 
@@ -150,9 +153,10 @@ def transcribe(
 
     from faster_whisper import WhisperModel
 
+    cpu_threads = int(os.getenv("WHISPER_CPU_THREADS", str(min(os.cpu_count() or 4, 8))))
     raw_words = []
     try:
-        wm = WhisperModel(model, device=device, compute_type=compute_type)
+        wm = WhisperModel(model, device=device, compute_type=compute_type, cpu_threads=cpu_threads)
         segments, info = wm.transcribe(
             str(media_path),
             word_timestamps=True,
@@ -175,7 +179,7 @@ def transcribe(
             print(f"Device '{device}' transcription failed ({exc}). Falling back to CPU (int8)...")
             device = "cpu"
             compute_type = "int8"
-            wm = WhisperModel(model, device="cpu", compute_type="int8")
+            wm = WhisperModel(model, device="cpu", compute_type="int8", cpu_threads=cpu_threads)
             segments, info = wm.transcribe(
                 str(media_path),
                 word_timestamps=True,

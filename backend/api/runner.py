@@ -299,22 +299,39 @@ class JobManager:
             self.save_job(job)
 
         try:
-            # 0. Optional Clip Trimming (0.00 -> 0.02)
-            if job.trim_start is not None or job.trim_end is not None:
-                update_progress("trimming", 0.01)
-                t_start = max(0.0, float(job.trim_start or 0.0))
-                trimmed_path = job_dir / "trimmed_input.mp4"
-                trim_cmd = ["ffmpeg", "-y", "-ss", f"{t_start:.2f}"]
-                if job.trim_end is not None and float(job.trim_end) > t_start:
-                    trim_cmd.extend(["-to", f"{float(job.trim_end):.2f}"])
-                trim_cmd.extend(["-i", str(input_path), "-c:v", "libx264", "-c:a", "aac", str(trimmed_path)])
-                import subprocess
-                subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                input_path = trimmed_path
-
-            # 1. Probing (0.00 -> 0.05)
-            update_progress("probing", 0.02)
+            # 1. Probing & Validation (0.00 -> 0.03)
+            update_progress("probing", 0.01)
             probe = probe_video(input_path)
+            orig_duration = max(0.1, probe.duration)
+
+            # 0. Optional Clip Trimming (0.03 -> 0.05)
+            if job.trim_start is not None or job.trim_end is not None:
+                t_start = max(0.0, float(job.trim_start or 0.0))
+                if t_start >= orig_duration - 0.2:
+                    t_start = 0.0
+                
+                t_end = float(job.trim_end) if job.trim_end is not None else orig_duration
+                if t_end > orig_duration:
+                    t_end = orig_duration
+                if t_end <= t_start + 0.2:
+                    t_end = orig_duration
+
+                if t_start > 0.05 or t_end < orig_duration - 0.05:
+                    update_progress("trimming", 0.03)
+                    trimmed_path = job_dir / "trimmed_input.mp4"
+                    trim_cmd = [
+                        "ffmpeg", "-y",
+                        "-ss", f"{t_start:.2f}",
+                        "-to", f"{t_end:.2f}",
+                        "-i", str(input_path),
+                        "-c:v", "libx264", "-c:a", "aac",
+                        str(trimmed_path)
+                    ]
+                    import subprocess
+                    subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    input_path = trimmed_path
+                    probe = probe_video(input_path)
+
             update_progress("probing", 0.05)
 
             # 2. Transcription (0.05 -> 0.35)

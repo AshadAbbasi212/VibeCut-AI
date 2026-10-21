@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Draggable Caption & Positioning references
   const draggableCaptionBox = document.getElementById("draggableCaptionBox");
   const dragCoordBadge = document.getElementById("dragCoordBadge");
+  const dragSizeBadge = document.getElementById("dragSizeBadge");
   const dragSampleText = document.getElementById("dragSampleText");
   const snapGuideUpper = document.getElementById("snapGuideUpper");
   const snapGuideCenter = document.getElementById("snapGuideCenter");
@@ -61,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const subPosLabel = document.getElementById("subPosLabel");
   const subPosSlider = document.getElementById("subPosSlider");
   const subPosQuickChips = document.querySelectorAll("#subPosQuickChips .btn-custom-chip");
+  const captionSizeSlider = document.getElementById("captionSizeSlider");
 
   const subPosition = document.getElementById("subPosition");
   const videoLanguage = document.getElementById("videoLanguage");
@@ -450,24 +452,73 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedHighlightColor = "#38BDF8";
   let activeShowcaseStyle = "hormozi_bold";
 
-  // Caption Size Chips
+  function getNumericCaptionSize(size) {
+    if (size === "small") return 38;
+    if (size === "medium") return 52;
+    if (size === "large") return 68;
+    const num = parseInt(size, 10);
+    if (!isNaN(num) && num >= 16 && num <= 160) return num;
+    return 52;
+  }
+
+  // Caption Size Chips & Slider Wiring
   const captionSizeChips = document.querySelectorAll("#captionSizeChips .btn-custom-chip");
   const captionSizeSelectedLabel = document.getElementById("captionSizeSelectedLabel");
+
+  function setCaptionSize(size, updateSlider = true) {
+    selectedCaptionSize = size;
+    const numericPx = getNumericCaptionSize(size);
+
+    // Update active class on chips
+    captionSizeChips.forEach((btn) => {
+      const btnSize = btn.dataset.size;
+      const isMatch = btnSize === size || (size === String(numericPx) && getNumericCaptionSize(btnSize) === numericPx);
+      btn.classList.toggle("active", isMatch);
+    });
+
+    // Update slider position if requested
+    if (updateSlider && captionSizeSlider) {
+      captionSizeSlider.value = numericPx;
+    }
+
+    // Update label text
+    const sizeLabels = {
+      small: "Small (38px Compact)",
+      medium: "Medium (52px Sweet Spot)",
+      large: "Large (68px Bold Pop)",
+      "38": "Small (38px Compact)",
+      "52": "Medium (52px Sweet Spot)",
+      "68": "Large (68px Bold Pop)",
+    };
+    if (captionSizeSelectedLabel) {
+      captionSizeSelectedLabel.textContent = sizeLabels[size] || `Custom (${numericPx}px)`;
+    }
+
+    // Update canvas screen badge
+    if (dragSizeBadge) {
+      dragSizeBadge.textContent = `${numericPx}px`;
+    }
+
+    if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
+  }
+
   captionSizeChips.forEach((btn) => {
     btn.addEventListener("click", () => {
-      captionSizeChips.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      selectedCaptionSize = btn.dataset.size;
-      const sizeLabels = {
-        small: "Small (38px Compact)",
-        medium: "Medium (52px Sweet Spot)",
-        large: "Large (68px Bold Pop)",
-      };
-      if (captionSizeSelectedLabel) captionSizeSelectedLabel.textContent = sizeLabels[selectedCaptionSize] || selectedCaptionSize;
-      if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
-      showToast(`Caption font size: ${selectedCaptionSize}`);
+      setCaptionSize(btn.dataset.size, true);
+      showToast(`Caption font size: ${btn.dataset.size}`);
     });
   });
+
+  if (captionSizeSlider) {
+    captionSizeSlider.addEventListener("input", (e) => {
+      const val = e.target.value;
+      let matchedNamed = val;
+      if (val === "38") matchedNamed = "small";
+      else if (val === "52") matchedNamed = "medium";
+      else if (val === "68") matchedNamed = "large";
+      setCaptionSize(matchedNamed, false);
+    });
+  }
 
   // Background Style Chips
   const bgStyleChips = document.querySelectorAll("#bgStyleChips .btn-custom-chip");
@@ -739,9 +790,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const scTagBg = document.getElementById("scTagBg");
     const scTagColor = document.getElementById("scTagColor");
     const highlightWord = document.getElementById("showcaseHighlightWord");
+    const numericPx = getNumericCaptionSize(selectedCaptionSize);
+    const sizeLabels = { small: "38px Small", medium: "52px Medium", large: "68px Large" };
+    const displaySizeStr = sizeLabels[selectedCaptionSize] || `${numericPx}px Custom`;
 
     if (showcaseText) {
-      showcaseText.className = `showcase-caption-text style-${styleObj.id} size-${selectedCaptionSize} bg-${selectedBgStyle}`;
+      showcaseText.className = `showcase-caption-text style-${styleObj.id} bg-${selectedBgStyle}`;
+      showcaseText.style.fontSize = `${Math.round(numericPx * 0.404)}px`;
 
       if (highlightWord) {
         if (styleObj.id === "hormozi_bold") {
@@ -764,14 +819,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    const sizeLabels = { small: "38px Small", medium: "52px Medium", large: "68px Large" };
     const bgLabels = { transparent: "Transparent", glass: "Dark Glass", solid: "White Pill" };
 
     if (specsPill) {
-      specsPill.textContent = `${styleObj.name} • ${sizeLabels[selectedCaptionSize] || selectedCaptionSize} • ${bgLabels[selectedBgStyle] || selectedBgStyle}`;
+      specsPill.textContent = `${styleObj.name} • ${displaySizeStr} • ${bgLabels[selectedBgStyle] || selectedBgStyle}`;
     }
     if (scTagStyle) scTagStyle.textContent = `${styleObj.icon} ${styleObj.name}`;
-    if (scTagSize) scTagSize.textContent = `📏 ${sizeLabels[selectedCaptionSize] || selectedCaptionSize}`;
+    if (scTagSize) scTagSize.textContent = `📏 ${displaySizeStr}`;
     if (scTagBg) scTagBg.textContent = `🔲 ${bgLabels[selectedBgStyle] || selectedBgStyle}`;
     if (scTagColor) scTagColor.textContent = `🎨 ${highlightColorSelectedLabel ? highlightColorSelectedLabel.textContent : selectedHighlightColor}`;
 
@@ -782,6 +836,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!dragSampleText || !draggableCaptionBox) return;
 
     const styleObj = ALL_AVAILABLE_STYLES.find((s) => s.id === activeShowcaseStyle) || ALL_AVAILABLE_STYLES[0];
+    const numericPx = getNumericCaptionSize(selectedCaptionSize);
+
+    // Dynamic font size on preview canvas (52px base -> ~14px on ~280px canvas, ratio ~0.27)
+    dragSampleText.style.fontSize = `${Math.round(numericPx * 0.27)}px`;
+    if (dragSizeBadge) {
+      dragSizeBadge.textContent = `${numericPx}px`;
+    }
     
     // Sync backdrop styling to draggable box on phoneCanvas
     if (selectedBgStyle === "transparent") {

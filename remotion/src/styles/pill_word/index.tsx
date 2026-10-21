@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
+import { getCaptionFontSize } from "../registry";
 
 interface PillWordProps {
   event: TimelineEvent;
@@ -32,12 +33,7 @@ export const PillWord: React.FC<PillWordProps> = ({
   const phraseWords = words.slice(firstIdx, lastIdx + 1);
 
   // Caption size calculation (Default medium = 52px sweet spot)
-  const sizeMap: Record<string, number> = {
-    small: 38,
-    medium: 52,
-    large: 68,
-  };
-  const baseSize = sizeMap[event.captionSize || "medium"] || 52;
+  const baseSize = getCaptionFontSize(event.captionSize, 52);
 
   // Background style: "transparent" (default), "glass", "solid"
   const bgStyle = event.backgroundStyle || "transparent";

@@ -31,8 +31,15 @@ export const getCaptionFontSize = (
   size?: "small" | "medium" | "large" | string,
   base: number = 52
 ): number => {
+  if (!size) return base;
   if (size === "small") return Math.round(base * 0.74);
   if (size === "large") return Math.round(base * 1.30);
+  if (size === "medium") return base;
+  const num = parseFloat(size);
+  if (!isNaN(num) && num >= 16 && num <= 160) {
+    const scale = num / 52;
+    return Math.round(base * scale);
+  }
   return base;
 };
 

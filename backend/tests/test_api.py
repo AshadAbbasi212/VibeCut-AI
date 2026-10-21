@@ -300,4 +300,26 @@ def test_job_submission_video_layout(client, tmp_path, monkeypatch):
     assert job_data["video_layout"] == "split_podcast"
 
 
+def test_job_submission_custom_numeric_caption_size(client, tmp_path, monkeypatch):
+    manager = get_job_manager()
+    dummy_video = tmp_path / "test_font_size.mp4"
+    dummy_video.write_bytes(b"dummy mp4 container bytes for upload test")
+
+    monkeypatch.setattr(manager.executor, "submit", lambda fn, *args: None)
+
+    with open(dummy_video, "rb") as f:
+        response = client.post(
+            "/api/jobs",
+            files={"file": ("test_font_size.mp4", f, "video/mp4")},
+            data={
+                "caption_size": "44",
+            },
+        )
+
+    assert response.status_code == 201
+    job_data = response.json()
+    assert job_data["caption_size"] == "44"
+
+
+
 
