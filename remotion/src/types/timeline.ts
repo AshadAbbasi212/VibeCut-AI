@@ -9,7 +9,7 @@ export interface TimelineHighlight {
 }
 
 export interface TimelineGraphic {
-  kind: "emoji" | "icon" | "image";
+  kind: "emoji" | "icon" | "image" | "sticker3d";
   value: string;
   position?: "above" | "below" | "left" | "right";
 }

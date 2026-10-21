@@ -33,7 +33,7 @@ VALID_STYLES = {
 VALID_ZONES = {"upper", "center", "lower", "free"}
 VALID_HIGHLIGHT_KINDS = {"color", "italic", "pill", "underline", "scale"}
 VALID_DECORATIONS = {"sparkles", "ellipse", "underline_scribble", "arrow", "none"}
-VALID_GRAPHIC_KINDS = {"emoji", "icon", "image"}
+VALID_GRAPHIC_KINDS = {"emoji", "icon", "image", "sticker3d"}
 
 
 class CameraCut(BaseModel):
@@ -75,8 +75,8 @@ class Highlight(BaseModel):
 
 
 class Graphic(BaseModel):
-    kind: Literal["emoji", "icon", "image"] = Field(..., description="Type of graphic")
-    value: str = Field(..., description="Emoji char, Lucide icon name, or image path")
+    kind: Literal["emoji", "icon", "image", "sticker3d"] = Field(..., description="Type of graphic: emoji, icon, image, or sticker3d")
+    value: str = Field(..., description="Emoji char, 3D sticker identifier, Lucide icon name, or image path")
     position: Optional[Literal["above", "below", "left", "right"]] = Field(
         default="above", description="Placement relative to text"
     )

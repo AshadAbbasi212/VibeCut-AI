@@ -8,26 +8,32 @@ from backend.pipeline.plan_rules import detect_graphic_for_text, EMOJI_KEYWORDS,
 
 
 def test_detect_graphic_emoji():
-    # Concrete nouns mapping to emojis
-    g_money = detect_graphic_for_text("Making money is easy")
+    # Concrete nouns mapping to 3D stickers by default
+    g_money_3d = detect_graphic_for_text("Making money is easy")
+    assert g_money_3d is not None
+    assert g_money_3d.kind == "sticker3d"
+    assert g_money_3d.value == "money_bag"
+
+    # Fallback to standard emoji when prefer_3d=False
+    g_money = detect_graphic_for_text("Making money is easy", prefer_3d=False)
     assert g_money is not None
     assert g_money.kind == "emoji"
     assert g_money.value == "💰"
 
-    g_fire = detect_graphic_for_text("This track is pure fire!")
+    g_fire = detect_graphic_for_text("This track is pure fire!", prefer_3d=False)
     assert g_fire is not None
     assert g_fire.kind == "emoji"
     assert g_fire.value == "🔥"
 
 
 def test_detect_graphic_icon():
-    # Concrete keywords mapping to Lucide icons
-    g_skills = detect_graphic_for_text("A skills problem")
+    # Concrete keywords mapping to Lucide icons with prefer_3d=False
+    g_skills = detect_graphic_for_text("A skills problem", prefer_3d=False)
     assert g_skills is not None
     assert g_skills.kind == "icon"
     assert g_skills.value == "zap"
 
-    g_idea = detect_graphic_for_text("Monetize your ideas")
+    g_idea = detect_graphic_for_text("Monetize your ideas", prefer_3d=False)
     assert g_idea is not None
     assert g_idea.kind == "icon"
     assert g_idea.value == "lightbulb"

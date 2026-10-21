@@ -66,21 +66,21 @@ def test_timeline_headline_hook_optional():
 
 
 def test_auto_emojis_detection_and_toggle():
-    # 1. Keywords produce emojis/icons
+    # 1. Keywords produce 3D stickers
     g_money = detect_graphic_for_text("Making big money in 2026")
     assert g_money is not None
-    assert g_money.kind == "emoji"
-    assert g_money.value == "💰"
+    assert g_money.kind == "sticker3d"
+    assert g_money.value == "money_bag"
 
     g_fire = detect_graphic_for_text("This trick is straight fire")
     assert g_fire is not None
-    assert g_fire.kind == "emoji"
-    assert g_fire.value == "🔥"
+    assert g_fire.kind == "sticker3d"
+    assert g_fire.value == "fire"
 
     g_skills = detect_graphic_for_text("Focus on building your skills")
     assert g_skills is not None
-    assert g_skills.kind == "icon"
-    assert g_skills.value == "zap"
+    assert g_skills.kind == "sticker3d"
+    assert g_skills.value == "lightning"
 
     # 2. Planner respects auto_emojis=True
     words = [
@@ -108,7 +108,8 @@ def test_auto_emojis_detection_and_toggle():
     )
     assert len(events_with_emojis) == 1
     assert events_with_emojis[0].graphic is not None
-    assert events_with_emojis[0].graphic.value == "🔥"
+    assert events_with_emojis[0].graphic.kind == "sticker3d"
+    assert events_with_emojis[0].graphic.value == "fire"
 
     # 3. Planner respects auto_emojis=False
     events_no_emojis = planner.plan(

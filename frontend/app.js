@@ -1603,7 +1603,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (autoEmojisToggle) {
     autoEmojisToggle.addEventListener("change", (e) => {
       selectedAutoEmojis = e.target.checked;
-      showToast(selectedAutoEmojis ? "AI Auto-Emojis: Enabled" : "AI Auto-Emojis: Disabled");
+      showToast(selectedAutoEmojis ? "3D Viral Stickers: Enabled" : "3D Viral Stickers: Disabled");
     });
   }
 

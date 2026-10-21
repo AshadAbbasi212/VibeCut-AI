@@ -89,6 +89,65 @@ ICON_KEYWORDS: dict[str, str] = {
     "check": "check-circle",
 }
 
+# Concrete noun / keyword to 3D sticker mappings
+STICKER_3D_KEYWORDS: dict[str, str] = {
+    # Finance / Wealth
+    "money": "money_bag",
+    "cash": "money_bag",
+    "dollar": "coin",
+    "rich": "money_bag",
+    "wealth": "diamond",
+    "profit": "chart",
+    "crypto": "coin",
+    "bitcoin": "coin",
+    "invest": "chart",
+    # Energy / Viral
+    "fire": "fire",
+    "lit": "fire",
+    "rocket": "rocket",
+    "action": "rocket",
+    "boom": "boom",
+    "viral": "lightning",
+    "power": "lightning",
+    "magic": "star",
+    "star": "star",
+    "super": "star",
+    # Mind / Thinking
+    "brain": "brain",
+    "mind": "brain",
+    "think": "brain",
+    "idea": "lightbulb",
+    "ideas": "lightbulb",
+    "heart": "heart",
+    "love": "heart",
+    "time": "clock",
+    "clock": "clock",
+    "fast": "lightning",
+    "speed": "rocket",
+    # Tech / Devices
+    "ai": "robot",
+    "robot": "robot",
+    "crown": "crown",
+    "king": "crown",
+    "queen": "crown",
+    "skills": "lightning",
+    "skill": "lightning",
+    # Actions
+    "win": "trophy",
+    "winner": "trophy",
+    "target": "target",
+    "goal": "target",
+    "stop": "stop",
+    "danger": "warning",
+    "warning": "warning",
+    "look": "eyes",
+    "see": "eyes",
+    "watch": "eyes",
+    "party": "party",
+    "lock": "lock",
+    "key": "key",
+}
+
 EMPHASIS_KEYWORDS = {
     "not", "never", "no", "stop", "action", "money", "skills", "problem",
     "monetise", "monetize", "actually", "really", "everything", "best", "greatest"
@@ -97,10 +156,12 @@ EMPHASIS_KEYWORDS = {
 ORDINAL_WORDS = {"one", "two", "three", "first", "second", "third", "1", "2", "3"}
 
 
-def detect_graphic_for_text(text: str) -> Optional[Graphic]:
-    """Detect concrete noun in text and return appropriate graphic sticker or icon."""
+def detect_graphic_for_text(text: str, prefer_3d: bool = True) -> Optional[Graphic]:
+    """Detect concrete noun in text and return appropriate 3D sticker or graphic."""
     lower_words = [w.lower().strip(".,!?:;\"'") for w in text.split()]
     for w in lower_words:
+        if prefer_3d and w in STICKER_3D_KEYWORDS:
+            return Graphic(kind="sticker3d", value=STICKER_3D_KEYWORDS[w], position="above")
         if w in ICON_KEYWORDS:
             return Graphic(kind="icon", value=ICON_KEYWORDS[w], position="above")
         if w in EMOJI_KEYWORDS:

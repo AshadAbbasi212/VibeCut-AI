@@ -137,6 +137,16 @@
      Positioned in the upper safe zone (top 8%) with smooth spring `popIn` animation, avoiding any collisions with center or lower captions.
   3. **Animated Retention Progress Bar**: Added a sleek glowing progress bar running continuously along the top or bottom of the screen (`progressBarPosition="bottom" | "top"`), calculating frame progress as `(frame / totalFrames) * 100%` with a smooth multi-stop gradient matching the user's selected highlight color (`timeline.highlightColor`, `#ec4899`, `#FBBF24`).
   4. **AI Keyword Auto-Emojis & Animated Stickers**: Expanded semantic dictionary (`EMOJI_KEYWORDS` and `ICON_KEYWORDS`) to 50+ viral keywords across finance (💰, 💵, 💎, 📈), energy (🔥, 🚀, 💥, ⚡, ✨), health/mind (🧠, 🩺, ❤️, ⏳), tech (🤖, 💻, 📱, 🎥), and reactions (🏆, 🛑, ⚠️, 🤫, 👀). When `autoEmojis` is enabled, keyword-triggered graphics pop smoothly above spoken words across all styling presets and custom style modes.
-  5. **WYSIWYG Studio Monitor Preview**: Wired live canvas overlay previews directly onto the phone canvas (`#canvasHeadlineHook` and `#canvasProgressBar`) so users see instant visual feedback in real-time as they toggle cards, type hook text, or switch styles.
-- **Why**: Short-form vertical algorithms on TikTok, Instagram Reels, and YouTube Shorts heavily reward completion rates and 3-second hook retention. A customizable headline card hooks viewer attention, auto-emojis break visual monotony with animated delight, and an animated retention progress bar signals video pacing to maximize watch time.
+## 2026-10-21: 3D Viral Animated Stickers (Microsoft Fluent 3D Assets, Volumetric Lighting & Auto-Upgrade)
+- **Decision**:
+  1. **Volumetric 3D Sticker Library**: Replaced flat system 2D emojis with 23 high-resolution transparent PNG 3D stickers from Microsoft Fluent Emoji (MIT license): `fire`, `rocket`, `money_bag`, `coin`, `diamond`, `lightbulb`, `brain`, `trophy`, `target`, `lightning`, `star`, `heart`, `stop`, `lock`, `key`, `crown`, `chart`, `boom`, `eyes`, `warning`, `clock`, `party`, `robot`.
+  2. **Bundled Asset Architecture**: Pre-bundled the 3D assets in `remotion/public/stickers_3d/`, `remotion/build/public/stickers_3d/`, and `frontend/assets/stickers_3d/`, with automatic synchronization during pre-bundling.
+  3. **Volumetric Renderer & Auto-Upgrade**:
+     - Added explicit `kind="sticker3d"` in `TimelineGraphic` schema (`backend/schemas/timeline.py` and `remotion/src/types/timeline.ts`).
+     - In `GraphicRenderer.tsx`, implemented high-resolution image rendering with volumetric drop shadows (`filter: drop-shadow(0 14px 26px rgba(0,0,0,0.75)) drop-shadow(0 0 20px ${glowColor})`) and subtle 3D perspective tilt (`perspective(600px) rotateX(4deg)`).
+     - Added automatic emoji & icon upgrade dictionaries (`EMOJI_TO_3D` and `ICON_TO_3D`) so any timeline containing legacy emojis (`🔥`, `🚀`, `💰`, etc.) or icons seamlessly renders as high-res 3D stickers with zero code changes or migration overhead.
+  4. **Keyword Detection & Backwards Compatibility**: Updated `detect_graphic_for_text(text, prefer_3d=True)` in `backend/pipeline/plan_rules.py` with 3D keyword mappings and backwards-compatible fallback support for legacy 2D emojis when `prefer_3d=False`.
+  5. **Creator Studio UI**: Updated toggle in Card 3 from "AI Auto-Emojis" to "3D Viral Stickers" ("Pops 3D 🚀, 🔥, 💰, 💡 glossy stickers") with matching toast notifications.
+- **Why**: Flat 2D system emojis vary wildly across operating systems, often rendering as dull, low-contrast glyphs. High-res volumetric 3D stickers with specular highlights and glowing drop-shadows provide the polished, professional visual punch popularized by top creators on TikTok, Reels, and YouTube Shorts.
+
 

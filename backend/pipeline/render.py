@@ -104,6 +104,13 @@ def ensure_remotion_bundle(force: bool = False) -> Optional[Path]:
             # Fallback to on-the-fly rendering if bundling errors
             return None
 
+    if build_dir.exists():
+        # Mirror stickers_3d assets into build directory if needed
+        stickers_src = remotion_dir / "public" / "stickers_3d"
+        stickers_dst = build_dir / "public" / "stickers_3d"
+        if stickers_src.exists():
+            shutil.copytree(stickers_src, stickers_dst, dirs_exist_ok=True)
+
     return build_dir if build_dir.exists() else None
 
 

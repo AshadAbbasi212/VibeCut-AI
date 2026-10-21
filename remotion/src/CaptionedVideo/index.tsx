@@ -180,7 +180,7 @@ const EventContainer: React.FC<{
             transformOrigin: "center center",
           }}
         >
-          <GraphicRenderer graphic={event.graphic} size={64} />
+          <GraphicRenderer graphic={event.graphic} size={76} />
         </div>
       )}
 

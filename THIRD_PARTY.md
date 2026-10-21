@@ -11,3 +11,4 @@ This project relies on open-source libraries and models. Any code or assets adap
 | `google-genai` / `anthropic` | Apache-2.0 / MIT | Pluggable LLM planner integrations |
 | `edge-tts` | LGPL-3.0 | Synthetic test video audio generation |
 | Google Fonts (OFL) | SIL OFL 1.1 | Open-licence web typography (Bebas Neue, Poppins, Fraunces, Caveat, etc.) |
+| Microsoft Fluent Emoji (3D) | MIT | Volumetric 3D sticker PNG assets for viral captions |

@@ -115,17 +115,18 @@
     "Graphic": {
       "properties": {
         "kind": {
-          "description": "Type of graphic",
+          "description": "Type of graphic: emoji, icon, image, or sticker3d",
           "enum": [
             "emoji",
             "icon",
-            "image"
+            "image",
+            "sticker3d"
           ],
           "title": "Kind",
           "type": "string"
         },
         "value": {
-          "description": "Emoji char, Lucide icon name, or image path",
+          "description": "Emoji char, 3D sticker identifier, Lucide icon name, or image path",
           "title": "Value",
           "type": "string"
         },
