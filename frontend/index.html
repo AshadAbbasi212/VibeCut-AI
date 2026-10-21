@@ -1886,6 +1886,82 @@
               </label>
             </div>
           </div>
+
+          <!-- 4. Viral Boosters & Retention Pack -->
+          <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">🚀</span>
+                <label style="margin: 0; font-size: 13px; font-weight: 800; color: #fff;">Viral Boosters & Retention</label>
+              </div>
+              <span class="card-badge" style="background: rgba(236, 72, 153, 0.15); color: #f472b6; border-color: rgba(236, 72, 153, 0.3);">VIRAL PACK</span>
+            </div>
+
+            <!-- Top Headline Hook Card Toggle -->
+            <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label for="headlineHookToggle" style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
+                  <input type="checkbox" id="headlineHookToggle" style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer;">
+                  <div>
+                    <span style="font-size: 13px; font-weight: 700; color: #fff; display: block;">Top Headline Hook Card</span>
+                    <span style="font-size: 11px; color: var(--text-dim);">Attention-grabbing sticky card above captions in the first seconds</span>
+                  </div>
+                </label>
+                <span class="badge" id="headlineHookStateBadge" style="font-size: 10px; padding: 2px 8px; border-radius: 9999px; background: rgba(255,255,255,0.06); color: var(--text-dim);">OFF</span>
+              </div>
+
+              <!-- Collapsible Hook Settings -->
+              <div id="headlineHookSettings" class="hidden" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255, 255, 255, 0.08);">
+                <div style="margin-bottom: 10px;">
+                  <label for="headlineHookInput" style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; display: block;">Headline Hook Text:</label>
+                  <input type="text" id="headlineHookInput" class="input" placeholder="e.g. 🔥 WAIT TILL THE END..." value="🔥 WAIT TILL THE END..." style="width: 100%; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-xs);">
+                </div>
+                <div>
+                  <label style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block;">Hook Card Style:</label>
+                  <div class="custom-chip-group" id="headlineStyleChips" style="grid-template-columns: repeat(4, 1fr);">
+                    <button type="button" class="btn-custom-chip active" data-style="badge">
+                      <span class="chip-label">🏷️ Badge</span>
+                      <span class="chip-sub">Amber Pill</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-style="glass">
+                      <span class="chip-label">🫧 Glass</span>
+                      <span class="chip-sub">Apple Blur</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-style="clean">
+                      <span class="chip-label">📰 Clean</span>
+                      <span class="chip-sub">Bold B&W</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-style="cyber">
+                      <span class="chip-label">🤖 Cyber</span>
+                      <span class="chip-sub">Neon HUD</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Retention Progress Bar & Auto-Emojis Toggles -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 12px;">
+                <label for="progressBarToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0 0 6px 0;">
+                  <input type="checkbox" id="progressBarToggle" checked style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">Retention Bar</span>
+                </label>
+                <div style="display: flex; gap: 4px; margin-top: 6px;">
+                  <button type="button" class="btn-chip active" id="progBarBottomBtn" style="flex: 1; font-size: 10px; padding: 4px 6px;">Bottom</button>
+                  <button type="button" class="btn-chip" id="progBarTopBtn" style="flex: 1; font-size: 10px; padding: 4px 6px;">Top</button>
+                </div>
+              </div>
+
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 12px;">
+                <label for="autoEmojisToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0 0 6px 0;">
+                  <input type="checkbox" id="autoEmojisToggle" checked style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">AI Auto-Emojis</span>
+                </label>
+                <span style="font-size: 10px; color: var(--text-dim); display: block;">Auto-pops 🚀, 💡, 💰, 🔥 stickers</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Pipeline Progress Card -->
@@ -2024,6 +2100,18 @@
               <div class="drag-sample-text" id="dragSampleText">
                 CREATING <span class="highlight">DYNAMIC CAPTIONS</span> THAT POP
               </div>
+            </div>
+
+            <!-- Canvas Live Headline Hook Card Preview -->
+            <div id="canvasHeadlineHook" class="hidden" style="position: absolute; top: 8%; left: 50%; transform: translateX(-50%); max-width: 88%; z-index: 25; pointer-events: none; text-align: center; transition: all 0.2s ease;">
+              <div id="canvasHeadlineHookInner" style="background: linear-gradient(135deg, rgba(20, 20, 26, 0.94), rgba(10, 10, 15, 0.98)); border: 2px solid #F59E0B; border-radius: 9999px; box-shadow: 0 10px 25px rgba(0,0,0,0.7), 0 0 20px rgba(245, 158, 11, 0.35); color: #fff; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 13px; letter-spacing: 0.5px; padding: 6px 16px; text-transform: uppercase;">
+                🔥 WAIT TILL THE END...
+              </div>
+            </div>
+
+            <!-- Canvas Live Retention Progress Bar Preview -->
+            <div id="canvasProgressBar" style="position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, 0.4); z-index: 28; pointer-events: none;">
+              <div id="canvasProgressBarFill" style="height: 100%; width: 65%; background: linear-gradient(90deg, #38BDF8, #ec4899, #FBBF24); box-shadow: 0 0 10px #38BDF8;"></div>
             </div>
           </div>
 

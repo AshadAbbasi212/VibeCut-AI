@@ -126,8 +126,17 @@
   5. **In-Memory Video Frame Cache (`--offthreadvideo-cache-size-in-bytes=1073741824`)**: Allocated a 1 GB cache for decoded video frames so multi-layer compositions (`split_podcast`, `split_triple`, `blur_fit`) reuse decoded frames without redundant FFmpeg extractions.
   6. **Optimal Concurrency Tuning**: Capped default rendering concurrency to `min(max(2, cpu_cores // 2), 4)` to eliminate CPU cache thrashing and memory paging stalls caused by too many simultaneous headless Chrome processes.
 - **Why**: Creators need rapid iteration cycles. Re-compiling Webpack and writing uncompressed PNG frames per frame caused unacceptable latency even on short 5-10 second clips. These optimizations cut rendering time by 3x-5x while preserving 1080x1920 60/30fps production visual quality.
-
-
-
-
+## 2026-10-21: Viral Boosters Pack (Retention Progress Bar, Headline Hook Card, AI Keyword Auto-Emojis)
+- **Decision**:
+  1. **Reversibility & Backup Checkpoint**: Created git branch `backup-before-viral-pack`, tag `backup-before-viral-pack`, and exported standalone bundle `backup-progress-viral.bundle` before implementing changes, giving the user guaranteed single-command rollback capability (`git checkout backup-before-viral-pack`).
+  2. **Top Headline Hook Card with Explicit User Option**: Made the Headline Hook Card completely optional via a dedicated toggle in Card 3 (defaults to OFF). When enabled, creators can customize the hook text (e.g. `"🔥 WAIT TILL THE END..."`) and choose between 4 visual aesthetics:
+     - `badge`: Amber-bordered dark pill with glowing drop-shadow.
+     - `glass`: Ultra-sleek Apple frosted glassmorphism with backdrop-filter blur.
+     - `clean`: High-contrast bold black & white card with 3px border.
+     - `cyber`: Cyberpunk neon cyan HUD console styling with 2.5px letter spacing.
+     Positioned in the upper safe zone (top 8%) with smooth spring `popIn` animation, avoiding any collisions with center or lower captions.
+  3. **Animated Retention Progress Bar**: Added a sleek glowing progress bar running continuously along the top or bottom of the screen (`progressBarPosition="bottom" | "top"`), calculating frame progress as `(frame / totalFrames) * 100%` with a smooth multi-stop gradient matching the user's selected highlight color (`timeline.highlightColor`, `#ec4899`, `#FBBF24`).
+  4. **AI Keyword Auto-Emojis & Animated Stickers**: Expanded semantic dictionary (`EMOJI_KEYWORDS` and `ICON_KEYWORDS`) to 50+ viral keywords across finance (💰, 💵, 💎, 📈), energy (🔥, 🚀, 💥, ⚡, ✨), health/mind (🧠, 🩺, ❤️, ⏳), tech (🤖, 💻, 📱, 🎥), and reactions (🏆, 🛑, ⚠️, 🤫, 👀). When `autoEmojis` is enabled, keyword-triggered graphics pop smoothly above spoken words across all styling presets and custom style modes.
+  5. **WYSIWYG Studio Monitor Preview**: Wired live canvas overlay previews directly onto the phone canvas (`#canvasHeadlineHook` and `#canvasProgressBar`) so users see instant visual feedback in real-time as they toggle cards, type hook text, or switch styles.
+- **Why**: Short-form vertical algorithms on TikTok, Instagram Reels, and YouTube Shorts heavily reward completion rates and 3-second hook retention. A customizable headline card hooks viewer attention, auto-emojis break visual monotony with animated delight, and an animated retention progress bar signals video pacing to maximize watch time.
 

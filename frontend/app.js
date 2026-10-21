@@ -73,6 +73,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnProgressFill = document.getElementById("btnProgressFill");
   const btnTextLabel = document.getElementById("btnTextLabel");
 
+  // Viral Boosters & Retention DOM references
+  const headlineHookToggle = document.getElementById("headlineHookToggle");
+  const headlineHookStateBadge = document.getElementById("headlineHookStateBadge");
+  const headlineHookSettings = document.getElementById("headlineHookSettings");
+  const headlineHookInput = document.getElementById("headlineHookInput");
+  const headlineStyleChips = document.querySelectorAll("#headlineStyleChips .btn-custom-chip");
+  const progressBarToggle = document.getElementById("progressBarToggle");
+  const progBarBottomBtn = document.getElementById("progBarBottomBtn");
+  const progBarTopBtn = document.getElementById("progBarTopBtn");
+  const autoEmojisToggle = document.getElementById("autoEmojisToggle");
+
+  const canvasHeadlineHook = document.getElementById("canvasHeadlineHook");
+  const canvasHeadlineHookInner = document.getElementById("canvasHeadlineHookInner");
+  const canvasProgressBar = document.getElementById("canvasProgressBar");
+  const canvasProgressBarFill = document.getElementById("canvasProgressBarFill");
+
   // Prominent Pipeline Progress Card references
   const pipelineProgressCard = document.getElementById("pipelineProgressCard");
   const pipelineProgressTitle = document.getElementById("pipelineProgressTitle");
@@ -144,6 +160,14 @@ document.addEventListener("DOMContentLoaded", () => {
   let jobStartTime = null;
   let currentTimeline = null;
   let selectedAspectRatio = "9:16";
+
+  // Viral Boosters State
+  let selectedHeadlineHookEnabled = false;
+  let selectedHeadlineHookText = "🔥 WAIT TILL THE END...";
+  let selectedHeadlineHookStyle = "badge";
+  let selectedProgressBar = true;
+  let selectedProgressBarPos = "bottom";
+  let selectedAutoEmojis = true;
 
   // 1. Health Check
   async function checkHealth() {
@@ -1429,6 +1453,164 @@ document.addEventListener("DOMContentLoaded", () => {
   setSubtitlePosition(0.79);
 
   // =========================================================================
+  // Viral Boosters & Retention Live Controls & Canvas Overlay Sync
+  // =========================================================================
+  function updateHeadlineHookPreview() {
+    if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim().length > 0) {
+      if (canvasHeadlineHook) canvasHeadlineHook.classList.remove("hidden");
+      if (headlineHookSettings) headlineHookSettings.classList.remove("hidden");
+      if (headlineHookStateBadge) {
+        headlineHookStateBadge.textContent = "ON";
+        headlineHookStateBadge.style.background = "rgba(34, 197, 94, 0.15)";
+        headlineHookStateBadge.style.color = "#22c55e";
+      }
+      if (canvasHeadlineHookInner) {
+        canvasHeadlineHookInner.textContent = selectedHeadlineHookText;
+        if (selectedHeadlineHookStyle === "badge") {
+          canvasHeadlineHookInner.style.background = "linear-gradient(135deg, rgba(20, 20, 26, 0.94), rgba(10, 10, 15, 0.98))";
+          canvasHeadlineHookInner.style.border = "2px solid #F59E0B";
+          canvasHeadlineHookInner.style.borderRadius = "9999px";
+          canvasHeadlineHookInner.style.boxShadow = "0 10px 25px rgba(0,0,0,0.7), 0 0 20px rgba(245, 158, 11, 0.35)";
+          canvasHeadlineHookInner.style.color = "#FFFFFF";
+          canvasHeadlineHookInner.style.fontFamily = "'Inter', sans-serif";
+          canvasHeadlineHookInner.style.fontWeight = "900";
+          canvasHeadlineHookInner.style.fontSize = "13px";
+          canvasHeadlineHookInner.style.letterSpacing = "0.5px";
+          canvasHeadlineHookInner.style.padding = "6px 16px";
+          canvasHeadlineHookInner.style.textTransform = "uppercase";
+        } else if (selectedHeadlineHookStyle === "glass") {
+          canvasHeadlineHookInner.style.background = "rgba(255, 255, 255, 0.15)";
+          canvasHeadlineHookInner.style.backdropFilter = "blur(16px)";
+          canvasHeadlineHookInner.style.webkitBackdropFilter = "blur(16px)";
+          canvasHeadlineHookInner.style.border = "1px solid rgba(255, 255, 255, 0.3)";
+          canvasHeadlineHookInner.style.borderRadius = "12px";
+          canvasHeadlineHookInner.style.boxShadow = "0 10px 25px rgba(0,0,0,0.5)";
+          canvasHeadlineHookInner.style.color = "#FFFFFF";
+          canvasHeadlineHookInner.style.fontFamily = "'Inter', sans-serif";
+          canvasHeadlineHookInner.style.fontWeight = "800";
+          canvasHeadlineHookInner.style.fontSize = "13px";
+          canvasHeadlineHookInner.style.letterSpacing = "0px";
+          canvasHeadlineHookInner.style.padding = "6px 16px";
+          canvasHeadlineHookInner.style.textTransform = "none";
+        } else if (selectedHeadlineHookStyle === "clean") {
+          canvasHeadlineHookInner.style.background = "#FFFFFF";
+          canvasHeadlineHookInner.style.border = "2px solid #000000";
+          canvasHeadlineHookInner.style.borderRadius = "8px";
+          canvasHeadlineHookInner.style.boxShadow = "0 8px 20px rgba(0,0,0,0.7)";
+          canvasHeadlineHookInner.style.color = "#0A0A0C";
+          canvasHeadlineHookInner.style.fontFamily = "'Inter', sans-serif";
+          canvasHeadlineHookInner.style.fontWeight = "900";
+          canvasHeadlineHookInner.style.fontSize = "13px";
+          canvasHeadlineHookInner.style.letterSpacing = "-0.3px";
+          canvasHeadlineHookInner.style.padding = "6px 16px";
+          canvasHeadlineHookInner.style.textTransform = "none";
+        } else if (selectedHeadlineHookStyle === "cyber") {
+          canvasHeadlineHookInner.style.background = "rgba(10, 10, 24, 0.94)";
+          canvasHeadlineHookInner.style.border = "2px solid #00F0FF";
+          canvasHeadlineHookInner.style.borderRadius = "6px";
+          canvasHeadlineHookInner.style.boxShadow = "0 0 20px rgba(0, 240, 255, 0.4)";
+          canvasHeadlineHookInner.style.color = "#00F0FF";
+          canvasHeadlineHookInner.style.fontFamily = "'JetBrains Mono', monospace";
+          canvasHeadlineHookInner.style.fontWeight = "900";
+          canvasHeadlineHookInner.style.fontSize = "12px";
+          canvasHeadlineHookInner.style.letterSpacing = "1.5px";
+          canvasHeadlineHookInner.style.padding = "6px 16px";
+          canvasHeadlineHookInner.style.textTransform = "uppercase";
+        }
+      }
+    } else {
+      if (canvasHeadlineHook) canvasHeadlineHook.classList.add("hidden");
+      if (headlineHookSettings) headlineHookSettings.classList.add("hidden");
+      if (headlineHookStateBadge) {
+        headlineHookStateBadge.textContent = "OFF";
+        headlineHookStateBadge.style.background = "rgba(255,255,255,0.06)";
+        headlineHookStateBadge.style.color = "var(--text-dim)";
+      }
+    }
+  }
+
+  function updateProgressBarPreview() {
+    if (!canvasProgressBar) return;
+    if (selectedProgressBar) {
+      canvasProgressBar.classList.remove("hidden");
+      if (selectedProgressBarPos === "top") {
+        canvasProgressBar.style.top = "0";
+        canvasProgressBar.style.bottom = "auto";
+      } else {
+        canvasProgressBar.style.bottom = "0";
+        canvasProgressBar.style.top = "auto";
+      }
+      if (canvasProgressBarFill) {
+        canvasProgressBarFill.style.background = `linear-gradient(90deg, ${selectedHighlightColor}, #ec4899, #FBBF24)`;
+        canvasProgressBarFill.style.boxShadow = `0 0 10px ${selectedHighlightColor}`;
+      }
+    } else {
+      canvasProgressBar.classList.add("hidden");
+    }
+  }
+
+  if (headlineHookToggle) {
+    headlineHookToggle.addEventListener("change", (e) => {
+      selectedHeadlineHookEnabled = e.target.checked;
+      updateHeadlineHookPreview();
+      showToast(selectedHeadlineHookEnabled ? "Top Headline Hook Card: Enabled" : "Top Headline Hook Card: Disabled");
+    });
+  }
+
+  if (headlineHookInput) {
+    headlineHookInput.addEventListener("input", (e) => {
+      selectedHeadlineHookText = e.target.value;
+      updateHeadlineHookPreview();
+    });
+  }
+
+  if (headlineStyleChips) {
+    headlineStyleChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        headlineStyleChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedHeadlineHookStyle = btn.dataset.style || "badge";
+        updateHeadlineHookPreview();
+        const lbl = btn.querySelector(".chip-label");
+        showToast(`Hook Style: ${lbl ? lbl.textContent : selectedHeadlineHookStyle}`);
+      });
+    });
+  }
+
+  if (progressBarToggle) {
+    progressBarToggle.addEventListener("change", (e) => {
+      selectedProgressBar = e.target.checked;
+      updateProgressBarPreview();
+      showToast(selectedProgressBar ? "Retention Progress Bar: Enabled" : "Retention Progress Bar: Disabled");
+    });
+  }
+
+  if (progBarBottomBtn && progBarTopBtn) {
+    progBarBottomBtn.addEventListener("click", () => {
+      progBarBottomBtn.classList.add("active");
+      progBarTopBtn.classList.remove("active");
+      selectedProgressBarPos = "bottom";
+      updateProgressBarPreview();
+    });
+    progBarTopBtn.addEventListener("click", () => {
+      progBarTopBtn.classList.add("active");
+      progBarBottomBtn.classList.remove("active");
+      selectedProgressBarPos = "top";
+      updateProgressBarPreview();
+    });
+  }
+
+  if (autoEmojisToggle) {
+    autoEmojisToggle.addEventListener("change", (e) => {
+      selectedAutoEmojis = e.target.checked;
+      showToast(selectedAutoEmojis ? "AI Auto-Emojis: Enabled" : "AI Auto-Emojis: Disabled");
+    });
+  }
+
+  updateHeadlineHookPreview();
+  updateProgressBarPreview();
+
+  // =========================================================================
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
   // =========================================================================
   startJobBtn.addEventListener("click", async () => {
@@ -1469,6 +1651,13 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("selected_styles", selectedStyles.join(","));
     formData.append("subtitle_y", currentSubtitleY.toFixed(2));
     formData.append("video_layout", selectedVideoLayout);
+    formData.append("progress_bar", selectedProgressBar ? "true" : "false");
+    formData.append("progress_bar_position", selectedProgressBarPos);
+    if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim()) {
+      formData.append("headline_hook", selectedHeadlineHookText.trim());
+      formData.append("headline_style", selectedHeadlineHookStyle);
+    }
+    formData.append("auto_emojis", selectedAutoEmojis ? "true" : "false");
 
     if (draftToggle.checked) {
       formData.append("draft", "true");

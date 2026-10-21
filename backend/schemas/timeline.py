@@ -158,6 +158,21 @@ class Timeline(BaseModel):
     cameraCuts: Optional[list[CameraCut]] = Field(
         default=None, description="Dynamic camera cut timeline for active speaker tracking"
     )
+    progressBar: Optional[bool] = Field(
+        default=True, description="Enable animated retention progress bar"
+    )
+    progressBarPosition: Optional[Literal["bottom", "top"]] = Field(
+        default="bottom", description="Position of the retention progress bar"
+    )
+    headlineHook: Optional[str] = Field(
+        default=None, description="Optional top hook headline card text"
+    )
+    headlineStyle: Optional[Literal["badge", "glass", "clean", "cyber"]] = Field(
+        default="badge", description="Visual treatment for top hook headline card"
+    )
+    autoEmojis: Optional[bool] = Field(
+        default=True, description="Enable keyword-driven auto-emojis and animated stickers"
+    )
 
     @model_validator(mode="after")
     def validate_timeline_invariants(self) -> "Timeline":

@@ -212,7 +212,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
   }, []);
 
   const timeline = resolveTimeline(props);
-  const fps = timeline.video.fps || 30;
+  const { fps: videoConfigFps, durationInFrames } = useVideoConfig();
+  const fps = timeline.video.fps || videoConfigFps || 30;
 
   // Resolve video source: if relative without slash or in jobs/, use staticFile or direct
   const videoSrc = useMemo(() => {
@@ -232,6 +233,132 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     timeline.video.originalWidth && timeline.video.originalHeight
       ? timeline.video.originalWidth > timeline.video.originalHeight
       : true;
+
+  const renderProgressBar = () => {
+    if (timeline.progressBar === false) return null;
+    const isTop = timeline.progressBarPosition === "top";
+    const totalFrames = durationInFrames || Math.max(1, Math.round(timeline.video.durationSec * fps));
+    const progressPct = Math.min(100, Math.max(0, (frame / totalFrames) * 100));
+    const accentColor = timeline.highlightColor || "#38BDF8";
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: isTop ? 0 : undefined,
+          bottom: !isTop ? 0 : undefined,
+          height: "10px",
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          zIndex: 95,
+          overflow: "hidden",
+          pointerEvents: "none",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${progressPct}%`,
+            background: `linear-gradient(90deg, ${accentColor}, #ec4899, #FBBF24)`,
+            boxShadow: `0 0 16px ${accentColor}`,
+            borderRadius: "0 4px 4px 0",
+          }}
+        />
+      </div>
+    );
+  };
+
+  const renderHeadlineHook = () => {
+    if (!timeline.headlineHook || !timeline.headlineHook.trim()) return null;
+
+    const hookScale = popIn(frame, fps, 2, 12, 0.5, 160);
+    const hookStyleType = timeline.headlineStyle || "badge";
+    const fonts = ensureFontsLoaded();
+
+    let cardStyle: React.CSSProperties = {};
+    if (hookStyleType === "badge") {
+      cardStyle = {
+        background: "linear-gradient(135deg, rgba(20, 20, 26, 0.94), rgba(10, 10, 15, 0.98))",
+        border: "2.5px solid #F59E0B",
+        borderRadius: "9999px",
+        boxShadow: "0 16px 36px rgba(0, 0, 0, 0.75), 0 0 25px rgba(245, 158, 11, 0.35)",
+        color: "#FFFFFF",
+        fontFamily: fonts.sans,
+        fontWeight: 900,
+        fontSize: "30px",
+        letterSpacing: "1px",
+        padding: "14px 34px",
+        textTransform: "uppercase",
+      };
+    } else if (hookStyleType === "glass") {
+      cardStyle = {
+        background: "rgba(255, 255, 255, 0.14)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        border: "1.5px solid rgba(255, 255, 255, 0.32)",
+        borderRadius: "20px",
+        boxShadow: "0 20px 45px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
+        color: "#FFFFFF",
+        fontFamily: fonts.sans,
+        fontWeight: 800,
+        fontSize: "32px",
+        padding: "16px 36px",
+        textShadow: "0 2px 10px rgba(0, 0, 0, 0.7)",
+      };
+    } else if (hookStyleType === "clean") {
+      cardStyle = {
+        background: "#FFFFFF",
+        color: "#09090B",
+        borderRadius: "14px",
+        border: "3px solid #000000",
+        boxShadow: "0 16px 36px rgba(0, 0, 0, 0.7)",
+        fontFamily: fonts.sans,
+        fontWeight: 900,
+        fontSize: "32px",
+        letterSpacing: "-0.5px",
+        padding: "14px 32px",
+      };
+    } else if (hookStyleType === "cyber") {
+      cardStyle = {
+        background: "rgba(10, 10, 24, 0.94)",
+        border: "2.5px solid #00F0FF",
+        borderRadius: "10px",
+        boxShadow: "0 0 30px rgba(0, 240, 255, 0.45), inset 0 0 15px rgba(0, 240, 255, 0.2)",
+        color: "#00F0FF",
+        fontFamily: fonts.mono,
+        fontWeight: 900,
+        fontSize: "30px",
+        letterSpacing: "2.5px",
+        textTransform: "uppercase",
+        padding: "14px 32px",
+      };
+    }
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          top: "8%",
+          left: "50%",
+          transform: `translateX(-50%) scale(${hookScale})`,
+          maxWidth: "88%",
+          zIndex: 85,
+          pointerEvents: "none",
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={cardStyle}>
+          {timeline.headlineHook}
+        </div>
+      </div>
+    );
+  };
 
   const renderVideoLayer = () => {
     // 0. Active Speaker Auto-Tracking (Dynamic Speaker Cuts with Cross-Talk Fallback)
@@ -583,6 +710,12 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
       {/* Background Video Layer */}
       {renderVideoLayer()}
+
+      {/* Retention Progress Bar */}
+      {renderProgressBar()}
+
+      {/* Top Headline Hook Card (Optional user card) */}
+      {renderHeadlineHook()}
 
       {/* Dynamic Caption Events */}
       {timeline.events.map((rawEvent) => {

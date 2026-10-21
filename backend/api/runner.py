@@ -44,6 +44,11 @@ class JobInfo(BaseModel):
     selected_styles: Optional[str] = None
     subtitle_y: Optional[float] = None
     video_layout: str = "split_podcast"
+    progress_bar: bool = True
+    progress_bar_position: Literal["bottom", "top"] = "bottom"
+    headline_hook: Optional[str] = None
+    headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge"
+    auto_emojis: bool = True
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
     input_file: str = ""
@@ -170,6 +175,11 @@ class JobManager:
         selected_styles: Optional[str] = None,
         subtitle_y: Optional[float] = None,
         video_layout: str = "split_podcast",
+        progress_bar: bool = True,
+        progress_bar_position: Literal["bottom", "top"] = "bottom",
+        headline_hook: Optional[str] = None,
+        headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge",
+        auto_emojis: bool = True,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
         job_id = f"job_{uuid.uuid4().hex[:10]}"
@@ -200,6 +210,11 @@ class JobManager:
             selected_styles=selected_styles,
             subtitle_y=subtitle_y,
             video_layout=video_layout,
+            progress_bar=progress_bar,
+            progress_bar_position=progress_bar_position,
+            headline_hook=headline_hook,
+            headline_style=headline_style,
+            auto_emojis=auto_emojis,
             input_file=str(target_input),
         )
         self.save_job(job)
@@ -376,6 +391,7 @@ class JobManager:
                 highlight_color=job.highlight_color,
                 selected_styles=selected_styles_list,
                 subtitle_y=job.subtitle_y,
+                auto_emojis=getattr(job, "auto_emojis", True),
             )
 
             # Copy input asset to remotion public dir
@@ -439,6 +455,11 @@ class JobManager:
                 subtitleY=job.subtitle_y,
                 videoLayout=resolved_layout,
                 cameraCuts=camera_cuts,
+                progressBar=getattr(job, "progress_bar", True),
+                progressBarPosition=getattr(job, "progress_bar_position", "bottom"),
+                headlineHook=getattr(job, "headline_hook", None),
+                headlineStyle=getattr(job, "headline_style", "badge"),
+                autoEmojis=getattr(job, "auto_emojis", True),
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Literal
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -65,6 +65,11 @@ async def create_job(
     selected_styles: Optional[str] = Form(None),
     subtitle_y: Optional[float] = Form(None),
     video_layout: str = Form("split_podcast"),
+    progress_bar: bool = Form(True),
+    progress_bar_position: Literal["bottom", "top"] = Form("bottom"),
+    headline_hook: Optional[str] = Form(None),
+    headline_style: Literal["badge", "glass", "clean", "cyber"] = Form("badge"),
+    auto_emojis: bool = Form(True),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -98,6 +103,11 @@ async def create_job(
             selected_styles=selected_styles,
             subtitle_y=subtitle_y,
             video_layout=video_layout,
+            progress_bar=progress_bar,
+            progress_bar_position=progress_bar_position,
+            headline_hook=headline_hook.strip() if headline_hook and headline_hook.strip() else None,
+            headline_style=headline_style,
+            auto_emojis=auto_emojis,
         )
         return job
     finally:

@@ -68,6 +68,8 @@ class BasePlanner(ABC):
         highlight_color: str = "#38BDF8",
         selected_styles: Optional[list[str]] = None,
         subtitle_y: Optional[float] = None,
+        auto_emojis: bool = True,
+        **kwargs,
     ) -> list[TimelineEvent]:
         """Generate a list of TimelineEvents for the given phrases."""
         pass
@@ -92,6 +94,8 @@ class RulePlanner(BasePlanner):
         highlight_color: str = "#38BDF8",
         selected_styles: Optional[list[str]] = None,
         subtitle_y: Optional[float] = None,
+        auto_emojis: bool = True,
+        **kwargs,
     ) -> list[TimelineEvent]:
         raw_events = self.core.plan(
             phrases,
@@ -103,6 +107,7 @@ class RulePlanner(BasePlanner):
             highlight_color=highlight_color,
             selected_styles=selected_styles,
             subtitle_y=subtitle_y,
+            auto_emojis=auto_emojis,
         )
         return assign_layout(raw_events, video_duration=video_duration)
 

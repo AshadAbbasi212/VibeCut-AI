@@ -54,6 +54,64 @@
       "title": "AnimationConfig",
       "type": "object"
     },
+    "CameraCut": {
+      "properties": {
+        "start": {
+          "description": "Cut start time in seconds",
+          "title": "Start",
+          "type": "number"
+        },
+        "end": {
+          "description": "Cut end time in seconds",
+          "title": "End",
+          "type": "number"
+        },
+        "focusX": {
+          "default": 0.5,
+          "description": "Horizontal center focus (0.0 to 1.0)",
+          "title": "Focusx",
+          "type": "number"
+        },
+        "speakerId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "speaker_0",
+          "description": "Identifier of the active speaker",
+          "title": "Speakerid"
+        },
+        "layout": {
+          "anyOf": [
+            {
+              "enum": [
+                "solo",
+                "split_duo",
+                "split_trio",
+                "wide"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "solo",
+          "description": "Layout mode for this cut segment",
+          "title": "Layout"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ],
+      "title": "CameraCut",
+      "type": "object"
+    },
     "Graphic": {
       "properties": {
         "kind": {
@@ -305,11 +363,6 @@
         "captionSize": {
           "anyOf": [
             {
-              "enum": [
-                "small",
-                "medium",
-                "large"
-              ],
               "type": "string"
             },
             {
@@ -317,7 +370,7 @@
             }
           ],
           "default": null,
-          "description": "Optional caption size override",
+          "description": "Optional caption size override (small, medium, large, or custom px)",
           "title": "Captionsize"
         },
         "backgroundStyle": {
@@ -404,6 +457,54 @@
           "description": "Total duration in seconds",
           "title": "Durationsec",
           "type": "number"
+        },
+        "layout": {
+          "anyOf": [
+            {
+              "enum": [
+                "split_podcast",
+                "split_triple",
+                "blur_fit",
+                "fill",
+                "focus_left",
+                "focus_right",
+                "active_speaker"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "split_podcast",
+          "description": "Video framing layout for landscape to vertical conversion",
+          "title": "Layout"
+        },
+        "originalWidth": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Original source video width",
+          "title": "Originalwidth"
+        },
+        "originalHeight": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Original source video height",
+          "title": "Originalheight"
         }
       },
       "required": [
@@ -477,11 +578,6 @@
     "captionSize": {
       "anyOf": [
         {
-          "enum": [
-            "small",
-            "medium",
-            "large"
-          ],
           "type": "string"
         },
         {
@@ -489,7 +585,7 @@
         }
       ],
       "default": "medium",
-      "description": "Global caption size",
+      "description": "Global caption size (small, medium, large, or custom px)",
       "title": "Captionsize"
     },
     "backgroundStyle": {
@@ -522,6 +618,132 @@
       "default": "#38BDF8",
       "description": "Global highlight color",
       "title": "Highlightcolor"
+    },
+    "subtitleY": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Global custom Y position (0.0 to 1.0) dragged by user",
+      "title": "Subtitley"
+    },
+    "videoLayout": {
+      "anyOf": [
+        {
+          "enum": [
+            "split_podcast",
+            "split_triple",
+            "blur_fit",
+            "fill",
+            "focus_left",
+            "focus_right",
+            "active_speaker"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "split_podcast",
+      "description": "Video framing layout for landscape to vertical conversion",
+      "title": "Videolayout"
+    },
+    "cameraCuts": {
+      "anyOf": [
+        {
+          "items": {
+            "$ref": "#/$defs/CameraCut"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Dynamic camera cut timeline for active speaker tracking",
+      "title": "Cameracuts"
+    },
+    "progressBar": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": true,
+      "description": "Enable animated retention progress bar",
+      "title": "Progressbar"
+    },
+    "progressBarPosition": {
+      "anyOf": [
+        {
+          "enum": [
+            "bottom",
+            "top"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "bottom",
+      "description": "Position of the retention progress bar",
+      "title": "Progressbarposition"
+    },
+    "headlineHook": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional top hook headline card text",
+      "title": "Headlinehook"
+    },
+    "headlineStyle": {
+      "anyOf": [
+        {
+          "enum": [
+            "badge",
+            "glass",
+            "clean",
+            "cyber"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": "badge",
+      "description": "Visual treatment for top hook headline card",
+      "title": "Headlinestyle"
+    },
+    "autoEmojis": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": true,
+      "description": "Enable keyword-driven auto-emojis and animated stickers",
+      "title": "Autoemojis"
     }
   },
   "required": [

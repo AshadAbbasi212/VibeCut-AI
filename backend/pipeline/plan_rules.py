@@ -8,17 +8,73 @@ from backend.schemas.timeline import TimelineEvent, Highlight, Graphic, Animatio
 
 # Concrete noun / keyword to emoji mappings
 EMOJI_KEYWORDS: dict[str, str] = {
+    # Finance / Success
+    "money": "💰",
+    "cash": "💵",
+    "dollar": "💵",
+    "rich": "🤑",
+    "wealth": "💎",
+    "profit": "📈",
+    "crypto": "🪙",
+    "bitcoin": "🪙",
+    "invest": "📊",
+    # Energy / Viral
+    "fire": "🔥",
+    "lit": "🔥",
+    "rocket": "🚀",
+    "action": "🚀",
+    "boom": "💥",
+    "viral": "⚡",
+    "power": "⚡",
+    "magic": "✨",
+    "star": "⭐",
+    "super": "🌟",
+    # Health / Mind
     "doctor": "🩺",
     "medicine": "🩺",
     "hospital": "🏥",
-    "money": "💰",
-    "cash": "💵",
     "brain": "🧠",
-    "fire": "🔥",
-    "rocket": "🚀",
-    "action": "🚀",
-    "time": "⏳",
+    "mind": "🧠",
+    "think": "🤔",
     "heart": "❤️",
+    "love": "❤️",
+    "hate": "💔",
+    "time": "⏳",
+    "clock": "⏰",
+    "fast": "⚡",
+    "speed": "🏎️",
+    # Objects / Tools
+    "phone": "📱",
+    "call": "📞",
+    "chat": "💬",
+    "code": "💻",
+    "laptop": "💻",
+    "computer": "🖥️",
+    "ai": "🤖",
+    "robot": "🤖",
+    "game": "🎮",
+    "music": "🎵",
+    "video": "🎥",
+    "camera": "📸",
+    # Actions / Emotions
+    "win": "🏆",
+    "winner": "🏆",
+    "lose": "❌",
+    "stop": "🛑",
+    "danger": "⚠️",
+    "warning": "⚠️",
+    "secret": "🤫",
+    "look": "👀",
+    "see": "👀",
+    "watch": "👀",
+    "listen": "🎧",
+    "speech": "🗣️",
+    "cool": "😎",
+    "party": "🎉",
+    "lock": "🔒",
+    "key": "🔑",
+    "target": "🎯",
+    "goal": "🎯",
 }
 
 ICON_KEYWORDS: dict[str, str] = {
@@ -29,6 +85,8 @@ ICON_KEYWORDS: dict[str, str] = {
     "target": "target",
     "growth": "trending-up",
     "spark": "sparkles",
+    "security": "shield",
+    "check": "check-circle",
 }
 
 EMPHASIS_KEYWORDS = {
@@ -107,6 +165,7 @@ class RulePlanner:
         highlight_color: str = "#38BDF8",
         selected_styles: Optional[list[str]] = None,
         subtitle_y: Optional[float] = None,
+        auto_emojis: bool = True,
     ) -> list[TimelineEvent]:
         from backend.schemas.timeline import VALID_STYLES
 
@@ -131,6 +190,7 @@ class RulePlanner:
                     s = max(0.0, round(e - 0.35, 2))
 
                 highlights = detect_highlights(p.words)
+                graphic = detect_graphic_for_text(p.text) if auto_emojis else None
                 events.append(
                     TimelineEvent(
                         id=f"evt_{p.id}",
@@ -144,6 +204,7 @@ class RulePlanner:
                         wordRange=[p.word_indices[0], p.word_indices[-1]],
                         text=p.text,
                         highlights=highlights if highlights else None,
+                        graphic=graphic,
                         captionSize=caption_size,
                         backgroundStyle=background_style,
                         highlightColor=highlight_color,
@@ -173,6 +234,7 @@ class RulePlanner:
                         s = max(0.0, round(e - 0.35, 2))
 
                     highlights = detect_highlights(p.words)
+                    graphic = detect_graphic_for_text(p.text) if auto_emojis else None
                     events.append(
                         TimelineEvent(
                             id=f"evt_{p.id}",
@@ -186,6 +248,7 @@ class RulePlanner:
                             wordRange=[p.word_indices[0], p.word_indices[-1]],
                             text=p.text,
                             highlights=highlights if highlights else None,
+                            graphic=graphic,
                             captionSize=caption_size,
                             backgroundStyle=background_style,
                             highlightColor=highlight_color,
@@ -399,7 +462,7 @@ class RulePlanner:
                         if h.kind == "color":
                             h.value = highlight_color
 
-                graphic_item = feature_graphic or detect_graphic_for_text(p.text)
+                graphic_item = (feature_graphic or detect_graphic_for_text(p.text)) if auto_emojis else None
 
                 feat_s = round(p.start, 2)
                 feat_e = max(round(p.end, 2), round(feat_s + 0.35, 2))

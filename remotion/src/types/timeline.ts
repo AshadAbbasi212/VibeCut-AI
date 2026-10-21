@@ -82,4 +82,9 @@ export interface Timeline {
   subtitleY?: number;
   videoLayout?: "split_podcast" | "split_triple" | "blur_fit" | "fill" | "focus_left" | "focus_right" | "active_speaker";
   cameraCuts?: CameraCut[];
+  progressBar?: boolean;
+  progressBarPosition?: "bottom" | "top";
+  headlineHook?: string;
+  headlineStyle?: "badge" | "glass" | "clean" | "cyber";
+  autoEmojis?: boolean;
 }
