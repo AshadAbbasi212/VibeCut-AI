@@ -47,6 +47,15 @@ def prepare_video_asset(video_path: Path, job_id: str = "default") -> str:
         if not target_file.exists() or target_file.stat().st_size != video_resolved.stat().st_size:
             shutil.copy2(video_resolved, target_file)
 
+    # Also ensure asset is accessible in pre-built bundle directory
+    build_dir = remotion_dir / "build"
+    if build_dir.exists():
+        build_job_dir = build_dir / "public" / "jobs" / job_id
+        build_job_dir.mkdir(parents=True, exist_ok=True)
+        build_target = build_job_dir / "input.mp4"
+        if not build_target.exists() or build_target.stat().st_size != video_resolved.stat().st_size:
+            shutil.copy2(video_resolved, build_target)
+
     return f"jobs/{job_id}/input.mp4"
 
 
@@ -172,6 +181,23 @@ def render(
 
     # Pre-bundled directory completely skips Webpack recompilation on every render!
     if bundle_path and bundle_path.exists():
+        build_public = bundle_path / "public"
+        build_public.mkdir(parents=True, exist_ok=True)
+
+        # Sync props file into build/public/temp
+        build_props_file = build_public / "temp" / "render_props.json"
+        build_props_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(props_file, build_props_file)
+
+        # Sync video file into build/public so Chromium can always resolve it
+        if timeline.video.src:
+            src_in_public = remotion_public / timeline.video.src
+            dst_in_build = build_public / timeline.video.src
+            if src_in_public.exists():
+                if not dst_in_build.exists() or dst_in_build.stat().st_size != src_in_public.stat().st_size:
+                    dst_in_build.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src_in_public, dst_in_build)
+
         cmd.extend([str(bundle_path), comp_name])
     else:
         cmd.append(comp_name)
