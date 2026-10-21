@@ -16,3 +16,4 @@ remotion/public/temp/
 .cache/
 .DS_Store
 *.bundle
+remotion/build/

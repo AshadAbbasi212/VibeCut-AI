@@ -30,3 +30,12 @@ def test_rendered_video_baseline():
     assert probe.fps == 30.0
     assert probe.duration >= 4.9
     assert probe.has_audio is True
+
+
+def test_ensure_remotion_bundle():
+    """Verify that Remotion bundle caching works and returns a valid build path."""
+    from backend.pipeline.render import ensure_remotion_bundle
+    bundle = ensure_remotion_bundle()
+    assert bundle is not None
+    assert bundle.exists()
+    assert (bundle / "index.html").exists() or (bundle / "bundle.js").exists()

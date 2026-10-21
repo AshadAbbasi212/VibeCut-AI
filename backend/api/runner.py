@@ -258,7 +258,7 @@ class JobManager:
             def on_render_progress(pct: float):
                 update_progress("rendering", 0.05 + (pct * 0.93))
 
-            concurrency_val = job.concurrency or min(os.cpu_count() or 4, 8)
+            concurrency_val = job.concurrency or min(max(2, (os.cpu_count() or 4) // 2), 4)
             render(
                 timeline_input=timeline,
                 output_path=output_mp4,
@@ -455,7 +455,7 @@ class JobManager:
                 mapped = 0.56 + (pct * 0.42)
                 update_progress("rendering", mapped)
 
-            concurrency_val = job.concurrency or min(os.cpu_count() or 4, 8)
+            concurrency_val = job.concurrency or min(max(2, (os.cpu_count() or 4) // 2), 4)
             render(
                 timeline_input=timeline,
                 output_path=output_mp4,
