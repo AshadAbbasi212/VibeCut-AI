@@ -1280,6 +1280,14 @@ document.addEventListener("DOMContentLoaded", () => {
         trimPlayhead.style.left = `${pct}%`;
       }
 
+      if (canvasProgressBarFill) {
+        const dur = videoTotalDuration > 0 ? videoTotalDuration : (sourceVideoPlayer.duration || 1);
+        if (dur > 0) {
+          const pct = (cur / dur) * 100;
+          canvasProgressBarFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+        }
+      }
+
       if (isPlayingCut) {
         if (cur >= trimEndSec || cur < trimStartSec - 0.2) {
           sourceVideoPlayer.currentTime = trimStartSec;
@@ -1952,6 +1960,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (snapGuideUpper) snapGuideUpper.classList.toggle("hidden", !showDraggable);
     if (snapGuideCenter) snapGuideCenter.classList.toggle("hidden", !showDraggable);
     if (snapGuideLower) snapGuideLower.classList.toggle("hidden", !showDraggable);
+
+    // Hide preview overlays when processing or viewing final result
+    const showOverlays = (stage === "idle" || stage === "source");
+    if (canvasHeadlineHook) {
+      canvasHeadlineHook.classList.toggle("hidden", !showOverlays || !selectedHeadlineHookEnabled);
+    }
+    if (canvasProgressBar) {
+      canvasProgressBar.classList.toggle("hidden", !showOverlays || !selectedProgressBar);
+    }
   }
 
   // Toast Helper
