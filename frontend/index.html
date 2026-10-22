@@ -2218,7 +2218,10 @@
         <div class="editor-card hidden" id="editorCard">
           <div class="editor-header">
             <div><h3>Captions Timeline (<span id="eventCount">0</span> phrases)</h3></div>
-            <button type="button" class="btn-save-edits hidden" id="saveEditsBtn">💾 Save Changes</button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" class="btn-save-edits hidden" id="saveEditsBtn">💾 Save Changes</button>
+              <button type="button" class="btn-save-edits hidden" id="rerenderBtn" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); border-color: rgba(99,102,241,0.5);">⚡ Re-render</button>
+            </div>
           </div>
           <div class="phrases-list" id="phrasesList"></div>
         </div>

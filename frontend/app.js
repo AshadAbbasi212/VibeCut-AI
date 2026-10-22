@@ -159,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const eventCount = document.getElementById("eventCount");
   const phrasesList = document.getElementById("phrasesList");
   const saveEditsBtn = document.getElementById("saveEditsBtn");
+  const rerenderBtn = document.getElementById("rerenderBtn");
   const toast = document.getElementById("toast");
 
   // State Management
@@ -2020,6 +2021,7 @@ document.addEventListener("DOMContentLoaded", () => {
       input.addEventListener("input", (e) => {
         ev.text = e.target.value;
         saveEditsBtn.classList.remove("hidden");
+        if (rerenderBtn) rerenderBtn.classList.remove("hidden");
       });
 
       const badge = document.createElement("span");
@@ -2054,8 +2056,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  if (rerenderBtn) {
+    rerenderBtn.addEventListener("click", async () => {
+      if (!currentJobId || !currentTimeline) return;
+      rerenderBtn.textContent = "Re-rendering...";
+      rerenderBtn.disabled = true;
+      try {
+        // Save timeline edits first
+        await fetch(`/api/jobs/${currentJobId}/timeline`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentTimeline),
+        });
+
+        // Trigger fast re-render on existing job
+        const formData = new FormData();
+        if (draftToggle && draftToggle.checked) {
+          formData.append("draft", "true");
+        }
+        const res = await fetch(`/api/jobs/${currentJobId}/rerender`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Re-render request failed");
+
+        showToast("Re-rendering video with updated captions...");
+        showStage("processing");
+        stageStatus.textContent = "Re-rendering...";
+        jobStartTime = Date.now();
+        procTitle.textContent = "Re-rendering Video...";
+        procStep.textContent = "Composing updated frames with Remotion...";
+        procFill.style.width = "40%";
+        if (pipelineProgressCard) pipelineProgressCard.classList.remove("hidden");
+        startPolling(currentJobId);
+      } catch (err) {
+        showToast(`Re-render error: ${err.message}`);
+      } finally {
+        rerenderBtn.textContent = "⚡ Re-render";
+        rerenderBtn.disabled = false;
+      }
+    });
+  }
+
   // Full Studio Reset for loading or generating a new video
   function resetStudioForNewVideo() {
+    // 0. Cancel active backend job if still processing/queued
+    if (currentJobId) {
+      try {
+        fetch(`/api/jobs/${currentJobId}/cancel`, { method: "POST" }).catch(() => {});
+      } catch {}
+    }
+
     // 1. Terminate any active polling
     if (pollInterval) {
       clearInterval(pollInterval);
@@ -2110,6 +2161,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. Reset UI action bars, cards, and generate button
     if (resultActions) resultActions.classList.add("hidden");
     if (editorCard) editorCard.classList.add("hidden");
+    if (saveEditsBtn) saveEditsBtn.classList.add("hidden");
+    if (rerenderBtn) rerenderBtn.classList.add("hidden");
     if (pipelineProgressCard) pipelineProgressCard.classList.add("hidden");
 
     if (startJobBtn) startJobBtn.disabled = false;
