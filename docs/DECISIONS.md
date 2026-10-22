@@ -149,4 +149,12 @@
   5. **Creator Studio UI**: Updated toggle in Card 3 from "AI Auto-Emojis" to "3D Viral Stickers" ("Pops 3D 🚀, 🔥, 💰, 💡 glossy stickers") with matching toast notifications.
 - **Why**: Flat 2D system emojis vary wildly across operating systems, often rendering as dull, low-contrast glyphs. High-res volumetric 3D stickers with specular highlights and glowing drop-shadows provide the polished, professional visual punch popularized by top creators on TikTok, Reels, and YouTube Shorts.
 
+## 2026-10-22: Seamless Multi-Video Workflow, Studio Reset & Isolated Render Props
+- **Decision**:
+  1. **Dismiss / Cancel (✕) & Studio Reset**: Added a dedicated circular `✕` button (`#closeResultBtn`) anchored to the top-right of the result monitor, and upgraded the secondary action to `🔄 Start New Video (✕)`. Both trigger `resetStudioForNewVideo()`, which halts active polling intervals, pauses and unloads media elements, clears selected file and job IDs, resets the CapCut trimmer and input elements, re-enables the generate button, and returns the workspace to clean idle preview.
+  2. **Per-Job Render Props Isolation**: Replaced static `render_props.json` in `backend/pipeline/render.py` with unique `render_props_{job_id}.json` both in `remotion/public/temp/` and `remotion/build/public/temp/`. Temporary props files are safely unlinked in a `finally` block upon render completion.
+  3. **Non-blocking Worker Queue**: Increased `JobManager` thread pool concurrency to 4 workers, sanitized interrupted lingering job states on server startup, and added `POST /api/jobs/{job_id}/cancel`.
+- **Why**: Under Windows, reusing a static `render_props.json` across consecutive renders created file-lock collisions with headless Chrome / Node.js processes, stalling subsequent renders until server restart. Releasing video buffers, isolating props files, and providing an explicit one-click `✕` dismiss allows creators to review/download their video and immediately start generating another without restarting the backend.
+
+
 

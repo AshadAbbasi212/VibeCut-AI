@@ -1244,6 +1244,52 @@
     }
     .btn-sub:hover { border-color: var(--accent); color: var(--accent); }
 
+    .btn-close-result {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 50;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.7);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-close-result:hover {
+      background: rgba(239, 68, 68, 0.95);
+      border-color: #ef4444;
+      transform: scale(1.14) rotate(90deg);
+      box-shadow: 0 0 22px rgba(239, 68, 68, 0.8);
+      color: #ffffff;
+    }
+    .btn-close-result:active {
+      transform: scale(0.92);
+    }
+
+    .btn-reset-studio {
+      background: rgba(239, 68, 68, 0.12) !important;
+      border-color: rgba(239, 68, 68, 0.35) !important;
+      color: #fca5a5 !important;
+      font-weight: 700 !important;
+    }
+    .btn-reset-studio:hover {
+      background: rgba(239, 68, 68, 0.25) !important;
+      border-color: #ef4444 !important;
+      color: #ffffff !important;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4) !important;
+    }
+
     /* Editor Card */
     .editor-card {
       background: var(--surface-card);
@@ -2075,6 +2121,7 @@
 
             <!-- State 4: Result -->
             <div class="result-box hidden" id="viewResult">
+              <button type="button" class="btn-close-result" id="closeResultBtn" title="Close video & start new">✕</button>
               <video id="resultVideo" controls playsinline></video>
               <div class="canvas-tag captioned">Captioned MP4</div>
             </div>
@@ -2123,7 +2170,7 @@
             <div class="sub-actions">
               <a href="#" class="btn-sub" id="downloadSrtBtn" download>Download .SRT</a>
               <a href="#" class="btn-sub" id="downloadVttBtn" download>Download .VTT</a>
-              <button type="button" class="btn-sub" id="resetBtn">Process Another</button>
+              <button type="button" class="btn-sub btn-reset-studio" id="resetBtn">🔄 Start New Video (✕)</button>
             </div>
           </div>
         </div>

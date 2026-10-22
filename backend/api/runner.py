@@ -119,7 +119,7 @@ def export_timeline_to_vtt(timeline: Timeline) -> str:
 class JobManager:
     """Manages job state, persistence, and execution queue."""
 
-    def __init__(self, base_jobs_dir: str = "jobs", max_workers: int = 1):
+    def __init__(self, base_jobs_dir: str = "jobs", max_workers: int = 4):
         self.jobs_dir = Path(base_jobs_dir).resolve()
         self.jobs_dir.mkdir(parents=True, exist_ok=True)
         self.jobs: dict[str, JobInfo] = {}
@@ -139,6 +139,11 @@ class JobManager:
                     try:
                         data = json.loads(job_json.read_text(encoding="utf-8"))
                         info = JobInfo(**data)
+                        # Sanitize lingering states from previous crashed runs
+                        if info.status in ["queued", "processing"]:
+                            info.status = "failed"
+                            info.step = "failed"
+                            info.error = "Interrupted by server restart"
                         self.jobs[info.id] = info
                     except Exception as e:
                         logger.warning(f"Failed to read existing job from {job_json}: {e}")
@@ -155,6 +160,19 @@ class JobManager:
     def get_job(self, job_id: str) -> Optional[JobInfo]:
         """Retrieve job information by ID."""
         return self.jobs.get(job_id)
+
+    def cancel_job(self, job_id: str) -> bool:
+        """Cancel a queued or processing job."""
+        job = self.jobs.get(job_id)
+        if not job:
+            return False
+        if job.status in ["queued", "processing"]:
+            job.status = "failed"
+            job.step = "failed"
+            job.error = "Cancelled by user"
+            self.save_job(job)
+            return True
+        return False
 
     def submit_job(
         self,

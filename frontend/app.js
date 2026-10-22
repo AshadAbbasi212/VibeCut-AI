@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const procElapsed = document.getElementById("procElapsed");
 
   const resultVideo = document.getElementById("resultVideo");
+  const closeResultBtn = document.getElementById("closeResultBtn");
   const resultActions = document.getElementById("resultActions");
   const downloadMp4Btn = document.getElementById("downloadMp4Btn");
   const downloadSrtBtn = document.getElementById("downloadSrtBtn");
@@ -643,22 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   removeFileBtn.addEventListener("click", (e) => {
     e.stopPropagation();
-    selectedFile = null;
-    videoFileInput.value = "";
-    sourceVideoPlayer.pause();
-    sourceVideoPlayer.src = "";
-    if (sourceSplitTop) { sourceSplitTop.pause(); sourceSplitTop.src = ""; }
-    if (sourceSplitBottom) { sourceSplitBottom.pause(); sourceSplitBottom.src = ""; }
-    if (sourceBlurBg) { sourceBlurBg.pause(); sourceBlurBg.src = ""; }
-    if (sourceBlurMain) { sourceBlurMain.pause(); sourceBlurMain.src = ""; }
-    if (sourceTripleTop) { sourceTripleTop.pause(); sourceTripleTop.src = ""; }
-    if (sourceTripleMid) { sourceTripleMid.pause(); sourceTripleMid.src = ""; }
-    if (sourceTripleBot) { sourceTripleBot.pause(); sourceTripleBot.src = ""; }
-    dropPrompt.classList.remove("hidden");
-    fileBadge.classList.add("hidden");
-    stageStatus.textContent = "Preview Canvas";
-    showStage("idle");
-    updateSourcePreviewFraming();
+    resetStudioForNewVideo();
   });
 
   function handleFile(file) {
@@ -666,6 +652,26 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("Please select a video file (MP4, MOV, WebM).");
       return;
     }
+
+    // Clean up previous render or job state
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    if (resultVideo) {
+      resultVideo.pause();
+      resultVideo.removeAttribute("src");
+      resultVideo.load();
+    }
+    if (resultActions) resultActions.classList.add("hidden");
+    if (editorCard) editorCard.classList.add("hidden");
+    if (pipelineProgressCard) pipelineProgressCard.classList.add("hidden");
+    if (startJobBtn) startJobBtn.disabled = false;
+    if (btnProgressFill) btnProgressFill.style.width = "0%";
+    if (btnTextLabel) btnTextLabel.textContent = "Generate Captioned Video ⚡";
+    currentJobId = null;
+    currentTimeline = null;
+
     selectedFile = file;
     fileName.textContent = file.name;
     fileSize.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
@@ -1622,6 +1628,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
   // =========================================================================
   startJobBtn.addEventListener("click", async () => {
+    if (startJobBtn.disabled) return;
+
     if (!selectedFile) {
       showToast("No video uploaded yet — auto-loading synthetic sample reel (12s)...");
       await loadSample();
@@ -1629,6 +1637,11 @@ document.addEventListener("DOMContentLoaded", () => {
         showToast("Please upload a video or click 'Load Sample Reel'!");
         return;
       }
+    }
+
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
     }
 
     startJobBtn.disabled = true;
@@ -1939,14 +1952,82 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  resetBtn.addEventListener("click", () => {
-    showStage(selectedFile ? "source" : "idle");
-    stageStatus.textContent = selectedFile ? `Raw Source • ${selectedFile.name}` : "Preview Canvas";
-    resultVideo.pause();
-    resultVideo.src = "";
-    resultActions.classList.add("hidden");
-    editorCard.classList.add("hidden");
-  });
+  // Full Studio Reset for loading or generating a new video
+  function resetStudioForNewVideo() {
+    // 1. Terminate any active polling
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+
+    // 2. Stop and detach result video
+    if (resultVideo) {
+      resultVideo.pause();
+      resultVideo.removeAttribute("src");
+      resultVideo.load();
+    }
+
+    // 3. Stop and detach all source preview players
+    const previewPlayers = [
+      sourceVideoPlayer,
+      sourceSplitTop,
+      sourceSplitBottom,
+      sourceBlurBg,
+      sourceBlurMain,
+      sourceTripleTop,
+      sourceTripleMid,
+      sourceTripleBot,
+    ];
+    previewPlayers.forEach((p) => {
+      if (p) {
+        try {
+          p.pause();
+          p.removeAttribute("src");
+          p.load();
+        } catch {}
+      }
+    });
+
+    // 4. Reset file state & file inputs
+    selectedFile = null;
+    currentJobId = null;
+    currentTimeline = null;
+    if (videoFileInput) videoFileInput.value = "";
+    if (dropPrompt) dropPrompt.classList.remove("hidden");
+    if (fileBadge) fileBadge.classList.add("hidden");
+    if (fileName) fileName.textContent = "";
+    if (fileSize) fileSize.textContent = "";
+
+    // 5. Reset trimmer state
+    trimStartSec = 0.0;
+    trimEndSec = 12.0;
+    videoTotalDuration = 12.0;
+    updateTrimmerDisplay();
+    if (trimReadout) trimReadout.textContent = "Full Video";
+
+    // 6. Reset UI action bars, cards, and generate button
+    if (resultActions) resultActions.classList.add("hidden");
+    if (editorCard) editorCard.classList.add("hidden");
+    if (pipelineProgressCard) pipelineProgressCard.classList.add("hidden");
+
+    if (startJobBtn) startJobBtn.disabled = false;
+    if (btnProgressFill) btnProgressFill.style.width = "0%";
+    if (btnTextLabel) btnTextLabel.textContent = "Generate Captioned Video ⚡";
+
+    // 7. Reset canvas stage to idle
+    showStage("idle");
+    if (stageStatus) stageStatus.textContent = "Preview Canvas";
+    updateSourcePreviewFraming();
+    showToast("Ready for new video! 🎬");
+  }
+
+  if (closeResultBtn) {
+    closeResultBtn.addEventListener("click", resetStudioForNewVideo);
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", resetStudioForNewVideo);
+  }
 
   // Stage Switcher
   function showStage(stage) {

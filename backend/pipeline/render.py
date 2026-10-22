@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -156,6 +157,9 @@ def render(
         timeline = Timeline.model_validate(timeline_data)
 
     # Ensure video asset is accessible in remotion/public
+    job_id = out_file.parent.name if out_file.parent.name.startswith("job_") else f"render_{uuid.uuid4().hex[:8]}"
+
+    # Ensure video asset is accessible in remotion/public
     if not (timeline.video.src.startswith("http://") or timeline.video.src.startswith("https://")):
         remotion_public = remotion_dir / "public"
         if not (remotion_public / timeline.video.src).exists():
@@ -163,7 +167,7 @@ def render(
             if not candidate.is_absolute():
                 candidate = Path.cwd() / candidate
             if candidate.exists():
-                public_rel = prepare_video_asset(candidate)
+                public_rel = prepare_video_asset(candidate, job_id=job_id)
                 timeline = timeline.model_copy(
                     update={"video": timeline.video.model_copy(update={"src": public_rel})}
                 )
@@ -173,7 +177,8 @@ def render(
         "timeline": timeline.model_dump(),
         **timeline.model_dump(),
     }
-    props_file = remotion_dir / "public" / "temp" / "render_props.json"
+    props_filename = f"render_props_{job_id}.json"
+    props_file = remotion_dir / "public" / "temp" / props_filename
     props_file.parent.mkdir(parents=True, exist_ok=True)
     props_file.write_text(json.dumps(props_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -186,13 +191,14 @@ def render(
         "render",
     ]
 
+    build_props_file = None
     # Pre-bundled directory completely skips Webpack recompilation on every render!
     if bundle_path and bundle_path.exists():
         build_public = bundle_path / "public"
         build_public.mkdir(parents=True, exist_ok=True)
 
         # Sync props file into build/public/temp
-        build_props_file = build_public / "temp" / "render_props.json"
+        build_props_file = build_public / "temp" / props_filename
         build_props_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(props_file, build_props_file)
 
@@ -211,7 +217,7 @@ def render(
 
     cmd.extend([
         str(out_file),
-        "--props=./public/temp/render_props.json",
+        f"--props=./public/temp/{props_filename}",
         "--public-dir=./public",
         "--image-format=jpeg",
         "--jpeg-quality=95",
@@ -245,50 +251,59 @@ def render(
         cmd.append(f"--scale={scale}")
 
     # Remotion render command executed in remotion directory
-    process = subprocess.Popen(
-        cmd,
-        cwd=str(remotion_dir),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        bufsize=1,
-    )
+    try:
+        process = subprocess.Popen(
+            cmd,
+            cwd=str(remotion_dir),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
 
-    logs = []
-    for line in iter(process.stdout.readline, ""):
-        line_clean = line.strip()
-        if not line_clean:
-            continue
-        logs.append(line_clean)
-        # Check for progress percentage or frame count in Remotion output
-        if progress_callback:
-            try:
-                import re
-                if "Rendered " in line_clean:
-                    frame_match = re.search(r"Rendered\s+(\d+)/(\d+)", line_clean)
-                    if frame_match:
-                        cur_f = int(frame_match.group(1))
-                        tot_f = max(1, int(frame_match.group(2)))
-                        progress_callback(cur_f / tot_f)
-                elif "%" in line_clean:
-                    match = re.search(r"(\d+)%", line_clean)
-                    if match:
-                        pct = int(match.group(1)) / 100.0
-                        progress_callback(pct)
-            except Exception:
-                pass
+        logs = []
+        for line in iter(process.stdout.readline, ""):
+            line_clean = line.strip()
+            if not line_clean:
+                continue
+            logs.append(line_clean)
+            # Check for progress percentage or frame count in Remotion output
+            if progress_callback:
+                try:
+                    import re
+                    if "Rendered " in line_clean:
+                        frame_match = re.search(r"Rendered\s+(\d+)/(\d+)", line_clean)
+                        if frame_match:
+                            cur_f = int(frame_match.group(1))
+                            tot_f = max(1, int(frame_match.group(2)))
+                            progress_callback(cur_f / tot_f)
+                    elif "%" in line_clean:
+                        match = re.search(r"(\d+)%", line_clean)
+                        if match:
+                            pct = int(match.group(1)) / 100.0
+                            progress_callback(pct)
+                except Exception:
+                    pass
 
-    process.stdout.close()
-    return_code = process.wait()
+        process.stdout.close()
+        return_code = process.wait()
 
-    if return_code != 0:
-        error_msg = "\n".join(logs[-25:])
-        raise RuntimeError(f"Remotion render failed with exit code {return_code}:\n{error_msg}")
+        if return_code != 0:
+            error_msg = "\n".join(logs[-25:])
+            raise RuntimeError(f"Remotion render failed with exit code {return_code}:\n{error_msg}")
 
-    if not out_file.exists() or out_file.stat().st_size == 0:
-        raise RuntimeError(f"Remotion render produced empty or missing file at {out_file}")
+        if not out_file.exists() or out_file.stat().st_size == 0:
+            raise RuntimeError(f"Remotion render produced empty or missing file at {out_file}")
 
-    return out_file
+        return out_file
+    finally:
+        # Clean up temporary per-job props files to prevent lock contention
+        for p in [props_file, build_props_file]:
+            if p and p.exists():
+                try:
+                    p.unlink()
+                except Exception:
+                    pass
 
 
 def main():

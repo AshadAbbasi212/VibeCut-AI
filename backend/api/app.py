@@ -129,6 +129,16 @@ def get_job_status(job_id: str):
     return job
 
 
+@app.post("/api/jobs/{job_id}/cancel")
+def cancel_job(job_id: str):
+    """Cancel a queued or running job."""
+    manager = get_job_manager()
+    success = manager.cancel_job(job_id)
+    if not success:
+        raise HTTPException(status_code=400, detail=f"Job '{job_id}' could not be cancelled or does not exist")
+    return {"status": "cancelled", "job_id": job_id}
+
+
 @app.api_route("/api/jobs/{job_id}/output", methods=["GET", "HEAD"])
 def download_job_output(job_id: str):
     """Download the final rendered MP4 video."""
