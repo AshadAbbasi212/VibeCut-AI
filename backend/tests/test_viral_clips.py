@@ -277,3 +277,84 @@ def test_multi_speaker_timeline_speaker_id_and_colors():
     assert ev_host.highlightColor == "#38BDF8"
     assert ev_guest.speakerId == "speaker_1"
     assert ev_guest.highlightColor == "#F59E0B"
+
+
+def test_uncapped_clip_discovery_long_video():
+    """Verify that a long video extracts dozens of clips and is NOT capped at 8 or 10."""
+    # Generate 120 phrases spanning 1800 seconds (30 minutes)
+    phrases = []
+    t = 0.0
+    for i in range(120):
+        t_end = t + 12.0
+        hook_word = "Why" if i % 2 == 0 else "How"
+        phrases.append({
+            "start": round(t, 2),
+            "end": round(t_end, 2),
+            "text": f"{hook_word} does secret strategy number {i} guarantee success in life and business?",
+        })
+        t = t_end + 3.0
+
+    video_dur = t + 10.0
+    clips = find_viral_clips(
+        phrases=phrases,
+        video_duration=video_dur,
+        target_length="30s",
+        provider="none",
+    )
+
+    # Previously capped at 8; now must discover dozens across the 30 minutes!
+    assert len(clips) > 15, f"Expected >15 clips for 30m video, got {len(clips)}"
+    assert clips[0].id == "clip_1"
+    assert clips[-1].id == f"clip_{len(clips)}"
+    # Verify clips are ordered by virality score descending
+    scores = [c.virality_score for c in clips]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_generate_time_windows():
+    """Verify time window generator covers full duration with overlap."""
+    from backend.pipeline.clips import _generate_time_windows
+    windows = _generate_time_windows(video_duration=1000.0, window_size=240.0, overlap=45.0)
+    assert len(windows) > 1
+    assert windows[0][0] == 0.0
+    assert windows[-1][1] == 1000.0
+    # Every consecutive window overlaps
+    for i in range(len(windows) - 1):
+        assert windows[i][1] > windows[i + 1][0]
+
+
+def test_assemble_and_deduplicate_clips_no_cap():
+    """Verify _assemble_and_deduplicate_clips returns all valid non-overlapping clips (e.g. 30+) without capping."""
+    from backend.pipeline.clips import _assemble_and_deduplicate_clips
+    raw_clips = []
+    phrases = []
+    # Create 40 distinct non-overlapping clips across 2000s
+    for idx in range(40):
+        start = float(idx * 50)
+        end = start + 30.0
+        phrases.append({"start": start, "end": end, "text": f"Insightful topic #{idx} discussed here."})
+        raw_clips.append({
+            "id": f"clip_{idx+1}",
+            "start": start,
+            "end": end,
+            "headline": f"🔥 INSIGHT #{idx+1}",
+            "summary": f"Key lesson #{idx+1}",
+            "virality_score": round(8.0 + (idx % 20) * 0.1, 1),
+            "keywords": ["lesson", "insight"],
+        })
+
+    assembled = _assemble_and_deduplicate_clips(
+        raw_clips=raw_clips,
+        phrases=phrases,
+        video_duration=2000.0,
+        target_length="30s",
+        target_sec=30.0,
+        min_sec=20.0,
+        max_sec=40.0,
+    )
+
+    # Must return all 40 clips without any cap at 8 or 10!
+    assert len(assembled) == 40
+    assert assembled[0].id == "clip_1"
+    assert assembled[-1].id == "clip_40"
+

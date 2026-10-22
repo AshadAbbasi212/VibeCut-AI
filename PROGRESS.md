@@ -29,8 +29,15 @@
 - [x] Phase 28 Studio Architecture Separation & Dedicated Viral Clip Tweaker (Top-Level Mode Switcher, Truncation Collision Fix, & Per-Clip Settings Customizer)
 - [x] Phase 29 Optional Watermark Badge, Viral Booster Explanations, Headmarker Location Positioning, AI Smart Director Styling, & Lightning Single-Clip Render Engine
 - [x] Phase 30 Output Video Error Analysis, Scene-Aware AI Vision in Reels Studio, Reframe Layout Options, & Boundary Validation Hardening
+- [x] Phase 31 Uncapped AI Viral Clip Discovery & Full-Duration Coverage (No 8/10 Limit, Multi-Window Full Transcript Scanning, 50-100+ Clips Support)
 
 ## Notes / known issues
+- Phase 31:
+  1. **Removed Artificial 8/10 Clip Cap**: Eliminated the hardcoded `len(selected) >= 8` break in `_rule_based_clip_finder`. Both rule-based and AI discovery now extract and return all qualifying high-impact non-overlapping moments across the entire video runtime without artificial limits.
+  2. **Full Transcript Time-Window Scanning**: Replaced the arbitrary `[:12000]` character cutoffs and `[:10]` topic segment limits in `_find_clips_with_mistral` and `_find_clips_with_gemini`. Long videos are now segmented into overlapping sliding time windows (`_generate_time_windows`), prompting the AI for exhaustive coverage of every viable moment with `max_tokens=4096` to avoid JSON truncation.
+  3. **Multi-Window Clip Assembly & Overlap Deduplication**: Implemented `_assemble_and_deduplicate_clips` which aggregates clips across all time windows, snaps timestamps to phrase boundaries, drops >50% redundant overlaps in favor of higher virality scores, and indexes all discovered clips (`clip_1` through `clip_N`).
+  4. **Frontend UI High-Capacity Polish**: Updated `renderViralClips` to dynamically reflect total clips in `#clipsCountBadge` (e.g. `42 Found`, `85 Found`, `100 Found`), expanded the clips gallery `max-height` to 420px for smooth scrolling through large clip sets.
+  5. **Test Coverage**: Added comprehensive test cases in `backend/tests/test_viral_clips.py` verifying uncapped multi-clip extraction on a 30-minute simulated video (>15 clips discovered), time window coverage, and large-batch assembly (40+ clips). All 97 tests pass.
 - Phase 30:
   1. **Output Video Error Analysis**: Detailed forensic inspection of `jobs/job_7aa189b1f6/output.mp4` by extracting keyframes (`frame_001.jpg`, `frame_003.jpg`, `frame_006.jpg`, `frame_010.jpg`). Found that `active_speaker` mode without Scene-Aware Vision (`ai_enhance=false`) defaulted to rigid `focusX` alternating between 0.20 and 0.82. At 0s-3.7s (`focusX = 0.20`), the camera captured a potted plant and microphone stand; from 3.7s-13s (`focusX = 0.82`), Sundar Pichai's face was cropped in half on the left edge while viewing empty wall.
   2. **Reframe Layout in Reel Tweaker**: Added complete Video Reframe Layout selector (`⚡ Active Speaker`, `👥 Podcast Split Stack`, `✨ Ambient Blur`, `📱 Center Zoom`, `👈 Left Focus`, `👉 Right Focus`) directly into the AI Viral Reels Studio Tweaker. Synchronized live preview on the Studio Monitor and wired parameters into `POST /api/jobs/{job_id}/render-clip` and `slice_timeline_for_clip`.

@@ -1586,6 +1586,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderViralClips(clips) {
     if (!viralClipsList) return;
+    const clipsCountBadge = document.getElementById("clipsCountBadge");
+    if (clipsCountBadge) {
+      clipsCountBadge.textContent = `${clips ? clips.length : 0} Found`;
+    }
+
     if (viralClipsActions) {
       if (clips && clips.length > 0) viralClipsActions.classList.remove("hidden");
       else viralClipsActions.classList.add("hidden");

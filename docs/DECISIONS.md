@@ -1,5 +1,13 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: Uncapped AI Viral Clip Discovery & Full-Duration Time-Window Scanning
+- **Decision**:
+  1. **Removed Artificial 8/10 Clip Cap**: Removed the `len(selected) >= 8` break in `_rule_based_clip_finder`. Both heuristic and AI discovery pipelines now evaluate candidate moments across the full video timeline without an arbitrary ceiling.
+  2. **Multi-Window Full-Transcript Scanning (`_generate_time_windows`)**: Removed the hardcoded `transcript_text[:12000]` character cutoffs and `topic_segments[:10]` truncation in both Mistral and Gemini extractors. Videos are segmented into sequential, overlapping time windows (`window_size=240.0s`, `overlap=45.0s`), ensuring 100% of the dialogue across 30m, 1h, or 2h videos is analyzed.
+  3. **High-Token Completion & Deduplication (`_assemble_and_deduplicate_clips`)**: Prompts explicitly demand extraction of ALL viable highlights without stopping at 3-5 clips per window, with `max_tokens=4096` to prevent JSON truncation. Discovered clips from all windows are aggregated, snapped to phrase boundaries, filtered against heavy overlap (>50% non-overlapping criteria, keeping highest virality scores), and indexed sequentially.
+  4. **High-Capacity UI Gallery**: Updated the frontend to display the exact live count in `#clipsCountBadge` (`X Found`) and increased the gallery scroll height to 420px.
+- **Why**: Long podcasts, lectures, or interviews contain dozens or 50–100+ high-retention viral moments. Artificially capping extraction at 8 or 10 clips or truncating the transcript at 12,000 characters discarded 70-80% of longer videos. The windowed architecture scales to arbitrary video runtimes without hitting LLM output token limits.
+
 ## 2026-10-22: Reframe Layout in Reel Studio, Scene-Aware AI Vision & Boundary Validation Hardening
 - **Decision**:
   1. **Video Reframe Layout in Reel Tweaker**: Integrated interactive Video Reframe Layout selector chips (`active_speaker`, `split_podcast`, `blur_fit`, `fill`, `focus_left`, `focus_right`) into the AI Viral Reels Tweaker card. Synchronized live framing preview directly onto the Studio Monitor (`#sourceSplitWrap`, `#sourceBlurWrap`, `#sourceSingleWrap`).

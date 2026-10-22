@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, List, Optional
 from pydantic import BaseModel, Field
@@ -195,8 +196,6 @@ def _rule_based_clip_finder(
                     break
         if not overlap:
             selected.append(cand)
-            if len(selected) >= 8:  # Return up to 8 top clips
-                break
 
     # If no candidates met the strict length, take a sliding slice
     if not selected:
@@ -310,46 +309,164 @@ def find_viral_clips(
         return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
 
 
-def _find_clips_with_mistral(
+def _generate_time_windows(video_duration: float, window_size: float = 240.0, overlap: float = 45.0) -> list[tuple[float, float]]:
+    """Generate time windows covering the full video duration so no portion is ever truncated."""
+    if video_duration <= window_size:
+        return [(0.0, video_duration)]
+
+    windows = []
+    start = 0.0
+    step = max(window_size - overlap, 30.0)
+    while start < video_duration:
+        end = min(start + window_size, video_duration)
+        windows.append((round(start, 2), round(end, 2)))
+        if end >= video_duration:
+            break
+        start += step
+    return windows
+
+
+def _assemble_and_deduplicate_clips(
+    raw_clips: list[dict],
     phrases: list[dict],
     video_duration: float,
     target_length: str,
     target_sec: float,
     min_sec: float,
     max_sec: float,
-    api_key: str,
-    topic_segments: Optional[list] = None,
 ) -> list[ViralClip]:
-    """Call Mistral to extract viral clips from transcript."""
-    try:
-        from mistralai.client import Mistral
-    except ImportError:
-        from mistralai import Mistral
+    """Snap candidate clips to phrases, eliminate heavy overlap (>50%), sort by virality score, and return ALL clips without arbitrary caps."""
+    if not raw_clips:
+        return _rule_based_clip_finder(phrases, video_duration, target_length)
 
-    client = Mistral(api_key=api_key)
+    candidates = []
+    for rc in raw_clips:
+        try:
+            raw_start = float(rc.get("start", 0.0))
+            raw_end = float(rc.get("end", min(raw_start + target_sec, video_duration)))
+        except (ValueError, TypeError):
+            continue
 
-    # Format transcript with timestamps
-    transcript_lines = []
-    for p in phrases:
-        transcript_lines.append(f"[{p['start']:.1f}s - {p['end']:.1f}s]: {p['text']}")
+        # Snap to phrase boundaries
+        snapped_start, snapped_end = _snap_to_phrases(raw_start, raw_end, phrases)
+        dur = round(snapped_end - snapped_start, 2)
+        if dur < (min_sec * 0.7) or dur > (max_sec * 1.5):
+            continue
+
+        headline = rc.get("headline", "").strip() or "🔥 VIRAL HIGHLIGHT"
+        summary = rc.get("summary", "").strip()
+        try:
+            score = float(rc.get("virality_score", 8.5))
+        except (ValueError, TypeError):
+            score = 8.5
+        keywords = rc.get("keywords", [])
+        if not isinstance(keywords, list):
+            keywords = []
+
+        sp = rc.get("social_post")
+        if isinstance(sp, dict):
+            social_post = SocialPost(
+                hook=sp.get("hook", f"Wait till you hear this... {headline}"),
+                caption=sp.get("caption", summary),
+                hashtags=sp.get("hashtags", ["#podcast", "#viral", "#shorts", "#reels"]),
+            )
+        else:
+            clean_h = headline.replace("🔥 ", "").title()
+            social_post = SocialPost(
+                hook=f"Wait till you hear this... {clean_h} 🤯",
+                caption=f"{summary} Watch till the end and share your thoughts! 👇",
+                hashtags=["#podcast", "#viral", "#reels", "#shorts", "#trending"],
+            )
+
+        candidates.append({
+            "start": snapped_start,
+            "end": snapped_end,
+            "duration": dur,
+            "headline": headline,
+            "summary": summary,
+            "score": score,
+            "keywords": keywords,
+            "social_post": social_post,
+        })
+
+    if not candidates:
+        return _rule_based_clip_finder(phrases, video_duration, target_length)
+
+    # Sort candidates by virality score descending
+    candidates.sort(key=lambda c: c["score"], reverse=True)
+
+    # Filter out heavily overlapping clips (must be at least 50% non-overlapping)
+    # Note: NO CAP on total clips - returns all valid moments across the entire video!
+    selected = []
+    for cand in candidates:
+        overlap = False
+        for s in selected:
+            ov_start = max(cand["start"], s["start"])
+            ov_end = min(cand["end"], s["end"])
+            if ov_end > ov_start:
+                ov_dur = ov_end - ov_start
+                if ov_dur > (cand["duration"] * 0.5):
+                    overlap = True
+                    break
+        if not overlap:
+            selected.append(cand)
+
+    # Build final ViralClip list with ordered ids
+    result = []
+    for idx, c in enumerate(selected, 1):
+        result.append(
+            ViralClip(
+                id=f"clip_{idx}",
+                start=c["start"],
+                end=c["end"],
+                duration=c["duration"],
+                headline=c["headline"],
+                summary=c["summary"],
+                virality_score=round(c["score"], 1),
+                target_length=target_length,
+                keywords=c["keywords"],
+                social_post=c["social_post"],
+            )
+        )
+    return result
+
+
+def _extract_window_mistral(
+    client: Any,
+    window_phrases: list[dict],
+    win_start: float,
+    win_end: float,
+    video_duration: float,
+    target_length: str,
+    target_sec: float,
+    min_sec: float,
+    max_sec: float,
+    win_topics: list[dict],
+) -> list[dict]:
+    """Call Mistral on a single time window to extract all viral clips in that window without truncation."""
+    transcript_lines = [f"[{p['start']:.1f}s - {p['end']:.1f}s]: {p['text']}" for p in window_phrases]
     transcript_text = "\n".join(transcript_lines)
 
     topics_summary = ""
-    if topic_segments:
-        topics_summary = "\nKnown Video Topics:\n" + "\n".join(
+    if win_topics:
+        topics_summary = "\nTopics in this segment:\n" + "\n".join(
             f"- [{t.get('start', 0):.1f}s-{t.get('end', 0):.1f}s] {t.get('title', '')} ({t.get('importance', '')})"
-            for t in topic_segments[:10]
+            for t in win_topics
         )
 
     system_prompt = (
         "You are an elite short-form video producer and viral podcast editor. "
-        "Your task is to analyze the full video transcript and find ALL standalone viral clips / highlights "
-        f"that fit a target length of {target_length} (between {min_sec:.0f}s and {max_sec:.0f}s). "
-        "Each clip must be a complete, coherent thought, debate, mind-blowing insight, or punchy story. "
-        "Do NOT cut off mid-sentence. Snap start and end times to the provided phrase timestamps.\n\n"
-        "Assign an attention-grabbing, viral HEADLINE for each clip (include 1 relevant emoji, ALL-CAPS punch words, "
-        "e.g. '🔥 THE BIGGEST MISTAKE YOU MAKE', '🤯 WHY 99% OF PEOPLE FAIL', '⚡ SECRET TO 10X OUTPUT'). "
-        "Also assign a virality_score between 1.0 and 10.0.\n\n"
+        f"Your task is to analyze this segment of video transcript ({win_start:.1f}s to {win_end:.1f}s) "
+        f"and find ALL standalone viral clips / highlights that fit a target length of {target_length} "
+        f"(between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "1. Extract ALL relevant, standalone viral clips in this segment. Do NOT artificially cap or limit to 3, 5, or 10 clips. "
+        "Extract EVERY distinct highlight, punchy insight, debate, or story.\n"
+        "2. Each clip must be a complete, coherent thought. Do NOT cut off mid-sentence.\n"
+        "3. Snap start and end times to the provided phrase timestamps within this segment.\n"
+        "4. Assign an attention-grabbing, viral HEADLINE for each clip (include 1 relevant emoji, ALL-CAPS punch words, "
+        "e.g. '🔥 THE BIGGEST MISTAKE YOU MAKE', '🤯 WHY 99% OF PEOPLE FAIL', '⚡ SECRET TO 10X OUTPUT').\n"
+        "5. Assign a virality_score between 1.0 and 10.0.\n\n"
         "Return ONLY a valid JSON object matching this schema:\n"
         "{\n"
         '  "clips": [\n'
@@ -367,14 +484,13 @@ def _find_clips_with_mistral(
     )
 
     user_prompt = (
-        f"Video Duration: {video_duration:.1f} seconds.\n"
-        f"Target Length: {target_length} (approx {target_sec} seconds, between {min_sec}s and {max_sec}s).\n"
+        f"Segment Time Window: {win_start:.1f}s - {win_end:.1f}s (Total Video Duration: {video_duration:.1f}s).\n"
+        f"Target Length: {target_length} (approx {target_sec}s, range {min_sec}s - {max_sec}s).\n"
         f"{topics_summary}\n\n"
-        f"Full Transcript:\n{transcript_text[:12000]}\n\n"
-        "Find the best viral clips now. Return valid JSON only."
+        f"Full Transcript for this segment:\n{transcript_text}\n\n"
+        "Extract ALL viable viral clips in this segment now. Return valid JSON only."
     )
 
-    # Use open-mistral-7b for free tier reliability with fallback to mistral-small-latest
     response_text = ""
     for model_name in ["open-mistral-7b", "mistral-small-latest"]:
         try:
@@ -386,74 +502,151 @@ def _find_clips_with_mistral(
                 ],
                 temperature=0.4,
                 response_format={"type": "json_object"},
+                max_tokens=4096,
             )
             response_text = resp.choices[0].message.content
             if response_text:
                 break
         except Exception as e:
-            logger.warning(f"Mistral clip model {model_name} error: {e}")
+            logger.warning(f"Mistral clip model {model_name} error on window [{win_start}-{win_end}]: {e}")
 
     if not response_text:
-        return _rule_based_clip_finder(phrases, video_duration, target_length)
+        return []
 
-    # Parse JSON
     try:
         data = json.loads(response_text)
-        raw_clips = data.get("clips", [])
-        if not raw_clips:
-            return _rule_based_clip_finder(phrases, video_duration, target_length)
+        return data.get("clips", [])
+    except Exception as e:
+        logger.warning(f"Failed to parse Mistral clip JSON for window [{win_start}-{win_end}]: {e}")
+        return []
 
-        clips = []
-        for idx, rc in enumerate(raw_clips, 1):
-            raw_start = float(rc.get("start", 0.0))
-            raw_end = float(rc.get("end", min(raw_start + target_sec, video_duration)))
 
-            # Snap to phrase boundaries
-            snapped_start, snapped_end = _snap_to_phrases(raw_start, raw_end, phrases)
-            dur = round(snapped_end - snapped_start, 2)
+def _find_clips_with_mistral(
+    phrases: list[dict],
+    video_duration: float,
+    target_length: str,
+    target_sec: float,
+    min_sec: float,
+    max_sec: float,
+    api_key: str,
+    topic_segments: Optional[list] = None,
+) -> list[ViralClip]:
+    """Call Mistral across time windows to extract all viral clips without arbitrary caps."""
+    try:
+        from mistralai.client import Mistral
+    except ImportError:
+        from mistralai import Mistral
 
-            headline = rc.get("headline", "").strip() or f"🔥 HIGHLIGHT #{idx}"
-            summary = rc.get("summary", "").strip()
-            score = float(rc.get("virality_score", 8.5))
-            keywords = rc.get("keywords", [])
+    client = Mistral(api_key=api_key)
 
-            sp = rc.get("social_post")
-            if isinstance(sp, dict):
-                social_post = SocialPost(
-                    hook=sp.get("hook", f"Wait till you hear this... {headline}"),
-                    caption=sp.get("caption", summary),
-                    hashtags=sp.get("hashtags", ["#podcast", "#viral", "#shorts", "#reels"]),
-                )
-            else:
-                clean_h = headline.replace("🔥 ", "").title()
-                social_post = SocialPost(
-                    hook=f"Wait till you hear this... {clean_h} 🤯",
-                    caption=f"{summary} Watch till the end and share your thoughts! 👇",
-                    hashtags=["#podcast", "#viral", "#reels", "#shorts", "#trending"],
-                )
+    windows = _generate_time_windows(video_duration, window_size=240.0, overlap=45.0)
+    all_raw_clips = []
 
-            clips.append(
-                ViralClip(
-                    id=f"clip_{idx}",
-                    start=snapped_start,
-                    end=snapped_end,
-                    duration=dur,
-                    headline=headline,
-                    summary=summary,
-                    virality_score=score,
-                    target_length=target_length,
-                    keywords=keywords if isinstance(keywords, list) else [],
-                    social_post=social_post,
-                )
-            )
+    def scan_win(win_start: float, win_end: float):
+        win_phrases = [
+            p for p in phrases
+            if (p["start"] < win_end and p["end"] > win_start)
+        ]
+        if len(win_phrases) < 2:
+            return []
+        win_topics = []
+        if topic_segments:
+            win_topics = [
+                t for t in topic_segments
+                if t.get("start", 0) < win_end and t.get("end", 0) > win_start
+            ]
+        return _extract_window_mistral(
+            client=client,
+            window_phrases=win_phrases,
+            win_start=win_start,
+            win_end=win_end,
+            video_duration=video_duration,
+            target_length=target_length,
+            target_sec=target_sec,
+            min_sec=min_sec,
+            max_sec=max_sec,
+            win_topics=win_topics,
+        )
 
-        # Sort clips by virality_score descending
-        clips.sort(key=lambda c: c.virality_score, reverse=True)
-        return clips if clips else _rule_based_clip_finder(phrases, video_duration, target_length)
+    if len(windows) == 1:
+        win_start, win_end = windows[0]
+        raw = scan_win(win_start, win_end)
+        all_raw_clips.extend(raw)
+    else:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(scan_win, ws, we) for ws, we in windows]
+            for f in as_completed(futures):
+                try:
+                    res = f.result()
+                    if res:
+                        all_raw_clips.extend(res)
+                except Exception as e:
+                    logger.warning(f"Mistral window scanning error: {e}")
 
-    except Exception as parse_err:
-        logger.warning(f"Failed to parse Mistral clip JSON: {parse_err}. Response was: {response_text[:300]}")
-        return _rule_based_clip_finder(phrases, video_duration, target_length)
+    return _assemble_and_deduplicate_clips(
+        raw_clips=all_raw_clips,
+        phrases=phrases,
+        video_duration=video_duration,
+        target_length=target_length,
+        target_sec=target_sec,
+        min_sec=min_sec,
+        max_sec=max_sec,
+    )
+
+
+def _extract_window_gemini(
+    client: Any,
+    window_phrases: list[dict],
+    win_start: float,
+    win_end: float,
+    video_duration: float,
+    target_length: str,
+    target_sec: float,
+    min_sec: float,
+    max_sec: float,
+    win_topics: list[dict],
+) -> list[dict]:
+    """Call Google Gemini on a single time window to extract all viral clips in that window without truncation."""
+    from google.genai import types
+
+    transcript_lines = [f"[{p['start']:.1f}s - {p['end']:.1f}s]: {p['text']}" for p in window_phrases]
+    transcript_text = "\n".join(transcript_lines)
+
+    topics_summary = ""
+    if win_topics:
+        topics_summary = "\nTopics in this segment:\n" + "\n".join(
+            f"- [{t.get('start', 0):.1f}s-{t.get('end', 0):.1f}s] {t.get('title', '')} ({t.get('importance', '')})"
+            for t in win_topics
+        )
+
+    prompt = (
+        "You are an elite short-form video producer and viral podcast editor. "
+        f"Analyze this segment of video transcript ({win_start:.1f}s to {win_end:.1f}s, total video {video_duration:.1f}s) "
+        f"and find ALL viral {target_length} highlights (between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "- Extract ALL relevant, standalone viral clips in this segment. Do NOT artificially cap or limit to 3, 5, or 10 clips.\n"
+        "- Each clip must be a complete self-contained thought. Snap start/end times to phrase timestamps.\n"
+        "- Return ONLY a JSON object: {'clips': [{'id': 'clip_1', 'start': float, 'end': float, 'headline': '🔥 ...', 'summary': '...', 'virality_score': 9.2, 'keywords': [...]}]}.\n\n"
+        f"{topics_summary}\n\n"
+        f"Transcript:\n{transcript_text}"
+    )
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.3,
+                max_output_tokens=4096,
+            ),
+        )
+        text = response.text or ""
+        data = json.loads(text)
+        return data.get("clips", [])
+    except Exception as e:
+        logger.warning(f"Gemini clip error on window [{win_start}-{win_end}]: {e}")
+        return []
 
 
 def _find_clips_with_gemini(
@@ -466,62 +659,64 @@ def _find_clips_with_gemini(
     api_key: str,
     topic_segments: Optional[list] = None,
 ) -> list[ViralClip]:
-    """Call Google Gemini to extract viral clips from transcript."""
+    """Call Google Gemini across time windows to extract all viral clips without arbitrary caps."""
     from google import genai
-    from google.genai import types
 
     client = genai.Client(api_key=api_key)
 
-    transcript_lines = [f"[{p['start']:.1f}s - {p['end']:.1f}s]: {p['text']}" for p in phrases]
-    transcript_text = "\n".join(transcript_lines)
+    windows = _generate_time_windows(video_duration, window_size=240.0, overlap=45.0)
+    all_raw_clips = []
 
-    prompt = (
-        f"You are an elite short-form video editor. Analyze this podcast/video transcript ({video_duration:.1f}s) "
-        f"and find ALL viral {target_length} highlights (between {min_sec:.0f}s and {max_sec:.0f}s). "
-        "Each clip must be a complete self-contained thought. Snap start/end times to phrase timestamps.\n"
-        "Return ONLY a JSON object: {'clips': [{'id': 'clip_1', 'start': float, 'end': float, 'headline': '🔥 ...', 'summary': '...', 'virality_score': 9.2, 'keywords': [...]}]}.\n\n"
-        f"Transcript:\n{transcript_text[:12000]}"
-    )
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=[prompt],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.3,
-        ),
-    )
-
-    text = response.text or ""
-    data = json.loads(text)
-    raw_clips = data.get("clips", [])
-    clips = []
-    for idx, rc in enumerate(raw_clips, 1):
-        snapped_start, snapped_end = _snap_to_phrases(float(rc["start"]), float(rc["end"]), phrases)
-        headline = rc.get("headline", f"🔥 HIGHLIGHT #{idx}")
-        summary = rc.get("summary", "")
-        clean_h = headline.replace("🔥 ", "").title()
-        social_post = SocialPost(
-            hook=f"Wait till you hear this... {clean_h} 🤯",
-            caption=f"{summary} Watch till the end and share your thoughts! 👇",
-            hashtags=["#podcast", "#viral", "#reels", "#shorts", "#trending"],
+    def scan_win(win_start: float, win_end: float):
+        win_phrases = [
+            p for p in phrases
+            if (p["start"] < win_end and p["end"] > win_start)
+        ]
+        if len(win_phrases) < 2:
+            return []
+        win_topics = []
+        if topic_segments:
+            win_topics = [
+                t for t in topic_segments
+                if t.get("start", 0) < win_end and t.get("end", 0) > win_start
+            ]
+        return _extract_window_gemini(
+            client=client,
+            window_phrases=win_phrases,
+            win_start=win_start,
+            win_end=win_end,
+            video_duration=video_duration,
+            target_length=target_length,
+            target_sec=target_sec,
+            min_sec=min_sec,
+            max_sec=max_sec,
+            win_topics=win_topics,
         )
-        clips.append(
-            ViralClip(
-                id=f"clip_{idx}",
-                start=snapped_start,
-                end=snapped_end,
-                duration=round(snapped_end - snapped_start, 2),
-                headline=headline,
-                summary=summary,
-                virality_score=float(rc.get("virality_score", 8.5)),
-                target_length=target_length,
-                keywords=rc.get("keywords", []),
-                social_post=social_post,
-            )
-        )
-    clips.sort(key=lambda c: c.virality_score, reverse=True)
-    return clips
+
+    if len(windows) == 1:
+        win_start, win_end = windows[0]
+        raw = scan_win(win_start, win_end)
+        all_raw_clips.extend(raw)
+    else:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futures = [executor.submit(scan_win, ws, we) for ws, we in windows]
+            for f in as_completed(futures):
+                try:
+                    res = f.result()
+                    if res:
+                        all_raw_clips.extend(res)
+                except Exception as e:
+                    logger.warning(f"Gemini window scanning error: {e}")
+
+    return _assemble_and_deduplicate_clips(
+        raw_clips=all_raw_clips,
+        phrases=phrases,
+        video_duration=video_duration,
+        target_length=target_length,
+        target_sec=target_sec,
+        min_sec=min_sec,
+        max_sec=max_sec,
+    )
 
 
 def slice_timeline_for_clip(
