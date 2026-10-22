@@ -135,6 +135,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const clipHighlightColorSwatches = document.querySelectorAll("#clipHighlightColorSwatches .btn-color-swatch");
   const clipWatermarkInput = document.getElementById("clipWatermarkInput");
   const clipWatermarkBadge = document.getElementById("clipWatermarkBadge");
+  const clipWatermarkToggle = document.getElementById("clipWatermarkToggle");
+  const clipWatermarkInputContainer = document.getElementById("clipWatermarkInputContainer");
+  const clipHeadlinePosChips = document.querySelectorAll("#clipHeadlinePosChips .btn-custom-chip");
+  const clipHeadlinePosSlider = document.getElementById("clipHeadlinePosSlider");
+  const clipHeadlinePosLabel = document.getElementById("clipHeadlinePosLabel");
+  const clipStyleAiNotice = document.getElementById("clipStyleAiNotice");
+  const watermarkToggle = document.getElementById("watermarkToggle");
+  const watermarkInputContainer = document.getElementById("watermarkInputContainer");
   const clipKineticZoomToggle = document.getElementById("clipKineticZoomToggle");
   const clipPopSfxToggle = document.getElementById("clipPopSfxToggle");
   const clipBgMusicToggle = document.getElementById("clipBgMusicToggle");
@@ -143,6 +151,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const clipBtnProgressFill = document.getElementById("clipBtnProgressFill");
   const clipBtnTextLabel = document.getElementById("clipBtnTextLabel");
   const btnBatchExportZipDedicated = document.getElementById("btnBatchExportZipDedicated");
+
+  let selectedHeadlinePosRatio = 0.08;
 
   // Prominent Pipeline Progress Card references
   const pipelineProgressCard = document.getElementById("pipelineProgressCard");
@@ -1746,9 +1756,29 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clipHeadlineInput) {
       clipHeadlineInput.value = clip.headline;
     }
+    selectedHeadlinePosRatio = 0.08;
+    if (clipHeadlinePosSlider) clipHeadlinePosSlider.value = 8;
+    if (clipHeadlinePosLabel) clipHeadlinePosLabel.textContent = "Top 8% Safe Zone";
+    if (clipHeadlinePosChips) {
+      clipHeadlinePosChips.forEach((b) => b.classList.toggle("active", b.dataset.pos === "0.08"));
+    }
     if (clipWatermarkInput && watermarkInput) {
       clipWatermarkInput.value = watermarkInput.value || "@antigravity";
-      if (clipWatermarkBadge) clipWatermarkBadge.textContent = clipWatermarkInput.value;
+    }
+    if (clipWatermarkToggle) {
+      clipWatermarkToggle.checked = false; // Optional by default
+    }
+    if (clipWatermarkInputContainer) {
+      clipWatermarkInputContainer.classList.add("hidden");
+    }
+    if (clipWatermarkBadge) {
+      clipWatermarkBadge.textContent = "Disabled";
+    }
+    selectedStyles = ["ai_auto"];
+    if (clipStyleLabel) clipStyleLabel.textContent = "AI Smart Director";
+    if (clipStyleAiNotice) clipStyleAiNotice.classList.remove("hidden");
+    if (clipStyleChips) {
+      clipStyleChips.forEach((b) => b.classList.toggle("active", b.dataset.stylePick === "ai_auto"));
     }
     if (clipFontSizeLabel) {
       clipFontSizeLabel.textContent = `${captionSizeSlider ? captionSizeSlider.value : 52}px (${selectedCaptionSize})`;
@@ -1823,14 +1853,50 @@ document.addEventListener("DOMContentLoaded", () => {
         clipStyleChips.forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
         const stylePick = btn.dataset.stylePick;
-        selectedStyles = [stylePick];
-        if (clipStyleLabel) clipStyleLabel.textContent = btn.textContent;
-        if (draggableCaptionBox) {
-          draggableCaptionBox.className = `draggable-caption-box style-${stylePick} size-${selectedCaptionSize}`;
+        if (stylePick === "ai_auto") {
+          selectedStyles = ["ai_auto"];
+          if (clipStyleLabel) clipStyleLabel.textContent = "AI Smart Director";
+          if (clipStyleAiNotice) clipStyleAiNotice.classList.remove("hidden");
+          if (draggableCaptionBox) {
+            draggableCaptionBox.className = `draggable-caption-box style-beast_impact size-${selectedCaptionSize}`;
+          }
+          showToast("🤖 AI Smart Director: Tone-matched dynamic styles");
+        } else {
+          selectedStyles = [stylePick];
+          if (clipStyleLabel) clipStyleLabel.textContent = btn.textContent;
+          if (clipStyleAiNotice) clipStyleAiNotice.classList.add("hidden");
+          if (draggableCaptionBox) {
+            draggableCaptionBox.className = `draggable-caption-box style-${stylePick} size-${selectedCaptionSize}`;
+          }
+          if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
+          showToast(`Active Style: ${btn.textContent}`);
         }
-        if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
-        showToast(`Active Style: ${btn.textContent}`);
       });
+    });
+  }
+
+  if (clipHeadlinePosChips) {
+    clipHeadlinePosChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipHeadlinePosChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedHeadlinePosRatio = parseFloat(btn.dataset.pos) || 0.08;
+        if (clipHeadlinePosSlider) clipHeadlinePosSlider.value = Math.round(selectedHeadlinePosRatio * 100);
+        if (clipHeadlinePosLabel) clipHeadlinePosLabel.textContent = `${btn.querySelector(".chip-label").textContent} (${Math.round(selectedHeadlinePosRatio * 100)}%)`;
+        updateHeadlineHookPreview();
+      });
+    });
+  }
+
+  if (clipHeadlinePosSlider) {
+    clipHeadlinePosSlider.addEventListener("input", (e) => {
+      const val = parseInt(e.target.value, 10);
+      selectedHeadlinePosRatio = val / 100.0;
+      if (clipHeadlinePosLabel) clipHeadlinePosLabel.textContent = `${val}% on Screen`;
+      if (clipHeadlinePosChips) {
+        clipHeadlinePosChips.forEach((b) => b.classList.toggle("active", Math.abs(parseFloat(b.dataset.pos) * 100 - val) < 5));
+      }
+      updateHeadlineHookPreview();
     });
   }
 
@@ -1856,9 +1922,34 @@ document.addEventListener("DOMContentLoaded", () => {
     clipWatermarkInput.addEventListener("input", (e) => {
       const val = e.target.value.trim();
       if (watermarkInput) watermarkInput.value = val;
-      if (canvasWatermarkText) canvasWatermarkText.textContent = val || "@handle";
-      if (clipWatermarkBadge) clipWatermarkBadge.textContent = val || "Hidden";
-      if (canvasWatermark) canvasWatermark.classList.toggle("hidden", !val);
+      if (clipWatermarkToggle && clipWatermarkToggle.checked) {
+        if (clipWatermarkBadge) clipWatermarkBadge.textContent = val || "@handle";
+      }
+      updateWatermarkPreview();
+    });
+  }
+
+  if (watermarkToggle) {
+    watermarkToggle.addEventListener("change", (e) => {
+      if (watermarkInputContainer) {
+        watermarkInputContainer.classList.toggle("hidden", !e.target.checked);
+      }
+      updateWatermarkPreview();
+      showToast(e.target.checked ? "Brand Watermark: Enabled" : "Brand Watermark: Disabled");
+    });
+  }
+
+  if (clipWatermarkToggle) {
+    clipWatermarkToggle.addEventListener("change", (e) => {
+      const isChecked = e.target.checked;
+      if (clipWatermarkInputContainer) {
+        clipWatermarkInputContainer.classList.toggle("hidden", !isChecked);
+      }
+      if (clipWatermarkBadge) {
+        clipWatermarkBadge.textContent = isChecked ? (clipWatermarkInput ? clipWatermarkInput.value.trim() || "@handle" : "@handle") : "Disabled";
+      }
+      updateWatermarkPreview();
+      showToast(isChecked ? "Creator Watermark: Enabled" : "Creator Watermark: Disabled");
     });
   }
 
@@ -2029,6 +2120,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Viral Boosters & Retention Live Controls & Canvas Overlay Sync
   // =========================================================================
   function updateHeadlineHookPreview() {
+    if (canvasHeadlineHook) {
+      canvasHeadlineHook.style.top = `${Math.round(selectedHeadlinePosRatio * 1000) / 10}%`;
+    }
     if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim().length > 0) {
       if (canvasHeadlineHook) canvasHeadlineHook.classList.remove("hidden");
       if (headlineHookSettings) headlineHookSettings.classList.remove("hidden");
@@ -2222,12 +2316,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function updateWatermarkPreview() {
-    if (!canvasWatermark || !watermarkInput) return;
-    const val = watermarkInput.value.trim();
-    if (val) {
+    if (!canvasWatermark) return;
+    const isClipsMode = tabClipsStudio && tabClipsStudio.classList.contains("active");
+    const isEnabled = isClipsMode 
+      ? (clipWatermarkToggle ? clipWatermarkToggle.checked : false)
+      : (watermarkToggle ? watermarkToggle.checked : false);
+    const textVal = isClipsMode
+      ? (clipWatermarkInput ? clipWatermarkInput.value.trim() : "")
+      : (watermarkInput ? watermarkInput.value.trim() : "");
+
+    if (isEnabled && textVal) {
       canvasWatermark.classList.remove("hidden");
       if (canvasWatermarkText) {
-        canvasWatermarkText.textContent = val.startsWith("@") ? val : `@${val}`;
+        canvasWatermarkText.textContent = textVal.startsWith("@") ? textVal : `@${textVal}`;
       }
     } else {
       canvasWatermark.classList.add("hidden");
@@ -2249,12 +2350,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (startJobBtn.disabled || (btnRenderSingleClip && btnRenderSingleClip.disabled)) return;
 
     if (!selectedFile) {
-      showToast("No video uploaded yet — auto-loading synthetic sample reel (12s)...");
-      await loadSample();
-      if (!selectedFile) {
-        showToast("Please upload a video or click 'Load Sample Reel'!");
-        return;
-      }
+      showToast("Please upload a video before rendering!");
+      return;
     }
 
     if (pollInterval) {
@@ -2305,6 +2402,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (hookDur !== null && hookDur !== undefined) {
         formData.append("headline_duration", hookDur.toString());
       }
+      formData.append("headline_y", (overrides.headline_y !== undefined ? overrides.headline_y : selectedHeadlinePosRatio).toString());
     }
 
     formData.append("auto_emojis", (overrides.auto_emojis !== undefined ? overrides.auto_emojis : selectedAutoEmojis) ? "true" : "false");
@@ -2318,7 +2416,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bgMusicVal) {
       formData.append("bg_music", bgMusicVal);
     }
-    const watermarkVal = overrides.watermark_text !== undefined ? overrides.watermark_text : (watermarkInput ? watermarkInput.value.trim() : "");
+    const isWatermarkActive = overrides.watermark_text !== undefined
+      ? Boolean(overrides.watermark_text)
+      : (watermarkToggle && watermarkToggle.checked);
+    const watermarkVal = isWatermarkActive 
+      ? (overrides.watermark_text !== undefined ? overrides.watermark_text : (watermarkInput ? watermarkInput.value.trim() : ""))
+      : "";
     if (watermarkVal) {
       formData.append("watermark_text", watermarkVal);
     }
@@ -2327,13 +2430,16 @@ document.addEventListener("DOMContentLoaded", () => {
       formData.append("draft", "true");
     }
 
-    const tStart = overrides.trim_start !== undefined ? parseFloat(overrides.trim_start) : trimStartSec;
-    const tEnd = overrides.trim_end !== undefined ? parseFloat(overrides.trim_end) : trimEndSec;
-    if (tStart > 0.05) {
-      formData.append("trim_start", tStart.toFixed(2));
+    if (overrides.trim_start !== undefined) {
+      formData.append("trim_start", parseFloat(overrides.trim_start).toFixed(2));
+    } else if (trimStartSec > 0.05) {
+      formData.append("trim_start", trimStartSec.toFixed(2));
     }
-    if (tEnd < videoTotalDuration - 0.05) {
-      formData.append("trim_end", tEnd.toFixed(2));
+
+    if (overrides.trim_end !== undefined) {
+      formData.append("trim_end", parseFloat(overrides.trim_end).toFixed(2));
+    } else if (trimEndSec < videoTotalDuration - 0.05) {
+      formData.append("trim_end", trimEndSec.toFixed(2));
     }
 
     // Use XMLHttpRequest for real-time Upload Progress
@@ -2424,21 +2530,91 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (btnRenderSingleClip.disabled) return;
 
+      const hookText = clipHeadlineInput ? clipHeadlineInput.value.trim() : activeSelectedClip.headline;
+      const isWatermarkOn = clipWatermarkToggle ? clipWatermarkToggle.checked : false;
+      const watermarkVal = isWatermarkOn && clipWatermarkInput ? clipWatermarkInput.value.trim() : null;
+
+      // FAST PATH: If currentJobId is present, call dedicated lightning-fast /render-clip endpoint!
+      if (currentJobId) {
+        btnRenderSingleClip.disabled = true;
+        startJobBtn.disabled = true;
+        showStage("processing");
+        stageStatus.textContent = "Rendering Viral Reel...";
+        jobStartTime = Date.now();
+
+        if (pipelineProgressCard) pipelineProgressCard.classList.remove("hidden");
+        if (pipelineProgressTitle) pipelineProgressTitle.textContent = "Rendering Viral Reel...";
+        if (pipelineProgressPct) pipelineProgressPct.textContent = "15%";
+        if (pipelineProgressFill) pipelineProgressFill.style.width = "15%";
+        if (pipelineProgressDesc) pipelineProgressDesc.textContent = `Slicing and rendering "${hookText || activeSelectedClip.headline}"...`;
+        if (pipelineProgressTime) pipelineProgressTime.textContent = "0s elapsed";
+
+        if (clipBtnTextLabel) clipBtnTextLabel.textContent = "Rendering Reel... 15%";
+        if (clipBtnProgressFill) clipBtnProgressFill.style.width = "15%";
+
+        try {
+          const payload = {
+            start: activeSelectedClip.start,
+            end: activeSelectedClip.end,
+            headline: hookText || null,
+            headline_style: selectedHeadlineHookStyle,
+            headline_duration: selectedHeadlineDuration,
+            headline_y: selectedHeadlinePosRatio,
+            caption_size: selectedCaptionSize,
+            subtitle_y: currentSubtitleY,
+            selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
+            watermark_text: watermarkVal,
+            kinetic_zoom: clipKineticZoomToggle ? clipKineticZoomToggle.checked : false,
+            sound_effects: clipPopSfxToggle ? clipPopSfxToggle.checked : true,
+            bg_music: (clipBgMusicToggle && clipBgMusicToggle.checked) ? "lofi" : null,
+            progress_bar: true,
+            auto_emojis: clipAutoEmojisToggle ? clipAutoEmojisToggle.checked : true,
+            aspect_ratio: "9:16",
+            draft: draftToggle ? draftToggle.checked : false,
+          };
+
+          const res = await fetch(`/api/jobs/${currentJobId}/render-clip`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || "Single clip render request failed");
+          }
+
+          const clipJob = await res.json();
+          currentJobId = clipJob.id;
+          startPolling(clipJob.id);
+          return;
+        } catch (err) {
+          console.error("Render clip error:", err);
+          showToast(`Render failed: ${err.message}`);
+          btnRenderSingleClip.disabled = false;
+          startJobBtn.disabled = false;
+          showStage(selectedFile ? "source" : "idle");
+          return;
+        }
+      }
+
+      // FALLBACK PATH: If currentJobId is not set, submit via submitVideoJob with exact overrides
       const overrides = {
         trim_start: activeSelectedClip.start.toFixed(2),
         trim_end: activeSelectedClip.end.toFixed(2),
         aspect_ratio: "9:16",
-        headline_hook: clipHeadlineInput ? clipHeadlineInput.value.trim() : activeSelectedClip.headline,
+        headline_hook: hookText,
         headline_style: selectedHeadlineHookStyle,
         headline_duration: selectedHeadlineDuration,
+        headline_y: selectedHeadlinePosRatio,
         caption_size: selectedCaptionSize,
         subtitle_y: currentSubtitleY.toFixed(2),
-        selected_styles: selectedStyles.length > 0 ? selectedStyles.join(",") : "beast_impact,hormozi_bold",
-        watermark_text: clipWatermarkInput ? clipWatermarkInput.value.trim() : "",
+        selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
+        watermark_text: watermarkVal || "",
         kinetic_zoom: clipKineticZoomToggle ? clipKineticZoomToggle.checked : false,
         sound_effects: clipPopSfxToggle ? clipPopSfxToggle.checked : true,
         bg_music: (clipBgMusicToggle && clipBgMusicToggle.checked) ? "lofi" : "",
-        progress_bar: clipProgressBarToggle ? clipProgressBarToggle.checked : true,
+        progress_bar: true,
         auto_emojis: clipAutoEmojisToggle ? clipAutoEmojisToggle.checked : true,
       };
 

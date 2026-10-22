@@ -176,6 +176,9 @@ class Timeline(BaseModel):
     headlineDuration: Optional[float] = Field(
         default=None, description="Optional duration in seconds before headline fades out (None = stays full video)"
     )
+    headlineY: Optional[float] = Field(
+        default=0.08, description="Vertical position ratio of headline hook card (0.0 to 1.0, default 0.08 for top safe zone)"
+    )
     autoEmojis: Optional[bool] = Field(
         default=True, description="Enable keyword-driven auto-emojis and animated stickers"
     )

@@ -201,6 +201,16 @@
        - **Actions**: `⚡ Render This Viral Reel (MP4)` rendering this customized clip with all overrides, and `📦 Export All Clips (.ZIP)`.
 - **Why**: As the studio expanded with CapCut trimming, AI clip generation, diarization, and booster packs, having all controls stacked together in one column caused visual clutter and confusion. Separating the modes gives creators a focused workflow, prevents UI collisions, and empowers them to fine-tune individual viral clips (typography, placement, styling, and boosters) before final export.
 
+## 2026-10-22: Optional Watermark, Booster Retention Education, Headmarker Positioning & Dedicated Clip Render Engine (Phase 29)
+- **Decision**:
+  1. **Optional Watermark Badge**: Replaced auto-rendered watermark handle with an explicit opt-in toggle checkbox in both Full Video Studio and AI Viral Reels Studio (defaults to OFF). When unchecked, the input field is collapsed, the preview badge on the video monitor is hidden, and `watermark_text` is omitted/null.
+  2. **Viral Boosters Retention Explanations**: Added clear, professional descriptions beneath each of the 4 booster options explaining why they boost viewer retention (Kinetic Zooms reset attention every 3-5s, Pop SFX accentuates keyword highlights, Lo-Fi Audio ducked at -18dB fills pauses, and 3D Glossy Stickers highlight key concepts).
+  3. **Headmarker (Headline Hook) Location Positioning**: Added `headlineY` (vertical position ratio 0.05 to 0.85) to `Timeline` backend schema, Remotion types, and `CaptionedVideo` layout. In the frontend, added quick safe zone chips (`Top 8%`, `Upper 22%`, `Center 42%`, `Lower 65%`) and fine-tuning slider, dynamically moving the headmarker card on the Studio Monitor preview.
+  4. **AI Smart Director Caption Styling**: Added `🤖 AI Smart Director` (`ai_auto`) as the primary style option in the Tweaker card. When selected, the AI dynamically evaluates clip energy, duration, and tone to assign high-retention styles (e.g., `beast_impact` and `hormozi_bold` for punchy hooks, `highlighter_marker` for explanations, and `cinematic_minimal` for longer discussions).
+  5. **Dedicated Lightning Single-Clip Render Engine (`POST /api/jobs/{job_id}/render-clip`)**: Resolved the clip rendering freeze/stall where editing a viral reel previously tried to re-upload the entire source video (which could be a 45-minute file) and re-run transcription from scratch. The dedicated endpoint rapidly trims the existing parent video via FFmpeg (< 0.5s), slices the timeline with all user tweaker overrides, and renders standalone reels in ~5-7s via Remotion.
+- **Why**: Creators need full control over their branding (optional watermark), placement (custom headmarker Y location), and style intelligence (letting AI pick the best caption style for the scene). Most importantly, rendering a tweaked 15-30s viral reel must be instantaneous rather than re-uploading and re-transcribing a massive 45-minute parent video.
+
+
 
 
 

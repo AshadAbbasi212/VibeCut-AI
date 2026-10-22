@@ -530,10 +530,23 @@ def slice_timeline_for_clip(
     clip_end: float,
     clip_headline: Optional[str] = None,
     trimmed_video_src: Optional[str] = None,
+    clip_headline_style: Optional[str] = None,
+    clip_headline_duration: Optional[float] = None,
+    clip_headline_y: Optional[float] = None,
+    caption_size: Optional[str] = None,
+    subtitle_y: Optional[float] = None,
+    selected_styles: Optional[str] = None,
+    watermark_text: Optional[str] = None,
+    kinetic_zoom: Optional[bool] = None,
+    sound_effects: Optional[bool] = None,
+    bg_music: Optional[str] = None,
+    progress_bar: Optional[bool] = None,
+    auto_emojis: Optional[bool] = None,
 ) -> Timeline:
     """Slice a Timeline to a specific clip window [clip_start, clip_end].
     
-    Adjusts all events, words, camera cuts, and video duration to start at 0.0.
+    Adjusts all events, words, camera cuts, and video duration to start at 0.0,
+    and applies any tweaker overrides (headline, location, style, font size, boosters).
     """
     clip_duration = round(clip_end - clip_start, 2)
 
@@ -545,15 +558,37 @@ def slice_timeline_for_clip(
         }
     )
 
+    # Determine styles to apply
+    custom_styles = None
+    if selected_styles and selected_styles.strip() and selected_styles != "ai_auto":
+        custom_styles = [s.strip() for s in selected_styles.split(",") if s.strip()]
+    elif selected_styles == "ai_auto":
+        # Dynamic AI Creator Director styles based on clip duration / energy
+        if clip_duration <= 20.0:
+            custom_styles = ["beast_impact", "hormozi_bold"]
+        elif clip_duration <= 45.0:
+            custom_styles = ["highlighter_marker", "beast_impact", "hormozi_bold"]
+        else:
+            custom_styles = ["cinematic_minimal", "highlighter_marker"]
+
     # 2. Slice events
     new_events = []
+    event_idx = 0
     for ev in timeline.events:
         if ev.end > clip_start and ev.start < clip_end:
             shifted_start = max(0.0, round(ev.start - clip_start, 2))
             shifted_end = min(clip_duration, round(ev.end - clip_start, 2))
             if shifted_end > shifted_start:
-                ev_copy = ev.model_copy(update={"start": shifted_start, "end": shifted_end})
+                updates = {"start": shifted_start, "end": shifted_end}
+                if caption_size:
+                    updates["captionSize"] = caption_size
+                if subtitle_y is not None:
+                    updates["subtitleY"] = subtitle_y
+                if custom_styles:
+                    updates["style"] = custom_styles[event_idx % len(custom_styles)]
+                ev_copy = ev.model_copy(update=updates)
                 new_events.append(ev_copy)
+                event_idx += 1
 
     # 3. Slice words
     new_words = []
@@ -575,16 +610,34 @@ def slice_timeline_for_clip(
                 if shifted_end > shifted_start:
                     new_cuts.append(cut.model_copy(update={"start": shifted_start, "end": shifted_end}))
 
-    # 5. Build sub-timeline
-    return timeline.model_copy(
-        update={
-            "video": new_video,
-            "events": new_events,
-            "words": new_words,
-            "cameraCuts": new_cuts,
-            "headlineHook": clip_headline or timeline.headlineHook,
-        }
-    )
+    # 5. Build sub-timeline with overrides
+    timeline_updates = {
+        "video": new_video,
+        "events": new_events,
+        "words": new_words,
+        "cameraCuts": new_cuts,
+        "headlineHook": clip_headline if clip_headline is not None else timeline.headlineHook,
+    }
+    if clip_headline_style is not None:
+        timeline_updates["headlineStyle"] = clip_headline_style
+    if clip_headline_duration is not None:
+        timeline_updates["headlineDuration"] = clip_headline_duration
+    if clip_headline_y is not None:
+        timeline_updates["headlineY"] = clip_headline_y
+    if watermark_text is not None:
+        timeline_updates["watermarkText"] = watermark_text.strip() if watermark_text.strip() else None
+    if kinetic_zoom is not None:
+        timeline_updates["kineticZoom"] = kinetic_zoom
+    if sound_effects is not None:
+        timeline_updates["soundEffects"] = sound_effects
+    if bg_music is not None:
+        timeline_updates["bgMusic"] = bg_music.strip() if bg_music.strip() else None
+    if progress_bar is not None:
+        timeline_updates["progressBar"] = progress_bar
+    if auto_emojis is not None:
+        timeline_updates["autoEmojis"] = auto_emojis
+
+    return timeline.model_copy(update=timeline_updates)
 
 
 def batch_render_viral_clips(

@@ -351,11 +351,14 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       };
     }
 
+    const hookYRatio = timeline.headlineY !== undefined && timeline.headlineY !== null ? timeline.headlineY : 0.08;
+    const hookYTop = `${Math.round(hookYRatio * 1000) / 10}%`;
+
     return (
       <div
         style={{
           position: "absolute",
-          top: "8%",
+          top: hookYTop,
           left: "50%",
           transform: `translateX(-50%) scale(${hookScale})`,
           opacity: fadeOpacity,

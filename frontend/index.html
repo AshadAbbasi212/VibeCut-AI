@@ -2553,8 +2553,16 @@
               </div>
 
               <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 10px 12px;">
-                <label for="watermarkInput" style="font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 4px; display: block;">🏷️ Brand Watermark</label>
-                <input type="text" id="watermarkInput" class="input" placeholder="@yourhandle" style="width: 100%; font-size: 11px; padding: 4px 8px; border-radius: var(--radius-xs);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <label for="watermarkToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="watermarkToggle" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                    <span style="font-size: 11px; font-weight: 700; color: #fff;">🏷️ Brand Watermark</span>
+                  </label>
+                  <span class="badge" style="font-size: 9px; opacity: 0.7;">Optional</span>
+                </div>
+                <div id="watermarkInputContainer" class="hidden" style="margin-top: 6px;">
+                  <input type="text" id="watermarkInput" class="input" placeholder="@yourhandle" style="width: 100%; font-size: 11px; padding: 4px 8px; border-radius: var(--radius-xs);">
+                </div>
               </div>
             </div>
           </div>
@@ -2645,10 +2653,10 @@
               </div>
             </div>
 
-            <!-- Tweak A: Headline Hook & Visual Style -->
+            <!-- Tweak A: Headline Hook & Visual Style & Location -->
             <div class="tweaker-section">
               <div class="tweaker-section-title">
-                <span>🏷️ Headline Hook Card</span>
+                <span>🏷️ Headline Hook Card (Headmarker)</span>
                 <span class="tweaker-value-badge" id="tweakerHeadlineStyleBadge">Badge Style</span>
               </div>
               <input type="text" id="clipHeadlineInput" class="input" placeholder="e.g. 🔥 WAIT TILL THE END..." value="" style="width: 100%; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-xs); margin-bottom: 8px; border-color: rgba(168, 85, 247, 0.3);">
@@ -2683,6 +2691,37 @@
                       <span class="chip-label" style="font-size: 10px;">Full</span>
                     </button>
                   </div>
+                </div>
+              </div>
+
+              <!-- Headline Location / Placement on Screen -->
+              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <label style="font-size: 10.5px; color: var(--text-dim); margin: 0;">📍 Location on Screen (Headmarker):</label>
+                  <span class="tweaker-value-badge" id="clipHeadlinePosLabel">Top 8% Safe Zone</span>
+                </div>
+                <div class="custom-chip-group" id="clipHeadlinePosChips" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 6px;">
+                  <button type="button" class="btn-custom-chip active" data-pos="0.08" style="padding: 5px 4px;">
+                    <span class="chip-label" style="font-size: 10px;">📌 Top</span>
+                    <span class="chip-sub" style="font-size: 8px;">8%</span>
+                  </button>
+                  <button type="button" class="btn-custom-chip" data-pos="0.22" style="padding: 5px 4px;">
+                    <span class="chip-label" style="font-size: 10px;">🎯 Upper</span>
+                    <span class="chip-sub" style="font-size: 8px;">22%</span>
+                  </button>
+                  <button type="button" class="btn-custom-chip" data-pos="0.42" style="padding: 5px 4px;">
+                    <span class="chip-label" style="font-size: 10px;">📍 Center</span>
+                    <span class="chip-sub" style="font-size: 8px;">42%</span>
+                  </button>
+                  <button type="button" class="btn-custom-chip" data-pos="0.65" style="padding: 5px 4px;">
+                    <span class="chip-label" style="font-size: 10px;">📐 Lower</span>
+                    <span class="chip-sub" style="font-size: 8px;">65%</span>
+                  </button>
+                </div>
+                <div class="pos-slider-row">
+                  <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">5% Top</span>
+                  <input type="range" id="clipHeadlinePosSlider" class="pos-slider" min="5" max="80" value="8" step="1">
+                  <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">80% Bottom</span>
                 </div>
               </div>
             </div>
@@ -2748,15 +2787,19 @@
             <div class="tweaker-section">
               <div class="tweaker-section-title">
                 <span>🎨 Caption Style & Accent Color</span>
-                <span class="tweaker-value-badge" id="clipStyleLabel">MrBeast Impact</span>
+                <span class="tweaker-value-badge" id="clipStyleLabel">AI Smart Director</span>
               </div>
-              <div class="styles-preset-quick-row" id="clipStylePresetRow" style="margin-bottom: 10px;">
-                <button type="button" class="btn-style-preset-quick active" data-style-pick="beast_impact">⚡ MrBeast</button>
+              <div class="styles-preset-quick-row" id="clipStylePresetRow" style="margin-bottom: 8px;">
+                <button type="button" class="btn-style-preset-quick active" data-style-pick="ai_auto" style="background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(99,102,241,0.35)); border-color: #a855f7; color: #f3e8ff; font-weight: 800;">🤖 AI Smart Director</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="beast_impact">⚡ MrBeast</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="hormozi_bold">💪 Hormozi</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="highlighter_marker">🖍️ Marker</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="neon_glow">💡 Neon</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="cyber_hud">🤖 Cyber</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="cinematic_minimal">🎬 Minimal</button>
+              </div>
+              <div id="clipStyleAiNotice" style="font-size: 10px; color: #c084fc; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                <span>✨ AI Director dynamically chooses high-retention styles suited for this clip's energy and speech pacing.</span>
               </div>
               <div class="color-swatch-group" id="clipHighlightColorSwatches">
                 <button type="button" class="btn-color-swatch active" data-color="#38BDF8" style="background: #38BDF8;" title="Electric Cyan"></button>
@@ -2767,37 +2810,60 @@
               </div>
             </div>
 
-            <!-- Tweak E: Creator Watermark -->
+            <!-- Tweak E: Creator Watermark (Optional) -->
             <div class="tweaker-section">
               <div class="tweaker-section-title">
-                <span>🏷️ Creator Watermark Badge</span>
-                <span class="tweaker-value-badge" id="clipWatermarkBadge">@antigravity</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="clipWatermarkToggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="clipWatermarkToggle" style="width: 15px; height: 15px; accent-color: #a855f7; cursor: pointer;">
+                    <span style="font-size: 11px; font-weight: 700; color: #fff;">🏷️ Creator Watermark Badge</span>
+                  </label>
+                  <span class="badge" style="font-size: 9px; opacity: 0.7;">Optional</span>
+                </div>
+                <span class="tweaker-value-badge" id="clipWatermarkBadge" style="opacity: 0.7;">Disabled</span>
               </div>
-              <input type="text" id="clipWatermarkInput" class="input" placeholder="@yourhandle" value="@antigravity" style="width: 100%; font-size: 11px; padding: 6px 10px; border-radius: var(--radius-xs); border-color: rgba(168, 85, 247, 0.3);">
+              <div id="clipWatermarkInputContainer" class="hidden" style="margin-top: 6px;">
+                <input type="text" id="clipWatermarkInput" class="input" placeholder="@yourhandle" value="@antigravity" style="width: 100%; font-size: 11px; padding: 6px 10px; border-radius: var(--radius-xs); border-color: rgba(168, 85, 247, 0.3);">
+              </div>
             </div>
 
-            <!-- Tweak F: Viral Boosters Toggles -->
+            <!-- Tweak F: Viral Boosters Toggles with Clear Explanations -->
             <div class="tweaker-section">
               <div class="tweaker-section-title">
-                <span>🚀 Viral Boosters Pack</span>
+                <div>
+                  <span>🚀 Viral Boosters Pack</span>
+                  <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Proven pattern-interrupts engineered to increase retention and watch-time:</div>
+                </div>
                 <span class="tweaker-value-badge">Active</span>
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
-                  <input type="checkbox" id="clipKineticZoomToggle" checked style="accent-color: #a855f7;">
-                  <span style="font-size: 11px; font-weight: 700; color: #fff;">🎥 Kinetic Zooms</span>
+              <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px;">
+                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                  <input type="checkbox" id="clipKineticZoomToggle" checked style="accent-color: #a855f7; margin-top: 2px;">
+                  <div>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #fff; display: block;">🎥 Kinetic Micro-Zooms</span>
+                    <span style="font-size: 10px; color: var(--text-dim); display: block; line-height: 1.35;">Dynamic 1.08x camera punch-ins on punchy words to reset viewer attention every 3–5 seconds.</span>
+                  </div>
                 </label>
-                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
-                  <input type="checkbox" id="clipPopSfxToggle" checked style="accent-color: #a855f7;">
-                  <span style="font-size: 11px; font-weight: 700; color: #fff;">🔊 Viral Pop SFX</span>
+                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                  <input type="checkbox" id="clipPopSfxToggle" checked style="accent-color: #a855f7; margin-top: 2px;">
+                  <div>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #fff; display: block;">🔊 Viral Pop SFX</span>
+                    <span style="font-size: 10px; color: var(--text-dim); display: block; line-height: 1.35;">Snappy wooden/bubble pop audio accents on keyword highlights and sticker appearances.</span>
+                  </div>
                 </label>
-                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
-                  <input type="checkbox" id="clipBgMusicToggle" style="accent-color: #a855f7;">
-                  <span style="font-size: 11px; font-weight: 700; color: #fff;">🎵 Lo-Fi Ambient</span>
+                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                  <input type="checkbox" id="clipBgMusicToggle" style="accent-color: #a855f7; margin-top: 2px;">
+                  <div>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #fff; display: block;">🎵 Lo-Fi Ambient Audio</span>
+                    <span style="font-size: 10px; color: var(--text-dim); display: block; line-height: 1.35;">Warm background audio bed ducked softly under dialogue (-18dB) to eliminate dead silence.</span>
+                  </div>
                 </label>
-                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
-                  <input type="checkbox" id="clipAutoEmojisToggle" checked style="accent-color: #a855f7;">
-                  <span style="font-size: 11px; font-weight: 700; color: #fff;">⚡ 3D Stickers</span>
+                <label style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: var(--radius-xs); padding: 8px 10px; display: flex; align-items: flex-start; gap: 10px; cursor: pointer; margin: 0;">
+                  <input type="checkbox" id="clipAutoEmojisToggle" checked style="accent-color: #a855f7; margin-top: 2px;">
+                  <div>
+                    <span style="font-size: 11.5px; font-weight: 800; color: #fff; display: block;">✨ 3D Glossy Stickers</span>
+                    <span style="font-size: 10px; color: var(--text-dim); display: block; line-height: 1.35;">High-res Microsoft Fluent 3D animated stickers (🚀, 🔥, 💡, 💰, 👑) on detected key concepts.</span>
+                  </div>
                 </label>
               </div>
             </div>

@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env (MISTRAL_API_KEY, etc.)
 load_dotenv()
 
+from pydantic import BaseModel
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -74,6 +75,7 @@ async def create_job(
     headline_hook: Optional[str] = Form(None),
     headline_style: Literal["badge", "glass", "clean", "cyber"] = Form("badge"),
     headline_duration: Optional[float] = Form(None),
+    headline_y: Optional[float] = Form(0.08),
     auto_emojis: bool = Form(True),
     kinetic_zoom: bool = Form(False),
     sound_effects: bool = Form(False),
@@ -119,6 +121,7 @@ async def create_job(
             headline_hook=headline_hook.strip() if headline_hook and headline_hook.strip() else None,
             headline_style=headline_style,
             headline_duration=headline_duration,
+            headline_y=headline_y,
             auto_emojis=auto_emojis,
             kinetic_zoom=kinetic_zoom,
             sound_effects=sound_effects,
@@ -388,6 +391,65 @@ def download_job_zip(job_id: str):
         media_type="application/zip",
         filename=f"{job_id}_viral_reels.zip",
     )
+
+
+class RenderClipPayload(BaseModel):
+    start: float
+    end: float
+    headline: Optional[str] = None
+    headline_style: Optional[Literal["badge", "glass", "clean", "cyber"]] = "badge"
+    headline_duration: Optional[float] = None
+    headline_y: Optional[float] = 0.08
+    caption_size: Optional[str] = "medium"
+    subtitle_y: Optional[float] = 0.79
+    selected_styles: Optional[str] = None
+    watermark_text: Optional[str] = None
+    kinetic_zoom: Optional[bool] = False
+    sound_effects: Optional[bool] = False
+    bg_music: Optional[str] = None
+    progress_bar: Optional[bool] = True
+    auto_emojis: Optional[bool] = True
+    aspect_ratio: Optional[str] = "9:16"
+    draft: Optional[bool] = False
+    concurrency: Optional[int] = None
+
+
+@app.post("/api/jobs/{job_id}/render-clip", response_model=JobInfo, status_code=status.HTTP_201_CREATED)
+def render_single_clip_endpoint(
+    job_id: str,
+    payload: RenderClipPayload,
+):
+    """Render a single customized viral reel into a standalone captioned MP4 rapidly from an existing job."""
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+
+    try:
+        clip_job = manager.submit_clip_job(
+            parent_job_id=job_id,
+            start=payload.start,
+            end=payload.end,
+            headline=payload.headline,
+            headline_style=payload.headline_style,
+            headline_duration=payload.headline_duration,
+            headline_y=payload.headline_y,
+            caption_size=payload.caption_size,
+            subtitle_y=payload.subtitle_y,
+            selected_styles=payload.selected_styles,
+            watermark_text=payload.watermark_text,
+            kinetic_zoom=payload.kinetic_zoom,
+            sound_effects=payload.sound_effects,
+            bg_music=payload.bg_music,
+            progress_bar=payload.progress_bar,
+            auto_emojis=payload.auto_emojis,
+            aspect_ratio=payload.aspect_ratio,
+            draft=payload.draft or False,
+            concurrency=payload.concurrency,
+        )
+        return clip_job
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/api/clips/discover")

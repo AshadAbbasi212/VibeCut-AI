@@ -88,6 +88,7 @@ export interface Timeline {
   headlineHook?: string;
   headlineStyle?: "badge" | "glass" | "clean" | "cyber";
   headlineDuration?: number;
+  headlineY?: number;
   autoEmojis?: boolean;
   kineticZoom?: boolean;
   soundEffects?: boolean;

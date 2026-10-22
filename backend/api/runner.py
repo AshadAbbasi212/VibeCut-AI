@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import time
 import uuid
 from pathlib import Path
@@ -49,6 +50,7 @@ class JobInfo(BaseModel):
     headline_hook: Optional[str] = None
     headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge"
     headline_duration: Optional[float] = None
+    headline_y: Optional[float] = 0.08
     auto_emojis: bool = True
     kinetic_zoom: bool = False
     sound_effects: bool = False
@@ -205,6 +207,7 @@ class JobManager:
         headline_hook: Optional[str] = None,
         headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge",
         headline_duration: Optional[float] = None,
+        headline_y: Optional[float] = 0.08,
         auto_emojis: bool = True,
         kinetic_zoom: bool = False,
         sound_effects: bool = False,
@@ -247,6 +250,7 @@ class JobManager:
             headline_hook=headline_hook,
             headline_style=headline_style,
             headline_duration=headline_duration,
+            headline_y=headline_y,
             auto_emojis=auto_emojis,
             kinetic_zoom=kinetic_zoom,
             sound_effects=sound_effects,
@@ -329,6 +333,155 @@ class JobManager:
             logger.info(f"Job {job_id} re-rendered successfully: {output_mp4}")
         except Exception as e:
             logger.exception(f"Re-render for {job_id} failed: {e}")
+            job.status = "failed"
+            job.step = "failed"
+            job.error = str(e)
+            self.save_job(job)
+
+    def submit_clip_job(
+        self,
+        parent_job_id: str,
+        start: float,
+        end: float,
+        headline: Optional[str] = None,
+        headline_style: Optional[str] = "badge",
+        headline_duration: Optional[float] = None,
+        headline_y: Optional[float] = 0.08,
+        caption_size: Optional[str] = "medium",
+        subtitle_y: Optional[float] = 0.79,
+        selected_styles: Optional[str] = None,
+        watermark_text: Optional[str] = None,
+        kinetic_zoom: Optional[bool] = False,
+        sound_effects: Optional[bool] = False,
+        bg_music: Optional[str] = None,
+        progress_bar: Optional[bool] = True,
+        auto_emojis: Optional[bool] = True,
+        aspect_ratio: Optional[str] = "9:16",
+        draft: bool = False,
+        concurrency: Optional[int] = None,
+    ) -> JobInfo:
+        """Create and queue a lightning-fast render for an edited viral clip from an existing job."""
+        parent_job = self.get_job(parent_job_id)
+        if not parent_job or not parent_job.timeline_file or not Path(parent_job.timeline_file).exists():
+            raise ValueError(f"Parent job {parent_job_id} or timeline not found")
+        if not parent_job.input_file or not Path(parent_job.input_file).exists():
+            raise ValueError(f"Parent job {parent_job_id} input video not found")
+
+        clip_job_id = f"job_clip_{uuid.uuid4().hex[:8]}"
+        clip_dir = self.jobs_dir / clip_job_id
+        clip_dir.mkdir(parents=True, exist_ok=True)
+
+        trimmed_mp4 = clip_dir / "input.mp4"
+        trim_cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(round(start, 2)),
+            "-to", str(round(end, 2)),
+            "-i", str(parent_job.input_file),
+            "-c:v", "libx264", "-c:a", "aac",
+            "-avoid_negative_ts", "make_zero",
+            str(trimmed_mp4)
+        ]
+        subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        from backend.pipeline.clips import slice_timeline_for_clip
+        rel_src = prepare_video_asset(trimmed_mp4, job_id=clip_job_id)
+
+        tl_data = json.loads(Path(parent_job.timeline_file).read_text(encoding="utf-8"))
+        base_timeline = Timeline.model_validate(tl_data)
+
+        sub_timeline = slice_timeline_for_clip(
+            timeline=base_timeline,
+            clip_start=start,
+            clip_end=end,
+            clip_headline=headline,
+            trimmed_video_src=rel_src,
+            clip_headline_style=headline_style,
+            clip_headline_duration=headline_duration,
+            clip_headline_y=headline_y,
+            caption_size=caption_size,
+            subtitle_y=subtitle_y,
+            selected_styles=selected_styles,
+            watermark_text=watermark_text,
+            kinetic_zoom=kinetic_zoom,
+            sound_effects=sound_effects,
+            bg_music=bg_music,
+            progress_bar=progress_bar,
+            auto_emojis=auto_emojis,
+        )
+
+        timeline_json = clip_dir / "timeline.json"
+        timeline_json.write_text(
+            json.dumps(sub_timeline.model_dump(by_alias=True, exclude_none=True), indent=2),
+            encoding="utf-8",
+        )
+
+        clip_job = JobInfo(
+            id=clip_job_id,
+            status="queued",
+            step="rendering",
+            progress=0.05,
+            aspect_ratio=aspect_ratio or "9:16",
+            draft=draft,
+            concurrency=concurrency,
+            input_file=str(trimmed_mp4),
+            timeline_file=str(timeline_json),
+            headline_hook=headline,
+            headline_style=headline_style or "badge",
+            headline_duration=headline_duration,
+            headline_y=headline_y,
+            watermark_text=watermark_text,
+            kinetic_zoom=kinetic_zoom,
+            sound_effects=sound_effects,
+            bg_music=bg_music,
+            progress_bar=progress_bar if progress_bar is not None else True,
+            auto_emojis=auto_emojis if auto_emojis is not None else True,
+            caption_size=caption_size or "medium",
+            subtitle_y=subtitle_y or 0.79,
+        )
+        self.save_job(clip_job)
+        self.executor.submit(self._run_clip_render_task, clip_job_id)
+        return clip_job
+
+    def _run_clip_render_task(self, clip_job_id: str):
+        job = self.get_job(clip_job_id)
+        if not job or not job.timeline_file or not Path(job.timeline_file).exists():
+            return
+
+        job_dir = self.jobs_dir / clip_job_id
+        output_mp4 = job_dir / "output.mp4"
+        timeline_json = Path(job.timeline_file)
+
+        def update_progress(step: str, progress: float):
+            job.status = "processing"
+            job.step = step
+            job.progress = round(progress, 3)
+            self.save_job(job)
+
+        try:
+            update_progress("rendering", 0.05)
+            tl_data = json.loads(timeline_json.read_text(encoding="utf-8"))
+            timeline = Timeline.model_validate(tl_data)
+
+            def on_render_progress(pct: float):
+                update_progress("rendering", 0.05 + (pct * 0.93))
+
+            concurrency_val = job.concurrency or min(max(2, (os.cpu_count() or 4) // 2), 4)
+            render(
+                timeline_input=timeline,
+                output_path=output_mp4,
+                concurrency=concurrency_val,
+                draft=job.draft,
+                progress_callback=on_render_progress,
+            )
+
+            job.status = "completed"
+            job.step = "completed"
+            job.progress = 1.0
+            job.output_file = str(output_mp4)
+            self.save_job(job)
+            logger.info(f"Viral clip job {clip_job_id} rendered successfully: {output_mp4}")
+        except Exception as e:
+            logger.exception(f"Render for viral clip {clip_job_id} failed: {e}")
             job.status = "failed"
             job.step = "failed"
             job.error = str(e)
@@ -560,6 +713,7 @@ class JobManager:
                 headlineHook=getattr(job, "headline_hook", None),
                 headlineStyle=getattr(job, "headline_style", "badge"),
                 headlineDuration=getattr(job, "headline_duration", None),
+                headlineY=getattr(job, "headline_y", 0.08),
                 autoEmojis=getattr(job, "auto_emojis", True),
                 kineticZoom=getattr(job, "kinetic_zoom", False),
                 soundEffects=getattr(job, "sound_effects", False),
