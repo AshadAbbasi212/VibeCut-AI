@@ -25,8 +25,17 @@
 - [x] Phase 24 Seamless Multi-Video Workflow & Studio Reset (Close ✕ Dismiss, Per-Job Isolated Render Props, & Worker Queue Expansion)
 - [x] Phase 25 AI Creative Director, Mistral Free Tier Integration & Scene-Aware Intelligence (Keyframe Vision Analysis, Burned-in Caption Avoidance, & Ali Abdaal Editorial Styling)
 - [x] Phase 26 AI Viral Reel / Clip Extractor (15s, 30s, 60s Discussion Finder), Top Headline Hook Duration (5s, 10s, Full Video Fade-out), & Backend-Only Secure API Key Management
+- [x] Phase 27 Creator Booster Pack: Batch Multi-Clip Export to ZIP, Viral SFX / Lo-Fi Audio Layer, Kinetic Punch-In Micro-Zooms, 1-Click Social Media Copy & Hashtag Generator, Automatic Multi-Speaker Diarization Color Coding, & Brand Watermark Overlay
 
 ## Notes / known issues
+- Phase 27:
+  1. **Batch Multi-Clip Export to ZIP (User Option)**: Added `POST /api/jobs/{job_id}/batch-render-clips` and `GET /api/jobs/{job_id}/download-zip`. In `backend/pipeline/clips.py`, added `slice_timeline_for_clip` which dynamically shifts all events, words, and camera cuts to start at 0.0 with the clip's assigned headline, trims the video rapidly with FFmpeg, and renders standalone reels using Remotion. Packages all rendered MP4s plus formatted `clip_XX_post.txt` files into `{job_id}_viral_reels.zip`. Added `#btnBatchExportZip` in the frontend Trimmer dock.
+  2. **Viral SFX & Lo-Fi Ambient Audio Layer (User Option)**: Synthesized local assets `sfx_pop.wav` (0.12s wooden/bubble pop) and `bg_lofi.wav` (8.0s warm ambient pad loop) in Remotion public directories. Added user checkboxes in Card 3 (`#soundEffectsToggle`, `#bgMusicToggle`), Remotion `<Audio>` layers for sticker/graphic pop-ins and speech-ducked lo-fi background beat.
+  3. **Kinetic Punch-In Micro-Zooms (User Option)**: Added user checkbox `#kineticZoomToggle` in Card 3. In `CaptionedVideo`, calculates smooth camera punch-in zoom interpolating up to 1.13x scale every 150 frames (5s) to reset viewer retention.
+  4. **Social Media Copy & Hashtag Generator (User Option)**: Added `SocialPost` model (`hook`, `caption`, `hashtags`) to `ViralClip`. In `frontend/app.js`, added `📋 Copy Post` button on each clip card with 1-click clipboard copy and toast notification.
+  5. **Multi-Speaker Diarization Auto Color Coding (Automatic - No User Toggle)**: Directly implemented in `backend/api/runner.py` and Remotion renderer: Host (`speaker_0`) is automatically assigned Electric Cyan (`#38BDF8`) and Guest (`speaker_1`) is assigned Cyber Amber (`#F59E0B`) based on active camera cut intervals without requiring manual user setup.
+  6. **Custom Brand Watermark / Handle (User Option)**: Added `#watermarkInput` (`@yourhandle`) in Card 3, live floating canvas badge preview on `#phoneCanvas`, and Remotion renderer badge overlay.
+  All 90 pytest tests pass, Remotion bundle builds cleanly.
 - Phase 26: 
   1. **Removed Frontend API Key Input**: Removed `#apiKeySection`, input fields, and `localStorage` API key handling from `frontend/index.html` and `frontend/app.js`. All keys (`MISTRAL_API_KEY`) remain securely in the backend `.env` accessed via `os.getenv()`.
   2. **Top Headline Hook Duration & Fade-out**: Added customizable duration chips (`5s`, `10s`, `Full Video`) in the frontend UI. In `remotion/src/CaptionedVideo/index.tsx`, when `headlineDuration` is set, the headline card smoothly interpolates opacity to 0 across the final 15 frames and unmounts, while during preview video playback in `frontend/app.js`, the on-canvas headline smoothly fades out when video playback exceeds the duration.

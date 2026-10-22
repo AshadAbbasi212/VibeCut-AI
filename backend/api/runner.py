@@ -50,6 +50,10 @@ class JobInfo(BaseModel):
     headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge"
     headline_duration: Optional[float] = None
     auto_emojis: bool = True
+    kinetic_zoom: bool = False
+    sound_effects: bool = False
+    bg_music: Optional[str] = None
+    watermark_text: Optional[str] = None
     ai_enhance: bool = False
     api_key: Optional[str] = Field(default=None, exclude=True)
     created_at: float = Field(default_factory=time.time)
@@ -202,6 +206,10 @@ class JobManager:
         headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge",
         headline_duration: Optional[float] = None,
         auto_emojis: bool = True,
+        kinetic_zoom: bool = False,
+        sound_effects: bool = False,
+        bg_music: Optional[str] = None,
+        watermark_text: Optional[str] = None,
         ai_enhance: bool = False,
         api_key: Optional[str] = None,
     ) -> JobInfo:
@@ -240,6 +248,10 @@ class JobManager:
             headline_style=headline_style,
             headline_duration=headline_duration,
             auto_emojis=auto_emojis,
+            kinetic_zoom=kinetic_zoom,
+            sound_effects=sound_effects,
+            bg_music=bg_music,
+            watermark_text=watermark_text,
             ai_enhance=ai_enhance,
             api_key=api_key,
             input_file=str(target_input),
@@ -518,6 +530,19 @@ class JobManager:
                     scene_analysis=scene_analysis_data,
                 )
 
+            # Multi-Speaker Diarization Auto Color Coding (Feature #5)
+            if camera_cuts:
+                for ev in events:
+                    mid = (ev.start + ev.end) / 2.0
+                    for cut in camera_cuts:
+                        if cut.start <= mid <= cut.end:
+                            ev.speakerId = cut.speakerId
+                            if cut.speakerId == "speaker_1":
+                                ev.highlightColor = "#F59E0B"
+                            elif cut.speakerId == "speaker_0":
+                                ev.highlightColor = "#38BDF8"
+                            break
+
             timeline = Timeline(
                 version=1,
                 video=tl_video,
@@ -536,6 +561,10 @@ class JobManager:
                 headlineStyle=getattr(job, "headline_style", "badge"),
                 headlineDuration=getattr(job, "headline_duration", None),
                 autoEmojis=getattr(job, "auto_emojis", True),
+                kineticZoom=getattr(job, "kinetic_zoom", False),
+                soundEffects=getattr(job, "sound_effects", False),
+                bgMusic=getattr(job, "bg_music", None),
+                watermarkText=getattr(job, "watermark_text", None),
             )
             timeline_json.write_text(
                 json.dumps(timeline.model_dump(by_alias=True, exclude_none=True), indent=2),

@@ -8,10 +8,19 @@ import json
 import logging
 import os
 import re
+from pathlib import Path
 from typing import Any, List, Optional
 from pydantic import BaseModel, Field
+from backend.schemas.timeline import Timeline
 
 logger = logging.getLogger("viral_clips")
+
+
+class SocialPost(BaseModel):
+    """Generated social media copy ready to paste into TikTok, Reels, or Shorts."""
+    hook: str = Field(default="", description="Opening viral hook line")
+    caption: str = Field(default="", description="Engaging caption paragraph with call-to-action")
+    hashtags: List[str] = Field(default_factory=list, description="Targeted trending hashtags")
 
 
 class ViralClip(BaseModel):
@@ -25,6 +34,7 @@ class ViralClip(BaseModel):
     virality_score: float = Field(default=8.5, description="Predicted virality potential score (1.0 to 10.0)")
     target_length: str = Field(default="30s", description="Target length category: 15s, 30s, 60s")
     keywords: List[str] = Field(default_factory=list, description="Top keywords in this clip")
+    social_post: Optional[SocialPost] = Field(default=None, description="Pre-generated viral social media post")
 
 
 TARGET_DURATIONS = {
@@ -203,6 +213,12 @@ def _rule_based_clip_finder(
 
     result = []
     for idx, c in enumerate(selected, 1):
+        clean_headline = c["headline"].replace("🔥 ", "").title()
+        social_post = SocialPost(
+            hook=f"Wait till you hear this... {clean_headline} 🤯",
+            caption=f"Key takeaway from this moment: \"{c.get('summary', '')}\"... Watch till the end and drop your thoughts below! 👇",
+            hashtags=["#podcast", "#viral", "#reels", "#shorts", "#mindset", "#success", "#growth"]
+        )
         result.append(
             ViralClip(
                 id=f"clip_{idx}",
@@ -214,6 +230,7 @@ def _rule_based_clip_finder(
                 virality_score=c["score"],
                 target_length=target_length,
                 keywords=c.get("keywords", []),
+                social_post=social_post,
             )
         )
     return result
@@ -400,6 +417,21 @@ def _find_clips_with_mistral(
             score = float(rc.get("virality_score", 8.5))
             keywords = rc.get("keywords", [])
 
+            sp = rc.get("social_post")
+            if isinstance(sp, dict):
+                social_post = SocialPost(
+                    hook=sp.get("hook", f"Wait till you hear this... {headline}"),
+                    caption=sp.get("caption", summary),
+                    hashtags=sp.get("hashtags", ["#podcast", "#viral", "#shorts", "#reels"]),
+                )
+            else:
+                clean_h = headline.replace("🔥 ", "").title()
+                social_post = SocialPost(
+                    hook=f"Wait till you hear this... {clean_h} 🤯",
+                    caption=f"{summary} Watch till the end and share your thoughts! 👇",
+                    hashtags=["#podcast", "#viral", "#reels", "#shorts", "#trending"],
+                )
+
             clips.append(
                 ViralClip(
                     id=f"clip_{idx}",
@@ -411,6 +443,7 @@ def _find_clips_with_mistral(
                     virality_score=score,
                     target_length=target_length,
                     keywords=keywords if isinstance(keywords, list) else [],
+                    social_post=social_post,
                 )
             )
 
@@ -465,18 +498,183 @@ def _find_clips_with_gemini(
     clips = []
     for idx, rc in enumerate(raw_clips, 1):
         snapped_start, snapped_end = _snap_to_phrases(float(rc["start"]), float(rc["end"]), phrases)
+        headline = rc.get("headline", f"🔥 HIGHLIGHT #{idx}")
+        summary = rc.get("summary", "")
+        clean_h = headline.replace("🔥 ", "").title()
+        social_post = SocialPost(
+            hook=f"Wait till you hear this... {clean_h} 🤯",
+            caption=f"{summary} Watch till the end and share your thoughts! 👇",
+            hashtags=["#podcast", "#viral", "#reels", "#shorts", "#trending"],
+        )
         clips.append(
             ViralClip(
                 id=f"clip_{idx}",
                 start=snapped_start,
                 end=snapped_end,
                 duration=round(snapped_end - snapped_start, 2),
-                headline=rc.get("headline", f"🔥 HIGHLIGHT #{idx}"),
-                summary=rc.get("summary", ""),
+                headline=headline,
+                summary=summary,
                 virality_score=float(rc.get("virality_score", 8.5)),
                 target_length=target_length,
                 keywords=rc.get("keywords", []),
+                social_post=social_post,
             )
         )
     clips.sort(key=lambda c: c.virality_score, reverse=True)
     return clips
+
+
+def slice_timeline_for_clip(
+    timeline: Timeline,
+    clip_start: float,
+    clip_end: float,
+    clip_headline: Optional[str] = None,
+    trimmed_video_src: Optional[str] = None,
+) -> Timeline:
+    """Slice a Timeline to a specific clip window [clip_start, clip_end].
+    
+    Adjusts all events, words, camera cuts, and video duration to start at 0.0.
+    """
+    clip_duration = round(clip_end - clip_start, 2)
+
+    # 1. Slice video metadata
+    new_video = timeline.video.model_copy(
+        update={
+            "durationSec": clip_duration,
+            "src": trimmed_video_src or timeline.video.src,
+        }
+    )
+
+    # 2. Slice events
+    new_events = []
+    for ev in timeline.events:
+        if ev.end > clip_start and ev.start < clip_end:
+            shifted_start = max(0.0, round(ev.start - clip_start, 2))
+            shifted_end = min(clip_duration, round(ev.end - clip_start, 2))
+            if shifted_end > shifted_start:
+                ev_copy = ev.model_copy(update={"start": shifted_start, "end": shifted_end})
+                new_events.append(ev_copy)
+
+    # 3. Slice words
+    new_words = []
+    for w in timeline.words:
+        if w.end > clip_start and w.start < clip_end:
+            shifted_start = max(0.0, round(w.start - clip_start, 2))
+            shifted_end = min(clip_duration, round(w.end - clip_start, 2))
+            if shifted_end > shifted_start:
+                new_words.append(w.model_copy(update={"start": shifted_start, "end": shifted_end}))
+
+    # 4. Slice camera cuts
+    new_cuts = None
+    if timeline.cameraCuts:
+        new_cuts = []
+        for cut in timeline.cameraCuts:
+            if cut.end > clip_start and cut.start < clip_end:
+                shifted_start = max(0.0, round(cut.start - clip_start, 2))
+                shifted_end = min(clip_duration, round(cut.end - clip_start, 2))
+                if shifted_end > shifted_start:
+                    new_cuts.append(cut.model_copy(update={"start": shifted_start, "end": shifted_end}))
+
+    # 5. Build sub-timeline
+    return timeline.model_copy(
+        update={
+            "video": new_video,
+            "events": new_events,
+            "words": new_words,
+            "cameraCuts": new_cuts,
+            "headlineHook": clip_headline or timeline.headlineHook,
+        }
+    )
+
+
+def batch_render_viral_clips(
+    job_id: str,
+    clips: List[ViralClip | dict],
+    concurrency: Optional[int] = None,
+    draft: bool = False,
+) -> Path:
+    """Batch render a list of viral clips into individual MP4s and bundle into a ZIP archive."""
+    import zipfile
+    import subprocess
+    from pathlib import Path
+    from backend.api.runner import get_job_manager
+    from backend.pipeline.render import render, prepare_video_asset
+
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job or not job.timeline_file or not Path(job.timeline_file).exists():
+        raise ValueError(f"Job {job_id} or timeline not found")
+
+    tl_data = json.loads(Path(job.timeline_file).read_text(encoding="utf-8"))
+    base_timeline = Timeline.model_validate(tl_data)
+
+    job_dir = Path("jobs").resolve() / job_id
+    batch_dir = job_dir / "batch_clips"
+    batch_dir.mkdir(parents=True, exist_ok=True)
+
+    source_video = Path(job.input_file).resolve()
+    rendered_files = []
+
+    for idx, raw_clip in enumerate(clips, 1):
+        clip = raw_clip if isinstance(raw_clip, ViralClip) else ViralClip.model_validate(raw_clip)
+
+        # Clean title for file name
+        safe_headline = re.sub(r'[^\w\s-]', '', clip.headline).strip().replace(" ", "_")[:35]
+        clip_name = f"clip_{idx:02d}_{safe_headline}"
+        clip_mp4 = batch_dir / f"{clip_name}.mp4"
+
+        # Trim input video for this clip using ffmpeg
+        trimmed_video = batch_dir / f"{clip_name}_raw.mp4"
+        trim_cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(clip.start),
+            "-to", str(clip.end),
+            "-i", str(source_video),
+            "-c:v", "libx264", "-c:a", "aac",
+            "-avoid_negative_ts", "make_zero",
+            str(trimmed_video)
+        ]
+        subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Prepare asset in remotion public folder
+        rel_src = prepare_video_asset(trimmed_video, job_id=f"{job_id}_batch_{idx}")
+
+        # Slice timeline
+        sub_timeline = slice_timeline_for_clip(
+            timeline=base_timeline,
+            clip_start=clip.start,
+            clip_end=clip.end,
+            clip_headline=clip.headline,
+            trimmed_video_src=rel_src,
+        )
+
+        # Render with Remotion
+        render(
+            timeline_input=sub_timeline,
+            output_path=clip_mp4,
+            concurrency=concurrency,
+            draft=draft,
+        )
+        rendered_files.append((clip_mp4, f"{clip_name}.mp4"))
+
+        # Write social post copy file
+        if clip.social_post:
+            post_txt = (
+                f"=== SOCIAL MEDIA POST ===\n\n"
+                f"HOOK:\n{clip.social_post.hook}\n\n"
+                f"CAPTION:\n{clip.social_post.caption}\n\n"
+                f"HASHTAGS:\n{' '.join(clip.social_post.hashtags)}\n\n"
+                f"VIRALITY SCORE: {clip.virality_score}/10\n"
+                f"DURATION: {clip.duration}s ({clip.start:.1f}s - {clip.end:.1f}s)\n"
+            )
+            post_file = batch_dir / f"{clip_name}_post.txt"
+            post_file.write_text(post_txt, encoding="utf-8")
+            rendered_files.append((post_file, f"{clip_name}_post.txt"))
+
+    # Create ZIP archive
+    zip_path = job_dir / f"{job_id}_viral_reels.zip"
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for fpath, arcname in rendered_files:
+            zf.write(fpath, arcname=arcname)
+
+    return zip_path

@@ -90,13 +90,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const viralClipsList = document.getElementById("viralClipsList");
   const progressBarToggle = document.getElementById("progressBarToggle");
   const progBarBottomBtn = document.getElementById("progBarBottomBtn");
-  const progBarTopBtn = document.getElementById("progBarTopBtn");
   const autoEmojisToggle = document.getElementById("autoEmojisToggle");
+  const kineticZoomToggle = document.getElementById("kineticZoomToggle");
+  const soundEffectsToggle = document.getElementById("soundEffectsToggle");
+  const bgMusicToggle = document.getElementById("bgMusicToggle");
+  const watermarkInput = document.getElementById("watermarkInput");
 
   const canvasHeadlineHook = document.getElementById("canvasHeadlineHook");
   const canvasHeadlineHookInner = document.getElementById("canvasHeadlineHookInner");
   const canvasProgressBar = document.getElementById("canvasProgressBar");
   const canvasProgressBarFill = document.getElementById("canvasProgressBarFill");
+  const canvasWatermark = document.getElementById("canvasWatermark");
+  const canvasWatermarkText = document.getElementById("canvasWatermarkText");
+  const viralClipsActions = document.getElementById("viralClipsActions");
+  const btnBatchExportZip = document.getElementById("btnBatchExportZip");
+  const batchZipIcon = document.getElementById("batchZipIcon");
+  const batchZipLabel = document.getElementById("batchZipLabel");
 
   // Prominent Pipeline Progress Card references
   const pipelineProgressCard = document.getElementById("pipelineProgressCard");
@@ -1486,6 +1495,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderViralClips(clips) {
     if (!viralClipsList) return;
+    if (viralClipsActions) {
+      if (clips && clips.length > 0) viralClipsActions.classList.remove("hidden");
+      else viralClipsActions.classList.add("hidden");
+    }
+
     if (!clips || clips.length === 0) {
       viralClipsList.innerHTML = `<div style="padding: 10px; font-size: 11px; color: var(--text-dim); text-align: center;">No viral clips found for this length.</div>`;
       viralClipsList.classList.remove("hidden");
@@ -1503,11 +1517,17 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="badge" style="font-size: 9px; text-transform: uppercase; background: rgba(255,255,255,0.06);">${clip.target_length}</span>
         </div>
         <div class="viral-clip-summary">${clip.summary || "Key discussion excerpt"}</div>
+        <div class="viral-clip-footer">
+          <button type="button" class="btn-copy-post" data-clip-idx="${idx}" title="Copy viral hook, caption, and hashtags for TikTok / Reels">
+            📋 Copy Post
+          </button>
+        </div>
       </div>
     `).join("");
 
     viralClipsList.classList.remove("hidden");
 
+    // Click on clip card applies clip to player & trimmer
     const cards = viralClipsList.querySelectorAll(".viral-clip-card");
     cards.forEach((card, idx) => {
       card.addEventListener("click", () => {
@@ -1515,6 +1535,75 @@ document.addEventListener("DOMContentLoaded", () => {
         card.classList.add("active");
         applyViralClip(clips[idx]);
       });
+    });
+
+    // Wire Copy Post button (Feature #4: Social Media Copy & Hashtag Generator)
+    viralClipsList.querySelectorAll(".btn-copy-post").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation(); // Don't trigger card selection
+        const idx = parseInt(btn.dataset.clipIdx, 10);
+        const clip = clips[idx];
+        if (!clip) return;
+        const post = clip.social_post;
+        let textToCopy = "";
+        if (post) {
+          textToCopy = `${post.hook}\n\n${post.caption}\n\n${(post.hashtags || []).join(" ")}`;
+        } else {
+          textToCopy = `${clip.headline}\n\n${clip.summary || "Watch till the end!"}\n\n#reels #viral #podcast #shorts`;
+        }
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          const oldText = btn.textContent;
+          btn.textContent = "✅ Copied!";
+          showToast("📋 Social media post copy & hashtags copied to clipboard!");
+          setTimeout(() => { btn.textContent = oldText; }, 2000);
+        }).catch(() => {
+          showToast("Could not copy to clipboard");
+        });
+      });
+    });
+  }
+
+  // Feature #1: Batch Multi-Clip Export to ZIP
+  if (btnBatchExportZip) {
+    btnBatchExportZip.addEventListener("click", async () => {
+      if (!currentJobId) {
+        showToast("Please process a video first before batch exporting clips!");
+        return;
+      }
+      if (btnBatchExportZip.disabled) return;
+      btnBatchExportZip.disabled = true;
+      if (batchZipIcon) batchZipIcon.textContent = "⏳";
+      if (batchZipLabel) batchZipLabel.textContent = "Rendering ZIP...";
+      showToast("📦 Batch rendering all clips into MP4s and building ZIP...");
+
+      try {
+        const res = await fetch(`/api/jobs/${currentJobId}/batch-render-clips`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clips: activeViralClips || [] }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Batch render failed");
+        }
+        const data = await res.json();
+        showToast(`🎉 Rendered ${data.clips_count} reels! Downloading ZIP...`);
+
+        // Trigger ZIP download
+        const downloadLink = document.createElement("a");
+        downloadLink.href = data.zip_url;
+        downloadLink.download = data.filename || `${currentJobId}_viral_reels.zip`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      } catch (err) {
+        console.error("Batch Export ZIP Error:", err);
+        showToast(`Batch Export Error: ${err.message}`);
+      } finally {
+        btnBatchExportZip.disabled = false;
+        if (batchZipIcon) batchZipIcon.textContent = "📦";
+        if (batchZipLabel) batchZipLabel.textContent = "Export All Clips (.ZIP)";
+      }
     });
   }
 
@@ -1834,8 +1923,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (kineticZoomToggle) {
+    kineticZoomToggle.addEventListener("change", (e) => {
+      showToast(e.target.checked ? "🎥 Kinetic Punch-In Zooms: Enabled" : "Kinetic Zooms: Disabled");
+    });
+  }
+
+  if (soundEffectsToggle) {
+    soundEffectsToggle.addEventListener("change", (e) => {
+      showToast(e.target.checked ? "🔊 Viral Pop SFX: Enabled" : "Viral Pop SFX: Disabled");
+    });
+  }
+
+  if (bgMusicToggle) {
+    bgMusicToggle.addEventListener("change", (e) => {
+      showToast(e.target.checked ? "🎵 Lo-Fi Ambient Beat: Enabled" : "Lo-Fi Ambient Beat: Disabled");
+    });
+  }
+
+  function updateWatermarkPreview() {
+    if (!canvasWatermark || !watermarkInput) return;
+    const val = watermarkInput.value.trim();
+    if (val) {
+      canvasWatermark.classList.remove("hidden");
+      if (canvasWatermarkText) {
+        canvasWatermarkText.textContent = val.startsWith("@") ? val : `@${val}`;
+      }
+    } else {
+      canvasWatermark.classList.add("hidden");
+    }
+  }
+
+  if (watermarkInput) {
+    watermarkInput.addEventListener("input", updateWatermarkPreview);
+  }
+
   updateHeadlineHookPreview();
   updateProgressBarPreview();
+  updateWatermarkPreview();
 
   // =========================================================================
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
@@ -1898,6 +2023,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     formData.append("auto_emojis", selectedAutoEmojis ? "true" : "false");
+    if (kineticZoomToggle && kineticZoomToggle.checked) {
+      formData.append("kinetic_zoom", "true");
+    }
+    if (soundEffectsToggle && soundEffectsToggle.checked) {
+      formData.append("sound_effects", "true");
+    }
+    if (bgMusicToggle && bgMusicToggle.checked) {
+      formData.append("bg_music", "lofi");
+    }
+    if (watermarkInput && watermarkInput.value.trim()) {
+      formData.append("watermark_text", watermarkInput.value.trim());
+    }
 
     if (draftToggle.checked) {
       formData.append("draft", "true");
@@ -2187,6 +2324,11 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           currentTimeline.headlineHook = null;
         }
+
+        if (kineticZoomToggle) currentTimeline.kineticZoom = kineticZoomToggle.checked;
+        if (soundEffectsToggle) currentTimeline.soundEffects = soundEffectsToggle.checked;
+        if (bgMusicToggle) currentTimeline.bgMusic = bgMusicToggle.checked ? "lofi" : null;
+        if (watermarkInput) currentTimeline.watermarkText = watermarkInput.value.trim() || null;
 
         // Save timeline edits first
         await fetch(`/api/jobs/${currentJobId}/timeline`, {

@@ -42,6 +42,7 @@ export interface TimelineEvent {
   backgroundStyle?: "transparent" | "glass" | "solid";
   highlightColor?: string;
   sentenceId?: string;
+  speakerId?: string;
 }
 
 export interface TimelineWord {
@@ -88,4 +89,9 @@ export interface Timeline {
   headlineStyle?: "badge" | "glass" | "clean" | "cyber";
   headlineDuration?: number;
   autoEmojis?: boolean;
+  kineticZoom?: boolean;
+  soundEffects?: boolean;
+  bgMusic?: string;
+  bgMusicVolume?: number;
+  watermarkText?: string;
 }

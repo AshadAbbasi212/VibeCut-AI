@@ -599,6 +599,34 @@
       color: var(--text-sub);
       line-height: 1.35;
     }
+    .viral-clip-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    .btn-copy-post {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38BDF8;
+      border-radius: var(--radius-xs);
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+    .btn-copy-post:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+      border-color: rgba(56, 189, 248, 0.6);
+    }
 
     /* Visual Specimens */
     .chip-visual-specimen { margin-bottom: 4px; }
@@ -1768,8 +1796,15 @@
                   </button>
                 </div>
 
-                <!-- Container for discovered clips -->
-                <div id="viralClipsList" class="hidden" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 4px; margin-top: 10px;">
+                <!-- Action strip & Container for discovered clips -->
+                <div id="viralClipsActions" class="hidden" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 11px; font-weight: 700; color: var(--text-sub);">Discovered Viral Clips:</span>
+                  <button type="button" class="btn-sub" id="btnBatchExportZip" style="font-size: 11px; padding: 4px 10px; border-radius: var(--radius-xs); border: 1px solid rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.12); color: #F59E0B; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <span id="batchZipIcon">📦</span>
+                    <span id="batchZipLabel">Export All Clips (.ZIP)</span>
+                  </button>
+                </div>
+                <div id="viralClipsList" class="hidden" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 4px; margin-top: 4px;">
                   <!-- Dynamic clip cards rendered by JS -->
                 </div>
               </div>
@@ -2153,6 +2188,41 @@
                 <span style="font-size: 10px; color: var(--text-dim); display: block;">Pops 3D 🚀, 🔥, 💰, 💡 glossy stickers</span>
               </div>
             </div>
+
+            <!-- Kinetic Punch-In & Viral Pop SFX Toggles -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 12px;">
+                <label for="kineticZoomToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0 0 4px 0;">
+                  <input type="checkbox" id="kineticZoomToggle" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">🎥 Kinetic Zooms</span>
+                </label>
+                <span style="font-size: 10px; color: var(--text-dim); display: block;">1.13x zoom punch every 5s to reset attention</span>
+              </div>
+
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 12px;">
+                <label for="soundEffectsToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0 0 4px 0;">
+                  <input type="checkbox" id="soundEffectsToggle" checked style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">🔊 Viral Pop SFX</span>
+                </label>
+                <span style="font-size: 10px; color: var(--text-dim); display: block;">Pop sound effect on hook & 3D stickers</span>
+              </div>
+            </div>
+
+            <!-- Lo-Fi Ambient Beat & Watermark -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 12px;">
+                <label for="bgMusicToggle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0 0 4px 0;">
+                  <input type="checkbox" id="bgMusicToggle" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+                  <span style="font-size: 12px; font-weight: 700; color: #fff;">🎵 Lo-Fi Ambient</span>
+                </label>
+                <span style="font-size: 10px; color: var(--text-dim); display: block;">Warm lo-fi pad ducked under speech</span>
+              </div>
+
+              <div style="background: rgba(255, 255, 255, 0.025); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 10px 12px;">
+                <label for="watermarkInput" style="font-size: 11px; font-weight: 700; color: #fff; margin-bottom: 4px; display: block;">🏷️ Brand Watermark</label>
+                <input type="text" id="watermarkInput" class="input" placeholder="@yourhandle" style="width: 100%; font-size: 11px; padding: 4px 8px; border-radius: var(--radius-xs);">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2305,6 +2375,14 @@
             <!-- Canvas Live Retention Progress Bar Preview -->
             <div id="canvasProgressBar" style="position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: rgba(0, 0, 0, 0.4); z-index: 28; pointer-events: none;">
               <div id="canvasProgressBarFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38BDF8, #ec4899, #FBBF24); box-shadow: 0 0 10px #38BDF8; transition: width 0.1s linear;"></div>
+            </div>
+
+            <!-- Canvas Live Brand Watermark Preview -->
+            <div id="canvasWatermark" class="hidden" style="position: absolute; bottom: 14px; right: 14px; z-index: 27; pointer-events: none;">
+              <div style="background: rgba(10, 10, 16, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9999px; padding: 4px 10px; color: #FFFFFF; font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); display: flex; align-items: center; gap: 4px;">
+                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #38BDF8; box-shadow: 0 0 6px #38BDF8;"></span>
+                <span id="canvasWatermarkText">@handle</span>
+              </div>
             </div>
           </div>
 

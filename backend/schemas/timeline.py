@@ -122,6 +122,9 @@ class TimelineEvent(BaseModel):
     sentenceId: Optional[str] = Field(
         default=None, description="Grouping identifier for sentence-level style consistency"
     )
+    speakerId: Optional[str] = Field(
+        default=None, description="Active speaker ID e.g. speaker_0, speaker_1"
+    )
 
     @model_validator(mode="after")
     def validate_event(self) -> "TimelineEvent":
@@ -175,6 +178,21 @@ class Timeline(BaseModel):
     )
     autoEmojis: Optional[bool] = Field(
         default=True, description="Enable keyword-driven auto-emojis and animated stickers"
+    )
+    kineticZoom: Optional[bool] = Field(
+        default=False, description="Auto kinetic punch-in zoom on emphasis moments"
+    )
+    soundEffects: Optional[bool] = Field(
+        default=False, description="Enable pop SFX on graphic and hook entrances"
+    )
+    bgMusic: Optional[str] = Field(
+        default=None, description="Background music track: 'lofi' or None"
+    )
+    bgMusicVolume: Optional[float] = Field(
+        default=0.12, description="Background music volume"
+    )
+    watermarkText: Optional[str] = Field(
+        default=None, description="Creator handle watermark e.g. @yourhandle"
     )
 
     @model_validator(mode="after")

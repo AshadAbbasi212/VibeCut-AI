@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env (MISTRAL_API_KEY, etc.)
 load_dotenv()
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
@@ -75,6 +75,10 @@ async def create_job(
     headline_style: Literal["badge", "glass", "clean", "cyber"] = Form("badge"),
     headline_duration: Optional[float] = Form(None),
     auto_emojis: bool = Form(True),
+    kinetic_zoom: bool = Form(False),
+    sound_effects: bool = Form(False),
+    bg_music: Optional[str] = Form(None),
+    watermark_text: Optional[str] = Form(None),
     ai_enhance: bool = Form(False),
     api_key: Optional[str] = Form(None),
 ):
@@ -116,6 +120,10 @@ async def create_job(
             headline_style=headline_style,
             headline_duration=headline_duration,
             auto_emojis=auto_emojis,
+            kinetic_zoom=kinetic_zoom,
+            sound_effects=sound_effects,
+            bg_music=bg_music.strip() if bg_music and bg_music.strip() else None,
+            watermark_text=watermark_text.strip() if watermark_text and watermark_text.strip() else None,
             ai_enhance=ai_enhance,
             api_key=api_key.strip() if api_key and api_key.strip() else None,
         )
@@ -290,6 +298,96 @@ def find_job_clips(
         "clips": [c.model_dump() for c in clips],
         "total": len(clips),
     }
+
+
+@app.post("/api/jobs/{job_id}/batch-render-clips")
+def batch_render_clips_endpoint(
+    job_id: str,
+    payload: Optional[dict] = Body(None),
+):
+    """Batch render discovered viral clips into standalone MP4s bundled in a ZIP."""
+    from backend.pipeline.clips import batch_render_viral_clips, find_viral_clips, ViralClip
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+
+    clips_data = None
+    if payload and "clips" in payload:
+        clips_data = payload["clips"]
+
+    if not clips_data:
+        # Discover clips if not provided in payload
+        job_dir = Path("jobs").resolve() / job_id
+        phrases_file = job_dir / "phrases.json"
+        timeline_file = job_dir / "timeline.json"
+        analysis_file = job_dir / "analysis.json"
+
+        phrases = []
+        duration = 30.0
+        if phrases_file.exists():
+            data = json.loads(phrases_file.read_text(encoding="utf-8"))
+            phrases = data.get("phrases", [])
+            duration = float(data.get("duration", 30.0))
+        elif timeline_file.exists():
+            tl_data = json.loads(timeline_file.read_text(encoding="utf-8"))
+            duration = float(tl_data.get("video", {}).get("durationSec", 30.0))
+            for ev in tl_data.get("events", []):
+                phrases.append({"start": ev.get("start", 0), "end": ev.get("end", 0), "text": ev.get("text", "")})
+        else:
+            raise HTTPException(status_code=400, detail="Job has no transcript or phrases to extract clips")
+
+        topic_segments = None
+        if analysis_file.exists():
+            try:
+                an_data = json.loads(analysis_file.read_text(encoding="utf-8"))
+                topic_segments = an_data.get("topic_segments", [])
+            except Exception:
+                pass
+
+        provider = job.llm_provider if job.llm_provider != "none" else os.getenv("LLM_PROVIDER", "none")
+        discovered = find_viral_clips(
+            phrases=phrases,
+            video_duration=duration,
+            target_length="30s",
+            provider=provider,
+            api_key=getattr(job, "api_key", None),
+            topic_segments=topic_segments,
+        )
+        clips_data = [c.model_dump() for c in discovered]
+
+    if not clips_data:
+        raise HTTPException(status_code=400, detail="No viral clips found or provided to batch render")
+
+    try:
+        zip_path = batch_render_viral_clips(
+            job_id=job_id,
+            clips=clips_data,
+            draft=getattr(job, "draft", False),
+        )
+        return {
+            "status": "completed",
+            "zip_url": f"/api/jobs/{job_id}/download-zip",
+            "clips_count": len(clips_data),
+            "filename": zip_path.name,
+            "message": f"Successfully rendered {len(clips_data)} viral reels into ZIP",
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch render failed: {e}")
+
+
+@app.get("/api/jobs/{job_id}/download-zip")
+def download_job_zip(job_id: str):
+    """Download the batch rendered viral reels ZIP package."""
+    job_dir = Path("jobs").resolve() / job_id
+    zip_path = job_dir / f"{job_id}_viral_reels.zip"
+    if not zip_path.exists():
+        raise HTTPException(status_code=404, detail="ZIP archive not found or not yet generated")
+    return FileResponse(
+        path=zip_path,
+        media_type="application/zip",
+        filename=f"{job_id}_viral_reels.zip",
+    )
 
 
 @app.post("/api/clips/discover")

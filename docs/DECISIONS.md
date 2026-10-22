@@ -1,5 +1,15 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: Creator Booster Pack: Batch ZIP Export, Viral Audio Layer, Kinetic Zooms, Social Copy & Auto Multi-Speaker Diarization
+- **Decision**:
+  1. **Batch Multi-Clip Export to ZIP**: Built `slice_timeline_for_clip` and `batch_render_viral_clips` in `backend/pipeline/clips.py` with endpoints `POST /api/jobs/{job_id}/batch-render-clips` and `GET /api/jobs/{job_id}/download-zip`. Slices the timeline down to each clip's time window, offsets all events and words to start at 0.0, extracts the sub-video via FFmpeg fast stream copy, renders standalone vertical MP4s via Remotion, generates matching `clip_XX_post.txt` files, and bundles them into `{job_id}_viral_reels.zip`.
+  2. **Viral SFX & Lo-Fi Ambient Audio Layer**: Generated clean local assets `sfx_pop.wav` and `bg_lofi.wav`. Integrated Remotion `<Audio>` layers for pop sound effects on sticker/hook entrances and looped ambient background pads ducked under speech, controlled via user toggles (`#soundEffectsToggle`, `#bgMusicToggle`).
+  3. **Kinetic Punch-In Micro-Zooms**: Implemented dynamic camera zoom calculation in `CaptionedVideo` that smoothly interpolates video scale up to 1.13x every 150 frames (5 seconds), giving an editorial attention reset without distracting motion. User toggled via `#kineticZoomToggle`.
+  4. **Social Media Copy & Hashtag Generator**: Added `SocialPost` model with hook, caption, and hashtags to `ViralClip`. Added 1-click `📋 Copy Post` button on each clip card that copies ready-to-paste social copy directly to the user's clipboard.
+  5. **Multi-Speaker Diarization Auto Color Coding**: *Direct implementation without user toggle*: In `backend/api/runner.py` and Remotion renderer, Host (`speaker_0`) dialogue is automatically mapped to Electric Cyan (`#38BDF8`) and Guest (`speaker_1`) dialogue to Cyber Amber (`#F59E0B`) based on active camera cut intervals.
+  6. **Custom Brand Watermark / Handle**: Added `#watermarkInput` with live floating canvas badge preview on `#phoneCanvas` and Remotion renderer badge overlay.
+- **Why**: Turns Dynamic Captions Studio from a caption generator into an end-to-end viral content repurposing engine. Creators can take one podcast, discover all engaging discussion clips, get auto-colored speaker subtitles, pop SFX, and download ready-to-publish reels in a single ZIP.
+
 ## 2026-10-22: AI Viral Clip Extractor (15s, 30s, 60s Highlights), Headline Hook Duration & Backend-Only API Key Security
 - **Decision**:
   1. Removed the API key input box, visibility toggles, and client-side storage from the frontend UI. All LLM credentials (including `MISTRAL_API_KEY`) are kept strictly in backend `.env` (gitignored) and accessed via `os.getenv()`, preventing any client key exposure.

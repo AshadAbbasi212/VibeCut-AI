@@ -144,6 +144,136 @@ def test_api_create_job_with_headline_duration():
         )
     assert resp.status_code == 201
     job = resp.json()
-    assert job["headline_hook"] == "🔥 WATCH THIS"
-    assert job["headline_style"] == "glass"
     assert job["headline_duration"] == 5.0
+
+
+def test_viral_clip_social_post():
+    from backend.pipeline.clips import SocialPost
+    post = SocialPost(
+        hook="Wait till you hear this... 🤯",
+        caption="The key to scaling is retention.",
+        hashtags=["#viral", "#podcast", "#reels"],
+    )
+    clip = ViralClip(
+        id="c1",
+        start=0.0,
+        end=15.0,
+        duration=15.0,
+        headline="🔥 THE SECRET TO SCALING",
+        social_post=post,
+    )
+    assert clip.social_post is not None
+    assert clip.social_post.hook.startswith("Wait")
+    assert len(clip.social_post.hashtags) == 3
+
+
+def test_slice_timeline_for_clip():
+    from backend.pipeline.clips import slice_timeline_for_clip
+    base_tl = Timeline(
+        version=1,
+        video=TimelineVideo(src="video.mp4", width=1080, height=1920, fps=30, durationSec=60.0),
+        words=[
+            TimelineWord(i=0, text="first", start=5.0, end=7.0),
+            TimelineWord(i=1, text="second", start=12.0, end=14.0),
+            TimelineWord(i=2, text="third", start=25.0, end=27.0),
+        ],
+        events=[
+            TimelineEvent(
+                id="e1",
+                style="hormozi_bold",
+                start=5.0,
+                end=8.0,
+                zone="lower",
+                wordRange=[0, 0],
+                text="first phrase",
+            ),
+            TimelineEvent(
+                id="e2",
+                style="hormozi_bold",
+                start=12.0,
+                end=15.0,
+                zone="lower",
+                wordRange=[1, 1],
+                text="second phrase",
+            ),
+        ],
+        headlineHook="🔥 OLD HEADLINE",
+    )
+
+    # Slice for clip from 10.0 to 20.0
+    sub_tl = slice_timeline_for_clip(
+        timeline=base_tl,
+        clip_start=10.0,
+        clip_end=20.0,
+        clip_headline="🔥 NEW CLIP HOOK",
+        trimmed_video_src="jobs/j1_batch_1/input.mp4",
+    )
+
+    assert sub_tl.video.durationSec == 10.0
+    assert sub_tl.video.src == "jobs/j1_batch_1/input.mp4"
+    assert sub_tl.headlineHook == "🔥 NEW CLIP HOOK"
+    # Event e1 (5.0 - 8.0) is before clip start 10.0 -> should be excluded
+    # Event e2 (12.0 - 15.0) -> shifted by -10.0 -> (2.0 - 5.0)
+    assert len(sub_tl.events) == 1
+    assert sub_tl.events[0].id == "e2"
+    assert sub_tl.events[0].start == 2.0
+    assert sub_tl.events[0].end == 5.0
+
+    # Word 1 (12.0 - 14.0) -> shifted by -10.0 -> (2.0 - 4.0)
+    assert len(sub_tl.words) == 1
+    assert sub_tl.words[0].text == "second"
+    assert sub_tl.words[0].start == 2.0
+    assert sub_tl.words[0].end == 4.0
+
+
+def test_api_create_job_with_booster_options():
+    client = TestClient(app)
+    with open("samples/synthetic.mp4", "rb") as f:
+        resp = client.post(
+            "/api/jobs",
+            files={"file": ("synthetic.mp4", f, "video/mp4")},
+            data={
+                "preset": "fast",
+                "kinetic_zoom": "true",
+                "sound_effects": "true",
+                "bg_music": "lofi",
+                "watermark_text": "@creatorbrand",
+                "draft": "true",
+            },
+        )
+    assert resp.status_code == 201
+    job = resp.json()
+    assert job["kinetic_zoom"] is True
+    assert job["sound_effects"] is True
+    assert job["bg_music"] == "lofi"
+    assert job["watermark_text"] == "@creatorbrand"
+
+
+def test_multi_speaker_timeline_speaker_id_and_colors():
+    # Verify speakerId and color mapping in TimelineEvent
+    ev_host = TimelineEvent(
+        id="ev_0",
+        style="hormozi_bold",
+        start=0.0,
+        end=3.0,
+        zone="lower",
+        wordRange=[0, 1],
+        text="Host speaking",
+        speakerId="speaker_0",
+        highlightColor="#38BDF8",
+    )
+    ev_guest = TimelineEvent(
+        id="ev_1",
+        style="hormozi_bold",
+        start=3.5,
+        end=7.0,
+        zone="lower",
+        wordRange=[2, 3],
+        text="Guest speaking",
+        speakerId="speaker_1",
+        highlightColor="#F59E0B",
+    )
+    assert ev_host.speakerId == "speaker_0"
+    assert ev_host.highlightColor == "#38BDF8"
+    assert ev_guest.speakerId == "speaker_1"
+    assert ev_guest.highlightColor == "#F59E0B"

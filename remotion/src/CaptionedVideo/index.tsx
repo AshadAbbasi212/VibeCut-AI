@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import {
   AbsoluteFill,
+  Audio,
   CalculateMetadataFunction,
   OffthreadVideo,
   Sequence,
@@ -720,10 +721,40 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     );
   };
 
+  // Kinetic punch-in zoom calculation (resets audience attention every ~5 seconds)
+  let videoScale = 1.0;
+  if (timeline.kineticZoom) {
+    const cycle = frame % 150; // every 5 seconds (150 frames @ 30fps)
+    if (cycle >= 0 && cycle <= 36) {
+      if (cycle < 6) {
+        videoScale = interpolate(cycle, [0, 6], [1.0, 1.13], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+      } else if (cycle > 30) {
+        videoScale = interpolate(cycle, [30, 36], [1.13, 1.0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+      } else {
+        videoScale = 1.13;
+      }
+    }
+  }
+
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Background Video Layer */}
-      {renderVideoLayer()}
+      {/* Background Video Layer with optional Kinetic Punch-In Zoom */}
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          transform: `scale(${videoScale})`,
+          transformOrigin: "center center",
+        }}
+      >
+        {renderVideoLayer()}
+      </div>
 
       {/* Retention Progress Bar */}
       {renderProgressBar()}
@@ -731,17 +762,92 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       {/* Top Headline Hook Card (Optional user card) */}
       {renderHeadlineHook()}
 
+      {/* Brand Watermark / Handle Badge */}
+      {timeline.watermarkText && (
+        <div
+          style={{
+            position: "absolute",
+            top: 52,
+            right: 52,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            background: "rgba(10, 10, 15, 0.75)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            borderRadius: 9999,
+            padding: "8px 22px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6)",
+            zIndex: 35,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>✨</span>
+          <span
+            style={{
+              color: "#FFFFFF",
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 800,
+              fontSize: 20,
+              letterSpacing: "0.5px",
+            }}
+          >
+            {timeline.watermarkText.startsWith("@")
+              ? timeline.watermarkText
+              : `@${timeline.watermarkText}`}
+          </span>
+        </div>
+      )}
+
+      {/* Lo-Fi Ambient Background Music (if enabled) */}
+      {timeline.bgMusic && (
+        <Audio
+          src={staticFile("audio/bg_lofi.wav")}
+          volume={timeline.bgMusicVolume || 0.12}
+          loop
+        />
+      )}
+
+      {/* Viral Pop Sound Effects on Hook and Graphic Sticker Entrances */}
+      {timeline.soundEffects &&
+        timeline.events
+          .filter(
+            (e) =>
+              e.graphic ||
+              e.style === "beast_impact" ||
+              e.style === "title3d" ||
+              e.style === "fire_burn"
+          )
+          .map((e) => (
+            <Sequence
+              key={`sfx_${e.id}`}
+              from={Math.round(e.start * fps)}
+              durationInFrames={8}
+            >
+              <Audio src={staticFile("audio/sfx_pop.wav")} volume={0.35} />
+            </Sequence>
+          ))}
+
       {/* Dynamic Caption Events */}
       {timeline.events.map((rawEvent) => {
+        // Multi-Speaker Diarization Auto Color Coding
+        let resolvedHighlightColor =
+          rawEvent.highlightColor || timeline.highlightColor || "#38BDF8";
+        if (rawEvent.speakerId === "speaker_1") {
+          resolvedHighlightColor = "#F59E0B"; // Amber Gold for Guest / Speaker 2
+        } else if (rawEvent.speakerId === "speaker_0") {
+          resolvedHighlightColor = "#38BDF8"; // Electric Cyan for Host / Speaker 1
+        }
+
         const event: TimelineEvent = {
           ...rawEvent,
           captionSize: rawEvent.captionSize || timeline.captionSize || "medium",
-          backgroundStyle: rawEvent.backgroundStyle || timeline.backgroundStyle || "transparent",
-          highlightColor: rawEvent.highlightColor || timeline.highlightColor || "#38BDF8",
+          backgroundStyle:
+            rawEvent.backgroundStyle || timeline.backgroundStyle || "transparent",
+          highlightColor: resolvedHighlightColor,
         };
 
-        // When a feature event is active for this phrase window, suppress the redundant
-        // base caption so only one clean, styled caption is visible at a time.
+        // When a feature event is active for this phrase window, suppress redundant base
         if (event.id.startsWith("base_")) {
           const hasConcurrentFeature = timeline.events.some(
             (other) =>
