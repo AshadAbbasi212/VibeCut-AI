@@ -86,5 +86,6 @@ export interface Timeline {
   progressBarPosition?: "bottom" | "top";
   headlineHook?: string;
   headlineStyle?: "badge" | "glass" | "clean" | "cyber";
+  headlineDuration?: number;
   autoEmojis?: boolean;
 }

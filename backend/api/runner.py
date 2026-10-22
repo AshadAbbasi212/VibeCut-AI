@@ -48,6 +48,7 @@ class JobInfo(BaseModel):
     progress_bar_position: Literal["bottom", "top"] = "bottom"
     headline_hook: Optional[str] = None
     headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge"
+    headline_duration: Optional[float] = None
     auto_emojis: bool = True
     ai_enhance: bool = False
     api_key: Optional[str] = Field(default=None, exclude=True)
@@ -199,6 +200,7 @@ class JobManager:
         progress_bar_position: Literal["bottom", "top"] = "bottom",
         headline_hook: Optional[str] = None,
         headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge",
+        headline_duration: Optional[float] = None,
         auto_emojis: bool = True,
         ai_enhance: bool = False,
         api_key: Optional[str] = None,
@@ -236,6 +238,7 @@ class JobManager:
             progress_bar_position=progress_bar_position,
             headline_hook=headline_hook,
             headline_style=headline_style,
+            headline_duration=headline_duration,
             auto_emojis=auto_emojis,
             ai_enhance=ai_enhance,
             api_key=api_key,
@@ -531,6 +534,7 @@ class JobManager:
                 progressBarPosition=getattr(job, "progress_bar_position", "bottom"),
                 headlineHook=getattr(job, "headline_hook", None),
                 headlineStyle=getattr(job, "headline_style", "badge"),
+                headlineDuration=getattr(job, "headline_duration", None),
                 autoEmojis=getattr(job, "auto_emojis", True),
             )
             timeline_json.write_text(

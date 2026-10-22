@@ -69,11 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const llmProvider = document.getElementById("llmProvider");
   const aiDirectorBadge = document.getElementById("aiDirectorBadge");
   const aiEnhanceToggle = document.getElementById("aiEnhanceToggle");
-  const apiKeySection = document.getElementById("apiKeySection");
-  const apiKeyInput = document.getElementById("apiKeyInput");
-  const toggleApiKeyVisibility = document.getElementById("toggleApiKeyVisibility");
-  const saveApiKeyBtn = document.getElementById("saveApiKeyBtn");
-  const apiKeySavedBadge = document.getElementById("apiKeySavedBadge");
   const draftToggle = document.getElementById("draftToggle");
 
   const startJobBtn = document.getElementById("startJobBtn");
@@ -86,6 +81,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const headlineHookSettings = document.getElementById("headlineHookSettings");
   const headlineHookInput = document.getElementById("headlineHookInput");
   const headlineStyleChips = document.querySelectorAll("#headlineStyleChips .btn-custom-chip");
+  const headlineDurationChips = document.querySelectorAll("#headlineDurationChips .btn-custom-chip");
+  const headlineDurationInput = document.getElementById("headlineDurationInput");
+  const clipLengthChips = document.querySelectorAll("#clipLengthSelector .btn-custom-chip");
+  const btnFindViralClips = document.getElementById("btnFindViralClips");
+  const findClipsBtnIcon = document.getElementById("findClipsBtnIcon");
+  const findClipsBtnText = document.getElementById("findClipsBtnText");
+  const viralClipsList = document.getElementById("viralClipsList");
   const progressBarToggle = document.getElementById("progressBarToggle");
   const progBarBottomBtn = document.getElementById("progBarBottomBtn");
   const progBarTopBtn = document.getElementById("progBarTopBtn");
@@ -174,6 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedHeadlineHookEnabled = false;
   let selectedHeadlineHookText = "🔥 WAIT TILL THE END...";
   let selectedHeadlineHookStyle = "badge";
+  let selectedHeadlineDuration = null; // null = full video sticky, or 5.0, 10.0
+  let selectedClipLength = "30s";
+  let activeViralClips = [];
   let selectedProgressBar = true;
   let selectedProgressBarPos = "bottom";
   let selectedAutoEmojis = true;
@@ -634,16 +639,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (apiKeySection) {
-      apiKeySection.style.display = isAi ? "block" : "none";
-    }
-
-    if (apiKeyInput && isAi) {
-      const savedKey = localStorage.getItem(`dcs_key_${prov}`) || localStorage.getItem("dcs_key_default") || "";
-      apiKeyInput.value = savedKey;
-      apiKeyInput.placeholder = `Enter your ${prov} API key...`;
-    }
-
     if (aiEnhanceToggle) {
       aiEnhanceToggle.disabled = !isAi;
       if (!isAi) aiEnhanceToggle.checked = false;
@@ -656,49 +651,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initialize AI Director UI state
   updateAiDirectorUI();
-
-  if (toggleApiKeyVisibility && apiKeyInput) {
-    toggleApiKeyVisibility.addEventListener("click", () => {
-      const isPwd = apiKeyInput.type === "password";
-      apiKeyInput.type = isPwd ? "text" : "password";
-      toggleApiKeyVisibility.textContent = isPwd ? "🙈" : "👁️";
-    });
-  }
-
-  function saveCurrentApiKey() {
-    if (!apiKeyInput || !llmProvider) return;
-    const val = apiKeyInput.value.trim();
-    const prov = llmProvider.value;
-    if (prov !== "none") {
-      if (val) {
-        localStorage.setItem(`dcs_key_${prov}`, val);
-        localStorage.setItem("dcs_key_default", val);
-      } else {
-        localStorage.removeItem(`dcs_key_${prov}`);
-      }
-      if (apiKeySavedBadge) {
-        apiKeySavedBadge.classList.remove("hidden");
-        setTimeout(() => apiKeySavedBadge.classList.add("hidden"), 2500);
-      }
-      showToast(`${prov.toUpperCase()} API key saved locally!`);
-    }
-  }
-
-  if (saveApiKeyBtn) {
-    saveApiKeyBtn.addEventListener("click", saveCurrentApiKey);
-  }
-
-  if (apiKeyInput) {
-    apiKeyInput.addEventListener("blur", () => {
-      if (apiKeyInput.value.trim()) {
-        const prov = llmProvider ? llmProvider.value : "none";
-        if (prov !== "none") {
-          localStorage.setItem(`dcs_key_${prov}`, apiKeyInput.value.trim());
-          localStorage.setItem("dcs_key_default", apiKeyInput.value.trim());
-        }
-      }
-    });
-  }
 
   // 3. File Selection & Instant Video Preview
   browseBtn.addEventListener("click", (e) => {
@@ -1387,6 +1339,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      if (selectedHeadlineHookEnabled && canvasHeadlineHook) {
+        if (selectedHeadlineDuration !== null && cur > selectedHeadlineDuration) {
+          canvasHeadlineHook.style.opacity = "0";
+          canvasHeadlineHook.style.transition = "opacity 0.4s ease";
+        } else {
+          canvasHeadlineHook.style.opacity = "1";
+        }
+      }
+
       if (isPlayingCut) {
         if (cur >= trimEndSec || cur < trimStartSec - 0.2) {
           sourceVideoPlayer.currentTime = trimStartSec;
@@ -1404,32 +1365,23 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Preset Buttons for Trimming
+  // Preset Buttons for Trimming & AI Viral Clips
   if (trim15sBtn) {
     trim15sBtn.addEventListener("click", () => {
-      trimStartSec = 0.0;
-      trimEndSec = Math.min(videoTotalDuration, 15.0);
-      updateTrimmerDisplay();
-      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
-      showToast("Trimmed to first 15s Hook");
+      setClipLength("15s");
+      fetchViralClips("15s");
     });
   }
   if (trim30sBtn) {
     trim30sBtn.addEventListener("click", () => {
-      trimStartSec = 0.0;
-      trimEndSec = Math.min(videoTotalDuration, 30.0);
-      updateTrimmerDisplay();
-      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
-      showToast("Trimmed to 30s Reel");
+      setClipLength("30s");
+      fetchViralClips("30s");
     });
   }
   if (trim60sBtn) {
     trim60sBtn.addEventListener("click", () => {
-      trimStartSec = 0.0;
-      trimEndSec = Math.min(videoTotalDuration, 60.0);
-      updateTrimmerDisplay();
-      if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
-      showToast("Trimmed to 60s Short");
+      setClipLength("60s");
+      fetchViralClips("60s");
     });
   }
   if (trimResetBtn) {
@@ -1438,8 +1390,153 @@ document.addEventListener("DOMContentLoaded", () => {
       trimEndSec = videoTotalDuration;
       updateTrimmerDisplay();
       if (sourceVideoPlayer) sourceVideoPlayer.currentTime = 0;
+      if (viralClipsList) {
+        viralClipsList.querySelectorAll(".viral-clip-card").forEach(c => c.classList.remove("active"));
+      }
       showToast("Reset to full video");
     });
+  }
+
+  function setClipLength(len) {
+    selectedClipLength = len;
+    if (clipLengthChips) {
+      clipLengthChips.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.length === len);
+      });
+    }
+  }
+
+  if (clipLengthChips) {
+    clipLengthChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setClipLength(btn.dataset.length || "30s");
+        fetchViralClips(selectedClipLength);
+      });
+    });
+  }
+
+  if (btnFindViralClips) {
+    btnFindViralClips.addEventListener("click", () => {
+      fetchViralClips(selectedClipLength);
+    });
+  }
+
+  async function fetchViralClips(targetLen) {
+    const len = targetLen || selectedClipLength || "30s";
+    setClipLength(len);
+
+    if (!selectedFile && !currentJobId) {
+      showToast("Please upload a video or click Sample Video first!");
+      return;
+    }
+
+    if (btnFindViralClips) btnFindViralClips.disabled = true;
+    if (findClipsBtnIcon) findClipsBtnIcon.textContent = "⏳";
+    if (findClipsBtnText) findClipsBtnText.textContent = "Scanning...";
+    showToast(`🤖 AI scanning video for ${len} viral moments...`);
+
+    try {
+      let data;
+      if (currentJobId) {
+        const res = await fetch(`/api/jobs/${currentJobId}/find-clips?target_length=${encodeURIComponent(len)}`, {
+          method: "POST",
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Failed to find clips");
+        }
+        data = await res.json();
+      } else {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        formData.append("target_length", len);
+        if (llmProvider && llmProvider.value) {
+          formData.append("llm_provider", llmProvider.value);
+        }
+        const res = await fetch("/api/clips/discover", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Failed to analyze clips");
+        }
+        data = await res.json();
+      }
+
+      const clips = data.clips || [];
+      activeViralClips = clips;
+      renderViralClips(clips);
+
+      if (clips.length > 0) {
+        applyViralClip(clips[0]);
+        showToast(`✨ Found ${clips.length} viral clips! Top: "${clips[0].headline}"`);
+      } else {
+        showToast("No distinct clips found matching length.");
+      }
+    } catch (err) {
+      console.error("AI Clip Extraction Error:", err);
+      showToast(`AI Clip Finder: ${err.message}`);
+    } finally {
+      if (btnFindViralClips) btnFindViralClips.disabled = false;
+      if (findClipsBtnIcon) findClipsBtnIcon.textContent = "✨";
+      if (findClipsBtnText) findClipsBtnText.textContent = "Find Clips";
+    }
+  }
+
+  function renderViralClips(clips) {
+    if (!viralClipsList) return;
+    if (!clips || clips.length === 0) {
+      viralClipsList.innerHTML = `<div style="padding: 10px; font-size: 11px; color: var(--text-dim); text-align: center;">No viral clips found for this length.</div>`;
+      viralClipsList.classList.remove("hidden");
+      return;
+    }
+
+    viralClipsList.innerHTML = clips.map((clip, idx) => `
+      <div class="viral-clip-card ${idx === 0 ? "active" : ""}" data-clip-id="${clip.id}">
+        <div class="viral-clip-header">
+          <span class="viral-clip-headline">${clip.headline}</span>
+          <span class="viral-clip-score">🔥 ${clip.virality_score ? clip.virality_score.toFixed(1) : "8.5"}/10</span>
+        </div>
+        <div class="viral-clip-meta">
+          <span class="viral-clip-time">⏱️ ${formatTime(clip.start)} - ${formatTime(clip.end)} (${clip.duration.toFixed(1)}s)</span>
+          <span class="badge" style="font-size: 9px; text-transform: uppercase; background: rgba(255,255,255,0.06);">${clip.target_length}</span>
+        </div>
+        <div class="viral-clip-summary">${clip.summary || "Key discussion excerpt"}</div>
+      </div>
+    `).join("");
+
+    viralClipsList.classList.remove("hidden");
+
+    const cards = viralClipsList.querySelectorAll(".viral-clip-card");
+    cards.forEach((card, idx) => {
+      card.addEventListener("click", () => {
+        cards.forEach((c) => c.classList.remove("active"));
+        card.classList.add("active");
+        applyViralClip(clips[idx]);
+      });
+    });
+  }
+
+  function applyViralClip(clip) {
+    if (!clip) return;
+    trimStartSec = clip.start;
+    trimEndSec = clip.end;
+    updateTrimmerDisplay();
+
+    if (sourceVideoPlayer) {
+      sourceVideoPlayer.currentTime = clip.start;
+      sourceVideoPlayer.play().catch(() => {});
+    }
+
+    selectedHeadlineHookText = clip.headline;
+    if (headlineHookInput) headlineHookInput.value = clip.headline;
+    selectedHeadlineHookEnabled = true;
+    if (headlineHookToggle) headlineHookToggle.checked = true;
+    if (headlineHookSettings) headlineHookSettings.classList.remove("hidden");
+    updateHeadlineHookPreview();
+
+    showToast(`🎯 Applied Clip & Hook: "${clip.headline}"`);
   }
 
   updateTrimmerDisplay();
@@ -1684,6 +1781,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (headlineDurationChips) {
+    headlineDurationChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        headlineDurationChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const dur = btn.dataset.duration;
+        if (dur === "5") {
+          selectedHeadlineDuration = 5.0;
+          if (headlineDurationInput) headlineDurationInput.value = "5";
+          showToast("Headline Duration: Vanishes after 5s");
+        } else if (dur === "10") {
+          selectedHeadlineDuration = 10.0;
+          if (headlineDurationInput) headlineDurationInput.value = "10";
+          showToast("Headline Duration: Vanishes after 10s");
+        } else {
+          selectedHeadlineDuration = null;
+          if (headlineDurationInput) headlineDurationInput.value = "";
+          showToast("Headline Duration: Sticky for Full Video");
+        }
+      });
+    });
+  }
+
   if (progressBarToggle) {
     progressBarToggle.addEventListener("change", (e) => {
       selectedProgressBar = e.target.checked;
@@ -1758,12 +1878,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (aiEnhanceToggle && aiEnhanceToggle.checked) {
       formData.append("ai_enhance", "true");
     }
-    const currentApiKey = (apiKeyInput ? apiKeyInput.value.trim() : "") ||
-      (llmProvider ? localStorage.getItem(`dcs_key_${llmProvider.value}`) : "") ||
-      localStorage.getItem("dcs_key_default") || "";
-    if (currentApiKey) {
-      formData.append("api_key", currentApiKey);
-    }
     formData.append("language", videoLanguage.value);
     formData.append("aspect_ratio", selectedAspectRatio);
     formData.append("subtitle_position", subPosition ? subPosition.value : "lower");
@@ -1779,6 +1893,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim()) {
       formData.append("headline_hook", selectedHeadlineHookText.trim());
       formData.append("headline_style", selectedHeadlineHookStyle);
+      if (selectedHeadlineDuration !== null) {
+        formData.append("headline_duration", selectedHeadlineDuration.toString());
+      }
     }
     formData.append("auto_emojis", selectedAutoEmojis ? "true" : "false");
 
@@ -2062,6 +2179,15 @@ document.addEventListener("DOMContentLoaded", () => {
       rerenderBtn.textContent = "Re-rendering...";
       rerenderBtn.disabled = true;
       try {
+        // Sync headline hook & duration state to currentTimeline
+        if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim()) {
+          currentTimeline.headlineHook = selectedHeadlineHookText.trim();
+          currentTimeline.headlineStyle = selectedHeadlineHookStyle;
+          currentTimeline.headlineDuration = selectedHeadlineDuration;
+        } else {
+          currentTimeline.headlineHook = null;
+        }
+
         // Save timeline edits first
         await fetch(`/api/jobs/${currentJobId}/timeline`, {
           method: "PUT",

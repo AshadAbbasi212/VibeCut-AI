@@ -73,6 +73,7 @@ async def create_job(
     progress_bar_position: Literal["bottom", "top"] = Form("bottom"),
     headline_hook: Optional[str] = Form(None),
     headline_style: Literal["badge", "glass", "clean", "cyber"] = Form("badge"),
+    headline_duration: Optional[float] = Form(None),
     auto_emojis: bool = Form(True),
     ai_enhance: bool = Form(False),
     api_key: Optional[str] = Form(None),
@@ -113,6 +114,7 @@ async def create_job(
             progress_bar_position=progress_bar_position,
             headline_hook=headline_hook.strip() if headline_hook and headline_hook.strip() else None,
             headline_style=headline_style,
+            headline_duration=headline_duration,
             auto_emojis=auto_emojis,
             ai_enhance=ai_enhance,
             api_key=api_key.strip() if api_key and api_key.strip() else None,
@@ -229,6 +231,119 @@ def rerender_job(
         return updated_job
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/jobs/{job_id}/find-clips")
+def find_job_clips(
+    job_id: str,
+    target_length: Literal["15s", "30s", "60s"] = "30s",
+):
+    """Find viral clips for a processed job based on its transcript and scene analysis."""
+    from backend.pipeline.clips import find_viral_clips
+    manager = get_job_manager()
+    job = manager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
+
+    job_dir = Path("jobs").resolve() / job_id
+    phrases_file = job_dir / "phrases.json"
+    timeline_file = job_dir / "timeline.json"
+    analysis_file = job_dir / "analysis.json"
+
+    phrases = []
+    duration = 30.0
+
+    if phrases_file.exists():
+        data = json.loads(phrases_file.read_text(encoding="utf-8"))
+        phrases = data.get("phrases", [])
+        duration = float(data.get("duration", 30.0))
+    elif timeline_file.exists():
+        tl_data = json.loads(timeline_file.read_text(encoding="utf-8"))
+        duration = float(tl_data.get("video", {}).get("durationSec", 30.0))
+        for ev in tl_data.get("events", []):
+            phrases.append({"start": ev.get("start", 0), "end": ev.get("end", 0), "text": ev.get("text", "")})
+    else:
+        raise HTTPException(status_code=400, detail="Transcript or phrases not yet generated for this job")
+
+    topic_segments = None
+    if analysis_file.exists():
+        try:
+            an_data = json.loads(analysis_file.read_text(encoding="utf-8"))
+            topic_segments = an_data.get("topic_segments", [])
+        except Exception:
+            pass
+
+    provider = job.llm_provider if job.llm_provider != "none" else os.getenv("LLM_PROVIDER", "none")
+    clips = find_viral_clips(
+        phrases=phrases,
+        video_duration=duration,
+        target_length=target_length,
+        provider=provider,
+        api_key=getattr(job, "api_key", None),
+        topic_segments=topic_segments,
+    )
+
+    return {
+        "job_id": job_id,
+        "target_length": target_length,
+        "video_duration": duration,
+        "clips": [c.model_dump() for c in clips],
+        "total": len(clips),
+    }
+
+
+@app.post("/api/clips/discover")
+def discover_clips_from_video(
+    file: Optional[UploadFile] = File(None),
+    sample: bool = Form(False),
+    target_length: Literal["15s", "30s", "60s"] = Form("30s"),
+    llm_provider: Optional[str] = Form(None),
+):
+    """Transcribe video and find viral clips on demand."""
+    from backend.pipeline.probe import probe_video
+    from backend.pipeline.transcribe import transcribe
+    from backend.pipeline.chunk import chunk_words
+    from backend.pipeline.clips import find_viral_clips
+
+    tmp_path = None
+    try:
+        if sample:
+            source_path = Path("samples/synthetic.mp4").resolve()
+            if not source_path.exists():
+                raise HTTPException(status_code=404, detail="Synthetic sample not found")
+        elif file and file.filename:
+            suffix = Path(file.filename).suffix or ".mp4"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                shutil.copyfileobj(file.file, tmp)
+                tmp_path = Path(tmp.name)
+            source_path = tmp_path
+        else:
+            raise HTTPException(status_code=400, detail="Either file or sample=true must be provided")
+
+        probe = probe_video(source_path)
+        transcript = transcribe(path=source_path)
+        phrases = chunk_words(words=transcript.words, duration=probe.duration)
+
+        provider = llm_provider or os.getenv("LLM_PROVIDER", "none")
+        clips = find_viral_clips(
+            phrases=[p.model_dump() for p in phrases],
+            video_duration=probe.duration,
+            target_length=target_length,
+            provider=provider,
+        )
+
+        return {
+            "target_length": target_length,
+            "video_duration": probe.duration,
+            "clips": [c.model_dump() for c in clips],
+            "total": len(clips),
+        }
+    finally:
+        if tmp_path and tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except Exception:
+                pass
 
 
 @app.get("/api/styles")

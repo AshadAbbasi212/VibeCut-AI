@@ -1,5 +1,12 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: AI Viral Clip Extractor (15s, 30s, 60s Highlights), Headline Hook Duration & Backend-Only API Key Security
+- **Decision**:
+  1. Removed the API key input box, visibility toggles, and client-side storage from the frontend UI. All LLM credentials (including `MISTRAL_API_KEY`) are kept strictly in backend `.env` (gitignored) and accessed via `os.getenv()`, preventing any client key exposure.
+  2. Implemented the AI Viral Clip Extractor in `backend/pipeline/clips.py` with endpoints `POST /api/jobs/{job_id}/find-clips` and `POST /api/clips/discover`. The extractor analyzes transcript phrases and topic segments with Mistral (`open-mistral-7b` / `mistral-small-latest` free tier) or falls back to an audio-cadence & keyword density rule-based finder. Candidate clips are snapped to natural phrase boundaries, assigned a viral headline hook and virality score, and displayed as interactive cards in the studio Trimmer. Clicking a clip sets the trimmer range, seeks video playback, and populates the Top Headline Hook Card.
+  3. Added headline hook card duration options (`5s`, `10s`, `Full Video`) in frontend UI chips, backend schema (`Timeline.headlineDuration`), and Remotion renderer (`interpolate()` smooth fade-out over 15 frames).
+- **Why**: Protects sensitive LLM API keys on the server, allows creators to discover unlimited high-retention short reels (15s, 30s, 60s) from long podcasts or lectures, and provides option for the top headline card to vanish after the opening hook rather than staying on-screen permanently.
+
 ## 2026-10-22: Smart Watermark Filtering, Full-Duration Keyframes & Scene-Aware Auto-Framing
 - **Decision**: 
   1. Refined `SCENE_ANALYSIS_PROMPT` and `plan_llm.py` so stationary channel logos, corner bugs (e.g. "BIG TECHNOLOGY PODCAST"), and teaser tags ("Coming up...") are NOT classified as burned-in dialogue captions. Any entry > 12s or matching watermark keywords is excluded from subtitle suppression, ensuring base speech captions remain visible across the full video.

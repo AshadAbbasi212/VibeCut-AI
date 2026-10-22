@@ -170,6 +170,9 @@ class Timeline(BaseModel):
     headlineStyle: Optional[Literal["badge", "glass", "clean", "cyber"]] = Field(
         default="badge", description="Visual treatment for top hook headline card"
     )
+    headlineDuration: Optional[float] = Field(
+        default=None, description="Optional duration in seconds before headline fades out (None = stays full video)"
+    )
     autoEmojis: Optional[bool] = Field(
         default=True, description="Enable keyword-driven auto-emojis and animated stickers"
     )

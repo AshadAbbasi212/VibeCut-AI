@@ -25,14 +25,16 @@ def test_frontend_dom_elements_exist_in_html():
         # Layout & Aspect Ratio
         "phoneCanvas", "stageStatus", "layoutPhotoModal", "btnOpenPhotoModal", "btnClosePhotoModal",
         # AI Director & LLM
-        "llmProvider", "aiDirectorBadge", "aiEnhanceToggle", "apiKeySection", "apiKeyInput",
-        "toggleApiKeyVisibility", "saveApiKeyBtn", "apiKeySavedBadge",
+        "llmProvider", "aiDirectorBadge", "aiEnhanceToggle",
         # Subtitles & Customization
         "videoLanguage", "subPosSlider", "subPosLabel", "captionSizeSlider",
         "draftToggle", "startJobBtn", "btnProgressFill", "btnTextLabel",
-        # Viral Boosters
-        "headlineHookToggle", "headlineHookInput", "headlineHookSettings", "progressBarToggle",
-        "progBarBottomBtn", "progBarTopBtn", "autoEmojisToggle",
+        # Viral Boosters & Duration
+        "headlineHookToggle", "headlineHookInput", "headlineHookSettings",
+        "headlineDurationChips", "headlineDurationInput",
+        "progressBarToggle", "progBarBottomBtn", "progBarTopBtn", "autoEmojisToggle",
+        # AI Viral Reel / Clip Finder
+        "clipLengthSelector", "btnFindViralClips", "viralClipsList",
         # Pipeline Progress
         "pipelineProgressCard", "pipelineProgressTitle", "pipelineProgressPct", "pipelineProgressFill",
         "pipelineProgressDesc", "pipelineProgressTime",

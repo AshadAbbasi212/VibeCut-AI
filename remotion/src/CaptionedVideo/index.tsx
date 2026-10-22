@@ -4,6 +4,7 @@ import {
   CalculateMetadataFunction,
   OffthreadVideo,
   Sequence,
+  interpolate,
   staticFile,
   useCurrentFrame,
   useVideoConfig,
@@ -274,6 +275,18 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
   const renderHeadlineHook = () => {
     if (!timeline.headlineHook || !timeline.headlineHook.trim()) return null;
 
+    let fadeOpacity = 1;
+    if (timeline.headlineDuration && timeline.headlineDuration > 0) {
+      const maxFrame = Math.round(timeline.headlineDuration * fps);
+      if (frame >= maxFrame) return null;
+      if (frame >= maxFrame - 15) {
+        fadeOpacity = interpolate(frame, [maxFrame - 15, maxFrame], [1, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        });
+      }
+    }
+
     const hookScale = popIn(frame, fps, 2, 12, 0.5, 160);
     const hookStyleType = timeline.headlineStyle || "badge";
     const fonts = ensureFontsLoaded();
@@ -344,6 +357,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
           top: "8%",
           left: "50%",
           transform: `translateX(-50%) scale(${hookScale})`,
+          opacity: fadeOpacity,
           maxWidth: "88%",
           zIndex: 85,
           pointerEvents: "none",

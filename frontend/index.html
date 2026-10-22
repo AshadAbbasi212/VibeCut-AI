@@ -537,6 +537,69 @@
     .chip-sub { font-size: 10px; color: var(--text-dim); }
     .btn-custom-chip.active .chip-label { color: var(--accent); }
 
+    /* Viral Clip Cards */
+    .viral-clip-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .viral-clip-card:hover {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(245, 158, 11, 0.05);
+      transform: translateY(-1px);
+    }
+    .viral-clip-card.active {
+      border-color: #F59E0B;
+      background: rgba(245, 158, 11, 0.1);
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+    }
+    .viral-clip-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .viral-clip-headline {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.3px;
+    }
+    .viral-clip-score {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(245, 158, 11, 0.2);
+      color: #F59E0B;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      white-space: nowrap;
+    }
+    .viral-clip-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .viral-clip-time {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: #38BDF8;
+    }
+    .viral-clip-summary {
+      font-size: 11px;
+      color: var(--text-sub);
+      line-height: 1.35;
+    }
+
     /* Visual Specimens */
     .chip-visual-specimen { margin-bottom: 4px; }
     .size-specimen { display: flex; align-items: center; justify-content: center; height: 28px; }
@@ -1671,6 +1734,45 @@
                   <button type="button" class="btn-chip" id="trimResetBtn">Full</button>
                 </div>
               </div>
+
+              <!-- AI Viral Reel / Clip Extractor Box -->
+              <div id="aiClipsBox" style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(255, 255, 255, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 13px;">✨</span>
+                    <span style="font-size: 12px; font-weight: 700; color: #fff;">AI Viral Clips & Highlight Extractor</span>
+                  </div>
+                  <span class="badge" style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3);">SMART FINDER</span>
+                </div>
+                <p style="font-size: 11px; color: var(--text-dim); margin-bottom: 10px; line-height: 1.4;">
+                  AI scans the entire video/podcast to discover key discussions and creates separate viral reels with auto-assigned hooks.
+                </p>
+                <div style="display: flex; gap: 8px; align-items: stretch; margin-bottom: 10px;">
+                  <div class="custom-chip-group" id="clipLengthSelector" style="grid-template-columns: repeat(3, 1fr); flex: 1;">
+                    <button type="button" class="btn-custom-chip" data-length="15s" id="chipClip15s" style="padding: 6px 10px; min-width: unset;">
+                      <span class="chip-label" style="font-size: 11px;">⚡ 15s Hook</span>
+                      <span class="chip-sub" style="font-size: 9px;">Punchy Reel</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip active" data-length="30s" id="chipClip30s" style="padding: 6px 10px; min-width: unset;">
+                      <span class="chip-label" style="font-size: 11px;">🔥 30s Highlight</span>
+                      <span class="chip-sub" style="font-size: 9px;">Story / Insight</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-length="60s" id="chipClip60s" style="padding: 6px 10px; min-width: unset;">
+                      <span class="chip-label" style="font-size: 11px;">🎬 60s Discussion</span>
+                      <span class="chip-sub" style="font-size: 9px;">Full Point</span>
+                    </button>
+                  </div>
+                  <button type="button" class="btn-select" id="btnFindViralClips" style="background: linear-gradient(135deg, #F59E0B, #D97706); color: #000; font-weight: 800; border: none; padding: 0 16px; border-radius: var(--radius-sm); white-space: nowrap; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); cursor: pointer;">
+                    <span id="findClipsBtnIcon">✨</span>
+                    <span id="findClipsBtnText">Find Clips</span>
+                  </button>
+                </div>
+
+                <!-- Container for discovered clips -->
+                <div id="viralClipsList" class="hidden" style="display: flex; flex-direction: column; gap: 8px; max-height: 250px; overflow-y: auto; padding-right: 4px; margin-top: 10px;">
+                  <!-- Dynamic clip cards rendered by JS -->
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1944,19 +2046,6 @@
               </div>
             </div>
 
-            <!-- API Key Input -->
-            <div id="apiKeySection" style="margin-top: 8px;">
-              <label for="apiKeyInput" style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; display: block;">API Key <span style="color: var(--text-dim); font-weight: 400;">(stored locally, never sent to our servers)</span></label>
-              <div style="display: flex; gap: 6px; align-items: center;">
-                <input type="password" id="apiKeyInput" class="input" placeholder="Enter your API key..." style="flex: 1; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-xs); font-family: var(--font-mono);">
-                <button type="button" id="toggleApiKeyVisibility" class="btn-chip" style="padding: 8px 10px; font-size: 11px; white-space: nowrap;">👁️</button>
-                <button type="button" id="saveApiKeyBtn" class="btn-chip active" style="padding: 8px 12px; font-size: 11px; white-space: nowrap;">Save</button>
-              </div>
-              <div id="apiKeySavedBadge" class="hidden" style="margin-top: 6px; font-size: 11px; color: #22c55e; display: flex; align-items: center; gap: 4px;">
-                <span>✓</span> <span>Key saved to browser</span>
-              </div>
-            </div>
-
             <div style="margin-top: 10px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: var(--radius-xs); font-size: 10.5px; color: var(--text-dim); line-height: 1.5;">
               <strong style="color: var(--text-sub);">What AI Director does:</strong> Analyzes your video with vision AI to detect scenes, speakers, headings & existing captions. The LLM acts as creative director — picking the right style for each moment, skipping already-captioned parts, and matching energy to mood.
             </div>
@@ -2021,6 +2110,24 @@
                       <span class="chip-sub">Neon HUD</span>
                     </button>
                   </div>
+                </div>
+                <div style="margin-top: 10px;">
+                  <label style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block;">Headline Duration / Fade-out:</label>
+                  <div class="custom-chip-group" id="headlineDurationChips" style="grid-template-columns: repeat(3, 1fr);">
+                    <button type="button" class="btn-custom-chip" data-duration="5">
+                      <span class="chip-label">⏱️ 5 Sec</span>
+                      <span class="chip-sub">Vanishes</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-duration="10">
+                      <span class="chip-label">⏱️ 10 Sec</span>
+                      <span class="chip-sub">Vanishes</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip active" data-duration="full">
+                      <span class="chip-label">📌 Full Video</span>
+                      <span class="chip-sub">Sticky</span>
+                    </button>
+                  </div>
+                  <input type="hidden" id="headlineDurationInput" value="">
                 </div>
               </div>
             </div>
