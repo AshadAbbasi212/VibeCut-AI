@@ -5,6 +5,10 @@ import shutil
 import tempfile
 from pathlib import Path
 from typing import Optional, Literal
+from dotenv import load_dotenv
+
+# Load environment variables from .env (MISTRAL_API_KEY, etc.)
+load_dotenv()
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware

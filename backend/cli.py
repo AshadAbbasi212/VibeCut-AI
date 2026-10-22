@@ -5,6 +5,9 @@ import os
 import sys
 import time
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Ensure UTF-8 output on Windows consoles
 if sys.platform == "win32":
