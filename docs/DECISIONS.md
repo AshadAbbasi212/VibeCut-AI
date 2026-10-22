@@ -183,7 +183,24 @@
   1. **Dismiss / Cancel (✕) & Studio Reset**: Added a dedicated circular `✕` button (`#closeResultBtn`) anchored to the top-right of the result monitor, and upgraded the secondary action to `🔄 Start New Video (✕)`. Both trigger `resetStudioForNewVideo()`, which halts active polling intervals, pauses and unloads media elements, clears selected file and job IDs, resets the CapCut trimmer and input elements, re-enables the generate button, and returns the workspace to clean idle preview.
   2. **Per-Job Render Props Isolation**: Replaced static `render_props.json` in `backend/pipeline/render.py` with unique `render_props_{job_id}.json` both in `remotion/public/temp/` and `remotion/build/public/temp/`. Temporary props files are safely unlinked in a `finally` block upon render completion.
   3. **Non-blocking Worker Queue**: Increased `JobManager` thread pool concurrency to 4 workers, sanitized interrupted lingering job states on server startup, and added `POST /api/jobs/{job_id}/cancel`.
-- **Why**: Under Windows, reusing a static `render_props.json` across consecutive renders created file-lock collisions with headless Chrome / Node.js processes, stalling subsequent renders until server restart. Releasing video buffers, isolating props files, and providing an explicit one-click `✕` dismiss allows creators to review/download their video and immediately start generating another without restarting the backend.
+## 2026-10-22: Studio Architecture Separation & Dedicated Viral Clip Tweaker (Phase 28)
+- **Decision**:
+  1. **Top-Level Segmented Studio Mode Switcher**: Decoupled full video rendering settings from AI viral clips extraction. Added `.studio-mode-switcher` at the top of the controls column (`[🎞️ Full Video Studio]` and `[✨ AI Viral Reels Studio]`), providing clean separation between full-timeline renders and short-form clip generation.
+  2. **Studio Monitor Header Collision Fix**: Fixed badge overflow in `.stage-header-left` where long filenames (`#stageStatus`) wrapped into 5 lines and overlapped the aspect ratio selector buttons (`9:16`, `16:9`, `1:1`, `4:5`). Applied CSS `min-width: 0; flex: 1; overflow: hidden;` to header left, and `max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;` to `#stageStatus`, with safe filename truncation in `handleFile()`.
+  3. **Full Video Studio Cleanup**: Removed the embedded `aiClipsBox` from inside the CapCut trimmer in Card 3, replacing it with a sleek shortcut banner (`.studio-callout-banner`) pointing to the Clips Studio.
+  4. **Dedicated AI Viral Reels Studio & Clip Tweaker Architecture**: Built a 3-stage dedicated workflow in `<div id="clipsStudioSection">`:
+     - **Card A (Scanner)**: Target length selector chips (`15s Hook`, `30s Highlight`, `60s Discussion`) + Discover button.
+     - **Card B (Gallery)**: Discovered clips list with virality scores, timestamps, AI summary, and `📋 Copy Post`.
+     - **Card C (`#clipTweakerCard`)**: Dedicated Selected Clip Customizer allowing creators to tweak all parameters before rendering:
+       - **Headline Hook**: Editable text, visual styles (`badge`, `glass`, `clean`, `cyber`), and fade-out duration (`5s`, `10s`, `Full`).
+       - **Caption Font Size**: Preset chips (`38px`, `52px`, `68px`) + live fine-tuning slider (`24px` - `96px`), immediately synced to canvas preview.
+       - **Caption Placement**: Quick buttons (`Top 18%`, `Center 50%`, `Bottom 79%`) + vertical slider + real-time canvas drag sync.
+       - **Caption Style & Palette**: Quick style selector + accent color swatches.
+       - **Creator Watermark**: Custom `@handle` input synced to live canvas badge.
+       - **Viral Boosters**: Toggles for Kinetic Zooms, Viral Pop SFX, Lo-Fi Ambient Beat, 3D Stickers.
+       - **Actions**: `⚡ Render This Viral Reel (MP4)` rendering this customized clip with all overrides, and `📦 Export All Clips (.ZIP)`.
+- **Why**: As the studio expanded with CapCut trimming, AI clip generation, diarization, and booster packs, having all controls stacked together in one column caused visual clutter and confusion. Separating the modes gives creators a focused workflow, prevents UI collisions, and empowers them to fine-tune individual viral clips (typography, placement, styling, and boosters) before final export.
+
 
 
 

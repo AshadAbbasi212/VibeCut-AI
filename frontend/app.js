@@ -107,6 +107,43 @@ document.addEventListener("DOMContentLoaded", () => {
   const batchZipIcon = document.getElementById("batchZipIcon");
   const batchZipLabel = document.getElementById("batchZipLabel");
 
+  // Studio Mode Switcher references
+  const tabFullStudio = document.getElementById("tabFullStudio");
+  const tabClipsStudio = document.getElementById("tabClipsStudio");
+  const fullStudioSection = document.getElementById("fullStudioSection");
+  const clipsStudioSection = document.getElementById("clipsStudioSection");
+  const btnSwitchToClips = document.getElementById("btnSwitchToClips");
+
+  // AI Viral Reels Studio Tweaker DOM references
+  const clipsCountBadge = document.getElementById("clipsCountBadge");
+  const clipTweakerCard = document.getElementById("clipTweakerCard");
+  const tweakerClipTitle = document.getElementById("tweakerClipTitle");
+  const tweakerClipTiming = document.getElementById("tweakerClipTiming");
+  const btnPlayActiveClip = document.getElementById("btnPlayActiveClip");
+  const tweakerHeadlineStyleBadge = document.getElementById("tweakerHeadlineStyleBadge");
+  const clipHeadlineInput = document.getElementById("clipHeadlineInput");
+  const clipHeadlineStyleChips = document.querySelectorAll("#clipHeadlineStyleChips .btn-custom-chip");
+  const clipHeadlineDurationChips = document.querySelectorAll("#clipHeadlineDurationChips .btn-custom-chip");
+  const clipFontSizeChips = document.querySelectorAll("#clipFontSizeChips .btn-custom-chip");
+  const clipFontSizeSlider = document.getElementById("clipFontSizeSlider");
+  const clipFontSizeLabel = document.getElementById("clipFontSizeLabel");
+  const clipPosChips = document.querySelectorAll("#clipPosChips .btn-custom-chip");
+  const clipPosSlider = document.getElementById("clipPosSlider");
+  const clipPosLabel = document.getElementById("clipPosLabel");
+  const clipStyleChips = document.querySelectorAll("#clipStylePresetRow .btn-style-preset-quick");
+  const clipStyleLabel = document.getElementById("clipStyleLabel");
+  const clipHighlightColorSwatches = document.querySelectorAll("#clipHighlightColorSwatches .btn-color-swatch");
+  const clipWatermarkInput = document.getElementById("clipWatermarkInput");
+  const clipWatermarkBadge = document.getElementById("clipWatermarkBadge");
+  const clipKineticZoomToggle = document.getElementById("clipKineticZoomToggle");
+  const clipPopSfxToggle = document.getElementById("clipPopSfxToggle");
+  const clipBgMusicToggle = document.getElementById("clipBgMusicToggle");
+  const clipAutoEmojisToggle = document.getElementById("clipAutoEmojisToggle");
+  const btnRenderSingleClip = document.getElementById("btnRenderSingleClip");
+  const clipBtnProgressFill = document.getElementById("clipBtnProgressFill");
+  const clipBtnTextLabel = document.getElementById("clipBtnTextLabel");
+  const btnBatchExportZipDedicated = document.getElementById("btnBatchExportZipDedicated");
+
   // Prominent Pipeline Progress Card references
   const pipelineProgressCard = document.getElementById("pipelineProgressCard");
   const pipelineProgressTitle = document.getElementById("pipelineProgressTitle");
@@ -539,6 +576,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (updateSlider && captionSizeSlider) {
       captionSizeSlider.value = numericPx;
     }
+    if (clipFontSizeSlider && updateSlider) {
+      clipFontSizeSlider.value = numericPx;
+    }
 
     // Update label text
     const sizeLabels = {
@@ -551,6 +591,17 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     if (captionSizeSelectedLabel) {
       captionSizeSelectedLabel.textContent = sizeLabels[size] || `Custom (${numericPx}px)`;
+    }
+    if (clipFontSizeLabel) {
+      clipFontSizeLabel.textContent = sizeLabels[size] || `${numericPx}px Custom`;
+    }
+
+    if (clipFontSizeChips) {
+      clipFontSizeChips.forEach((btn) => {
+        const btnSize = btn.dataset.size;
+        const isMatch = btnSize === size || (size === String(numericPx) && getNumericCaptionSize(btnSize) === numericPx);
+        btn.classList.toggle("active", isMatch);
+      });
     }
 
     // Update canvas screen badge
@@ -568,6 +619,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  if (clipFontSizeChips) {
+    clipFontSizeChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setCaptionSize(btn.dataset.size, true);
+        showToast(`Clip font size: ${btn.dataset.size}`);
+      });
+    });
+  }
+
   if (captionSizeSlider) {
     captionSizeSlider.addEventListener("input", (e) => {
       const val = e.target.value;
@@ -576,6 +636,19 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (val === "52") matchedNamed = "medium";
       else if (val === "68") matchedNamed = "large";
       setCaptionSize(matchedNamed, false);
+      if (clipFontSizeSlider) clipFontSizeSlider.value = val;
+    });
+  }
+
+  if (clipFontSizeSlider) {
+    clipFontSizeSlider.addEventListener("input", (e) => {
+      const val = e.target.value;
+      let matchedNamed = val;
+      if (val === "38") matchedNamed = "small";
+      else if (val === "52") matchedNamed = "medium";
+      else if (val === "68") matchedNamed = "large";
+      setCaptionSize(matchedNamed, false);
+      if (captionSizeSlider) captionSizeSlider.value = val;
     });
   }
 
@@ -732,7 +805,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     dropPrompt.classList.add("hidden");
     fileBadge.classList.remove("hidden");
-    stageStatus.textContent = `Raw Source • ${file.name}`;
+    const shortName = file.name.length > 20 ? file.name.slice(0, 18) + "..." : file.name;
+    stageStatus.textContent = shortName;
+    stageStatus.title = `Raw Source: ${file.name}`;
 
     // Instant Preview in Canvas across all layout layers
     const objectUrl = URL.createObjectURL(file);
@@ -1607,8 +1682,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let activeSelectedClip = null;
+
+  // ── Mode Switcher Tab Logic ──
+  function switchStudioMode(mode) {
+    const isClips = (mode === "clips");
+    if (tabFullStudio) tabFullStudio.classList.toggle("active", !isClips);
+    if (tabClipsStudio) tabClipsStudio.classList.toggle("active", isClips);
+    if (fullStudioSection) fullStudioSection.classList.toggle("hidden", isClips);
+    if (clipsStudioSection) clipsStudioSection.classList.toggle("hidden", !isClips);
+
+    if (isClips) {
+      if (!selectedFile && !currentJobId) {
+        showToast("Drop or load a video to start discovering viral reels!");
+      } else {
+        showToast("✨ AI Viral Reels Studio active");
+      }
+    } else {
+      showToast("🎞️ Full Video Studio active");
+    }
+  }
+
+  if (tabFullStudio) {
+    tabFullStudio.addEventListener("click", () => switchStudioMode("full"));
+  }
+  if (tabClipsStudio) {
+    tabClipsStudio.addEventListener("click", () => switchStudioMode("clips"));
+  }
+  if (btnSwitchToClips) {
+    btnSwitchToClips.addEventListener("click", () => switchStudioMode("clips"));
+  }
+
   function applyViralClip(clip) {
     if (!clip) return;
+    activeSelectedClip = clip;
     trimStartSec = clip.start;
     trimEndSec = clip.end;
     updateTrimmerDisplay();
@@ -1625,7 +1732,149 @@ document.addEventListener("DOMContentLoaded", () => {
     if (headlineHookSettings) headlineHookSettings.classList.remove("hidden");
     updateHeadlineHookPreview();
 
-    showToast(`🎯 Applied Clip & Hook: "${clip.headline}"`);
+    // Populate and display Dedicated Clip Tweaker Card
+    if (clipTweakerCard) {
+      clipTweakerCard.classList.remove("hidden");
+    }
+    if (tweakerClipTitle) {
+      tweakerClipTitle.textContent = `"${clip.headline}"`;
+      tweakerClipTitle.title = clip.headline;
+    }
+    if (tweakerClipTiming) {
+      tweakerClipTiming.textContent = `${formatTime(clip.start)} - ${formatTime(clip.end)} (${clip.duration.toFixed(1)}s)`;
+    }
+    if (clipHeadlineInput) {
+      clipHeadlineInput.value = clip.headline;
+    }
+    if (clipWatermarkInput && watermarkInput) {
+      clipWatermarkInput.value = watermarkInput.value || "@antigravity";
+      if (clipWatermarkBadge) clipWatermarkBadge.textContent = clipWatermarkInput.value;
+    }
+    if (clipFontSizeLabel) {
+      clipFontSizeLabel.textContent = `${captionSizeSlider ? captionSizeSlider.value : 52}px (${selectedCaptionSize})`;
+    }
+    if (clipFontSizeSlider && captionSizeSlider) {
+      clipFontSizeSlider.value = captionSizeSlider.value;
+    }
+    if (clipPosSlider && subPosSlider) {
+      clipPosSlider.value = subPosSlider.value;
+    }
+    if (clipPosLabel) {
+      clipPosLabel.textContent = subPosLabel ? subPosLabel.textContent : "Bottom (79% Safe Zone)";
+    }
+
+    // Update status badge on studio monitor cleanly
+    const shortHeadline = clip.headline.length > 20 ? clip.headline.slice(0, 18) + "..." : clip.headline;
+    if (stageStatus) {
+      stageStatus.textContent = `Clip: ${shortHeadline}`;
+      stageStatus.title = clip.headline;
+    }
+
+    showToast(`🎯 Selected: "${clip.headline}" — Ready to tweak below!`);
+  }
+
+  // ── Dedicated Clip Tweaker Event Listeners ──
+  if (clipHeadlineInput) {
+    clipHeadlineInput.addEventListener("input", (e) => {
+      const val = e.target.value.trim();
+      selectedHeadlineHookText = val;
+      if (headlineHookInput) headlineHookInput.value = val;
+      if (activeSelectedClip) activeSelectedClip.headline = val;
+      if (tweakerClipTitle) tweakerClipTitle.textContent = val ? `"${val}"` : `"Untitled Clip"`;
+      updateHeadlineHookPreview();
+    });
+  }
+
+  if (clipHeadlineStyleChips) {
+    clipHeadlineStyleChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipHeadlineStyleChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedHeadlineHookStyle = btn.dataset.style || "badge";
+        if (headlineStyleChips) {
+          headlineStyleChips.forEach((b) => b.classList.toggle("active", b.dataset.style === selectedHeadlineHookStyle));
+        }
+        if (tweakerHeadlineStyleBadge) {
+          tweakerHeadlineStyleBadge.textContent = `${btn.querySelector(".chip-label").textContent} Style`;
+        }
+        updateHeadlineHookPreview();
+      });
+    });
+  }
+
+  if (clipHeadlineDurationChips) {
+    clipHeadlineDurationChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipHeadlineDurationChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const dur = btn.dataset.duration;
+        selectedHeadlineDuration = dur === "full" ? null : parseFloat(dur);
+        if (headlineDurationChips) {
+          headlineDurationChips.forEach((b) => b.classList.toggle("active", b.dataset.duration === dur));
+        }
+        showToast(`Headline duration: ${btn.querySelector(".chip-label").textContent}`);
+      });
+    });
+  }
+
+  if (clipStyleChips) {
+    clipStyleChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipStyleChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const stylePick = btn.dataset.stylePick;
+        selectedStyles = [stylePick];
+        if (clipStyleLabel) clipStyleLabel.textContent = btn.textContent;
+        if (draggableCaptionBox) {
+          draggableCaptionBox.className = `draggable-caption-box style-${stylePick} size-${selectedCaptionSize}`;
+        }
+        if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
+        showToast(`Active Style: ${btn.textContent}`);
+      });
+    });
+  }
+
+  if (clipHighlightColorSwatches) {
+    clipHighlightColorSwatches.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipHighlightColorSwatches.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedHighlightColor = btn.dataset.color || "#38BDF8";
+        const mainSwatches = document.querySelectorAll("#highlightColorSwatches .btn-color-swatch");
+        if (mainSwatches) {
+          mainSwatches.forEach((b) => b.classList.toggle("active", b.dataset.color === selectedHighlightColor));
+        }
+        const canvasHighlight = document.querySelector("#draggableCaptionBox .highlight");
+        if (canvasHighlight) canvasHighlight.style.color = selectedHighlightColor;
+        if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
+        showToast(`Accent Color: ${selectedHighlightColor}`);
+      });
+    });
+  }
+
+  if (clipWatermarkInput) {
+    clipWatermarkInput.addEventListener("input", (e) => {
+      const val = e.target.value.trim();
+      if (watermarkInput) watermarkInput.value = val;
+      if (canvasWatermarkText) canvasWatermarkText.textContent = val || "@handle";
+      if (clipWatermarkBadge) clipWatermarkBadge.textContent = val || "Hidden";
+      if (canvasWatermark) canvasWatermark.classList.toggle("hidden", !val);
+    });
+  }
+
+  if (btnPlayActiveClip) {
+    btnPlayActiveClip.addEventListener("click", () => {
+      if (!activeSelectedClip || !sourceVideoPlayer) return;
+      sourceVideoPlayer.currentTime = activeSelectedClip.start;
+      sourceVideoPlayer.play().catch(() => {});
+      showToast(`▶ Playing clip from ${formatTime(activeSelectedClip.start)}`);
+    });
+  }
+
+  if (btnBatchExportZipDedicated && btnBatchExportZip) {
+    btnBatchExportZipDedicated.addEventListener("click", () => {
+      btnBatchExportZip.click();
+    });
   }
 
   updateTrimmerDisplay();
@@ -1657,6 +1906,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (subPosSlider) {
       subPosSlider.value = pct;
     }
+    if (clipPosSlider) {
+      clipPosSlider.value = pct;
+    }
 
     // Guideline highlights
     const isNearUpper = Math.abs(clamped - 0.18) < 0.025;
@@ -1667,21 +1919,31 @@ document.addEventListener("DOMContentLoaded", () => {
     if (snapGuideCenter) snapGuideCenter.classList.toggle("highlight", isNearCenter);
     if (snapGuideLower) snapGuideLower.classList.toggle("highlight", isNearLower);
 
-    // Update quick chips active state
+    // Update quick chips active state across both panels
     if (subPosQuickChips) {
       subPosQuickChips.forEach((btn) => {
         const p = btn.dataset.pos;
         btn.classList.toggle("active", (p === "upper" && isNearUpper) || (p === "center" && isNearCenter) || (p === "lower" && isNearLower));
       });
     }
+    if (clipPosChips) {
+      clipPosChips.forEach((btn) => {
+        const p = btn.dataset.pos;
+        btn.classList.toggle("active", (p === "upper" && isNearUpper) || (p === "center" && isNearCenter) || (p === "lower" && isNearLower));
+      });
+    }
 
     // Update label text
-    if (subPosLabel) {
-      if (isNearUpper) subPosLabel.textContent = "Top (18% Safe Zone)";
-      else if (isNearCenter) subPosLabel.textContent = "Center (50% Mid-Screen)";
-      else if (isNearLower) subPosLabel.textContent = "Bottom (79% Safe Zone)";
-      else subPosLabel.textContent = `Custom (${pct}% Y Position)`;
-    }
+    const labelText = isNearUpper
+      ? "Top (18% Safe Zone)"
+      : isNearCenter
+      ? "Center (50% Mid-Screen)"
+      : isNearLower
+      ? "Bottom (79% Safe Zone)"
+      : `Custom (${pct}% Y Position)`;
+
+    if (subPosLabel) subPosLabel.textContent = labelText;
+    if (clipPosLabel) clipPosLabel.textContent = labelText;
 
     if (subPosition) {
       if (isNearUpper) subPosition.value = "upper";
@@ -1730,9 +1992,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (clipPosSlider) {
+    clipPosSlider.addEventListener("input", (e) => {
+      setSubtitlePosition(parseFloat(e.target.value) / 100, "slider");
+    });
+  }
+
   // Quick Preset Chips Sync
   if (subPosQuickChips) {
     subPosQuickChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = btn.dataset.pos;
+        if (p === "upper") setSubtitlePosition(0.18, "preset");
+        else if (p === "center") setSubtitlePosition(0.50, "preset");
+        else setSubtitlePosition(0.79, "preset");
+        showToast(`Position: ${btn.querySelector(".chip-label").textContent}`);
+      });
+    });
+  }
+
+  if (clipPosChips) {
+    clipPosChips.forEach((btn) => {
       btn.addEventListener("click", () => {
         const p = btn.dataset.pos;
         if (p === "upper") setSubtitlePosition(0.18, "preset");
@@ -1965,8 +2245,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   // 6. Start Job with Real-Time Upload Progress & Dual Progress Bars
   // =========================================================================
-  startJobBtn.addEventListener("click", async () => {
-    if (startJobBtn.disabled) return;
+  async function submitVideoJob(overrides = {}) {
+    if (startJobBtn.disabled || (btnRenderSingleClip && btnRenderSingleClip.disabled)) return;
 
     if (!selectedFile) {
       showToast("No video uploaded yet — auto-loading synthetic sample reel (12s)...");
@@ -1983,6 +2263,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     startJobBtn.disabled = true;
+    if (btnRenderSingleClip) btnRenderSingleClip.disabled = true;
     showStage("processing");
     stageStatus.textContent = "Rendering...";
     jobStartTime = Date.now();
@@ -1998,52 +2279,61 @@ document.addEventListener("DOMContentLoaded", () => {
     // Prepare FormData
     const formData = new FormData();
     formData.append("file", selectedFile);
-    formData.append("preset", getSelectedPreset());
+    formData.append("preset", overrides.preset || getSelectedPreset());
     formData.append("llm_provider", llmProvider.value);
     if (aiEnhanceToggle && aiEnhanceToggle.checked) {
       formData.append("ai_enhance", "true");
     }
     formData.append("language", videoLanguage.value);
-    formData.append("aspect_ratio", selectedAspectRatio);
+    formData.append("aspect_ratio", overrides.aspect_ratio || selectedAspectRatio);
     formData.append("subtitle_position", subPosition ? subPosition.value : "lower");
-    formData.append("caption_size", selectedCaptionSize);
+    formData.append("caption_size", overrides.caption_size || selectedCaptionSize);
     formData.append("background_style", selectedBgStyle);
     formData.append("style_pacing", selectedStylePacing);
-    formData.append("highlight_color", selectedHighlightColor);
-    formData.append("selected_styles", selectedStyles.join(","));
-    formData.append("subtitle_y", currentSubtitleY.toFixed(2));
+    formData.append("highlight_color", overrides.highlight_color || selectedHighlightColor);
+    formData.append("selected_styles", overrides.selected_styles !== undefined ? overrides.selected_styles : selectedStyles.join(","));
+    formData.append("subtitle_y", overrides.subtitle_y !== undefined ? overrides.subtitle_y : currentSubtitleY.toFixed(2));
     formData.append("video_layout", selectedVideoLayout);
-    formData.append("progress_bar", selectedProgressBar ? "true" : "false");
+    formData.append("progress_bar", (overrides.progress_bar !== undefined ? overrides.progress_bar : selectedProgressBar) ? "true" : "false");
     formData.append("progress_bar_position", selectedProgressBarPos);
-    if (selectedHeadlineHookEnabled && selectedHeadlineHookText.trim()) {
-      formData.append("headline_hook", selectedHeadlineHookText.trim());
-      formData.append("headline_style", selectedHeadlineHookStyle);
-      if (selectedHeadlineDuration !== null) {
-        formData.append("headline_duration", selectedHeadlineDuration.toString());
+
+    const hookText = overrides.headline_hook !== undefined ? overrides.headline_hook : (selectedHeadlineHookEnabled ? selectedHeadlineHookText : "");
+    if (hookText && hookText.trim()) {
+      formData.append("headline_hook", hookText.trim());
+      formData.append("headline_style", overrides.headline_style || selectedHeadlineHookStyle);
+      const hookDur = overrides.headline_duration !== undefined ? overrides.headline_duration : selectedHeadlineDuration;
+      if (hookDur !== null && hookDur !== undefined) {
+        formData.append("headline_duration", hookDur.toString());
       }
     }
-    formData.append("auto_emojis", selectedAutoEmojis ? "true" : "false");
-    if (kineticZoomToggle && kineticZoomToggle.checked) {
+
+    formData.append("auto_emojis", (overrides.auto_emojis !== undefined ? overrides.auto_emojis : selectedAutoEmojis) ? "true" : "false");
+    if (overrides.kinetic_zoom !== undefined ? overrides.kinetic_zoom : (kineticZoomToggle && kineticZoomToggle.checked)) {
       formData.append("kinetic_zoom", "true");
     }
-    if (soundEffectsToggle && soundEffectsToggle.checked) {
+    if (overrides.sound_effects !== undefined ? overrides.sound_effects : (soundEffectsToggle && soundEffectsToggle.checked)) {
       formData.append("sound_effects", "true");
     }
-    if (bgMusicToggle && bgMusicToggle.checked) {
-      formData.append("bg_music", "lofi");
+    const bgMusicVal = overrides.bg_music !== undefined ? overrides.bg_music : ((bgMusicToggle && bgMusicToggle.checked) ? "lofi" : "");
+    if (bgMusicVal) {
+      formData.append("bg_music", bgMusicVal);
     }
-    if (watermarkInput && watermarkInput.value.trim()) {
-      formData.append("watermark_text", watermarkInput.value.trim());
+    const watermarkVal = overrides.watermark_text !== undefined ? overrides.watermark_text : (watermarkInput ? watermarkInput.value.trim() : "");
+    if (watermarkVal) {
+      formData.append("watermark_text", watermarkVal);
     }
 
     if (draftToggle.checked) {
       formData.append("draft", "true");
     }
-    if (trimStartSec > 0.05) {
-      formData.append("trim_start", trimStartSec.toFixed(2));
+
+    const tStart = overrides.trim_start !== undefined ? parseFloat(overrides.trim_start) : trimStartSec;
+    const tEnd = overrides.trim_end !== undefined ? parseFloat(overrides.trim_end) : trimEndSec;
+    if (tStart > 0.05) {
+      formData.append("trim_start", tStart.toFixed(2));
     }
-    if (trimEndSec < videoTotalDuration - 0.05) {
-      formData.append("trim_end", trimEndSec.toFixed(2));
+    if (tEnd < videoTotalDuration - 0.05) {
+      formData.append("trim_end", tEnd.toFixed(2));
     }
 
     // Use XMLHttpRequest for real-time Upload Progress
@@ -2057,6 +2347,8 @@ document.addEventListener("DOMContentLoaded", () => {
     procPct.textContent = "0%";
     btnTextLabel.textContent = "Uploading Video... 0%";
     btnProgressFill.style.width = "5%";
+    if (clipBtnTextLabel) clipBtnTextLabel.textContent = "Uploading Reel... 0%";
+    if (clipBtnProgressFill) clipBtnProgressFill.style.width = "5%";
 
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) {
@@ -2079,6 +2371,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         btnTextLabel.textContent = `Uploading Video... ${uploadPct}%`;
         btnProgressFill.style.width = `${uploadPct}%`;
+        if (clipBtnTextLabel) clipBtnTextLabel.textContent = `Uploading Reel... ${uploadPct}%`;
+        if (clipBtnProgressFill) clipBtnProgressFill.style.width = `${uploadPct}%`;
       }
     };
 
@@ -2092,6 +2386,7 @@ document.addEventListener("DOMContentLoaded", () => {
           procFill.style.width = "25%";
           procPct.textContent = "25%";
           btnTextLabel.textContent = "Transcribing Speech...";
+          if (clipBtnTextLabel) clipBtnTextLabel.textContent = "Transcribing Speech...";
 
           if (pipelineProgressTitle) pipelineProgressTitle.textContent = "Processing Video...";
           if (pipelineProgressDesc) pipelineProgressDesc.textContent = "Aligning speech with faster-whisper timestamps...";
@@ -2117,7 +2412,39 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     xhr.send(formData);
-  });
+  }
+
+  startJobBtn.addEventListener("click", () => submitVideoJob({}));
+
+  if (btnRenderSingleClip) {
+    btnRenderSingleClip.addEventListener("click", async () => {
+      if (!activeSelectedClip) {
+        showToast("Please select a clip to render!");
+        return;
+      }
+      if (btnRenderSingleClip.disabled) return;
+
+      const overrides = {
+        trim_start: activeSelectedClip.start.toFixed(2),
+        trim_end: activeSelectedClip.end.toFixed(2),
+        aspect_ratio: "9:16",
+        headline_hook: clipHeadlineInput ? clipHeadlineInput.value.trim() : activeSelectedClip.headline,
+        headline_style: selectedHeadlineHookStyle,
+        headline_duration: selectedHeadlineDuration,
+        caption_size: selectedCaptionSize,
+        subtitle_y: currentSubtitleY.toFixed(2),
+        selected_styles: selectedStyles.length > 0 ? selectedStyles.join(",") : "beast_impact,hormozi_bold",
+        watermark_text: clipWatermarkInput ? clipWatermarkInput.value.trim() : "",
+        kinetic_zoom: clipKineticZoomToggle ? clipKineticZoomToggle.checked : false,
+        sound_effects: clipPopSfxToggle ? clipPopSfxToggle.checked : true,
+        bg_music: (clipBgMusicToggle && clipBgMusicToggle.checked) ? "lofi" : "",
+        progress_bar: clipProgressBarToggle ? clipProgressBarToggle.checked : true,
+        auto_emojis: clipAutoEmojisToggle ? clipAutoEmojisToggle.checked : true,
+      };
+
+      await submitVideoJob(overrides);
+    });
+  }
 
   // 7. Polling Pipeline Progress
   function startPolling(jobId) {
@@ -2151,6 +2478,7 @@ document.addEventListener("DOMContentLoaded", () => {
     procFill.style.width = `${overallPct}%`;
     procPct.textContent = `${overallPct}%`;
     btnProgressFill.style.width = `${overallPct}%`;
+    if (clipBtnProgressFill) clipBtnProgressFill.style.width = `${overallPct}%`;
 
     const elapsed = Math.floor((Date.now() - jobStartTime) / 1000);
     procElapsed.textContent = `${elapsed}s elapsed`;
@@ -2175,6 +2503,7 @@ document.addEventListener("DOMContentLoaded", () => {
     procTitle.textContent = "Rendering Video...";
     procStep.textContent = currentStepText;
     btnTextLabel.textContent = `Rendering... ${overallPct}%`;
+    if (clipBtnTextLabel) clipBtnTextLabel.textContent = `Rendering Reel... ${overallPct}%`;
 
     // Prominent Progress Card
     if (pipelineProgressCard) pipelineProgressCard.classList.remove("hidden");
@@ -2190,6 +2519,9 @@ document.addEventListener("DOMContentLoaded", () => {
     startJobBtn.disabled = false;
     btnProgressFill.style.width = "0%";
     btnTextLabel.textContent = "Generate Captioned Video ⚡";
+    if (btnRenderSingleClip) btnRenderSingleClip.disabled = false;
+    if (clipBtnProgressFill) clipBtnProgressFill.style.width = "0%";
+    if (clipBtnTextLabel) clipBtnTextLabel.textContent = "⚡ Render This Viral Reel (MP4)";
     showToast("Render complete! Loading captioned video...");
 
     // Update prominent card to 100% complete
@@ -2239,6 +2571,9 @@ document.addEventListener("DOMContentLoaded", () => {
     startJobBtn.disabled = false;
     btnProgressFill.style.width = "0%";
     btnTextLabel.textContent = "Generate Captioned Video ⚡";
+    if (btnRenderSingleClip) btnRenderSingleClip.disabled = false;
+    if (clipBtnProgressFill) clipBtnProgressFill.style.width = "0%";
+    if (clipBtnTextLabel) clipBtnTextLabel.textContent = "⚡ Render This Viral Reel (MP4)";
     showToast(`Error: ${job.error || "Render failed"}`);
     showStage(selectedFile ? "source" : "idle");
   }
@@ -2436,6 +2771,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (startJobBtn) startJobBtn.disabled = false;
     if (btnProgressFill) btnProgressFill.style.width = "0%";
     if (btnTextLabel) btnTextLabel.textContent = "Generate Captioned Video ⚡";
+
+    activeSelectedClip = null;
+    if (clipTweakerCard) clipTweakerCard.classList.add("hidden");
+    if (btnRenderSingleClip) btnRenderSingleClip.disabled = false;
+    if (clipBtnProgressFill) clipBtnProgressFill.style.width = "0%";
+    if (clipBtnTextLabel) clipBtnTextLabel.textContent = "⚡ Render This Viral Reel (MP4)";
+    if (clipsCountBadge) clipsCountBadge.textContent = "0 Found";
 
     // 7. Reset canvas stage to idle
     showStage("idle");

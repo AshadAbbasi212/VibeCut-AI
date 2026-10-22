@@ -26,8 +26,25 @@
 - [x] Phase 25 AI Creative Director, Mistral Free Tier Integration & Scene-Aware Intelligence (Keyframe Vision Analysis, Burned-in Caption Avoidance, & Ali Abdaal Editorial Styling)
 - [x] Phase 26 AI Viral Reel / Clip Extractor (15s, 30s, 60s Discussion Finder), Top Headline Hook Duration (5s, 10s, Full Video Fade-out), & Backend-Only Secure API Key Management
 - [x] Phase 27 Creator Booster Pack: Batch Multi-Clip Export to ZIP, Viral SFX / Lo-Fi Audio Layer, Kinetic Punch-In Micro-Zooms, 1-Click Social Media Copy & Hashtag Generator, Automatic Multi-Speaker Diarization Color Coding, & Brand Watermark Overlay
+- [x] Phase 28 Studio Architecture Separation & Dedicated Viral Clip Tweaker (Top-Level Mode Switcher, Truncation Collision Fix, & Per-Clip Settings Customizer)
 
 ## Notes / known issues
+- Phase 28:
+  1. **Top-Level Segmented Studio Switcher**: Decoupled full video rendering settings from AI viral clips extraction. Added `.studio-mode-switcher` at the top of `.controls-col` with `[🎞️ Full Video Studio]` and `[✨ AI Viral Reels Studio]`.
+  2. **Studio Monitor Header Collision Fix**: Fixed badge overflow in `.stage-header-left` where long filenames (`#stageStatus`) wrapped into 5 lines and covered `.ar-selector` buttons. Added CSS `min-width: 0; flex: 1; overflow: hidden;` to header left, and `max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;` to `#stageStatus`, with safe filename truncation in `handleFile()`.
+  3. **Full Video Studio Cleanup**: Removed the embedded `aiClipsBox` from inside the CapCut trimmer in Card 3, replacing it with a sleek shortcut banner (`.studio-callout-banner`) pointing to the Clips Studio.
+  4. **AI Viral Reels Studio & Dedicated Clip Tweaker**: Built 3-stage dedicated workflow in `<div id="clipsStudioSection">`:
+     - **Card A (Scanner)**: Target length chips (`15s Hook`, `30s Highlight`, `60s Discussion`) + Discover button.
+     - **Card B (Gallery)**: Discovered clips list with virality scores, timestamps, AI summary, and `📋 Copy Post`.
+     - **Card C (`#clipTweakerCard`)**: Dedicated Selected Clip Customizer allowing creators to tweak all parameters before rendering:
+       - **Headline Hook**: Editable text, visual styles (`badge`, `glass`, `clean`, `cyber`), and fade-out duration (`5s`, `10s`, `Full`).
+       - **Caption Font Size**: Preset chips (`38px`, `52px`, `68px`) + live fine-tuning slider (`24px` - `96px`), immediately synced to canvas preview.
+       - **Caption Placement**: Quick buttons (`Top 18%`, `Center 50%`, `Bottom 79%`) + vertical slider + real-time canvas drag sync.
+       - **Caption Style & Palette**: Quick style selector + accent color swatches.
+       - **Creator Watermark**: Custom `@handle` input synced to live canvas badge.
+       - **Viral Boosters**: Toggles for Kinetic Zooms, Viral Pop SFX, Lo-Fi Ambient Beat, 3D Stickers.
+       - **Actions**: `⚡ Render This Viral Reel (MP4)` rendering this customized clip with all overrides, and `📦 Export All Clips (.ZIP)`.
+  5. All 90 pytest tests pass, Remotion bundle validated.
 - Phase 27:
   1. **Batch Multi-Clip Export to ZIP (User Option)**: Added `POST /api/jobs/{job_id}/batch-render-clips` and `GET /api/jobs/{job_id}/download-zip`. In `backend/pipeline/clips.py`, added `slice_timeline_for_clip` which dynamically shifts all events, words, and camera cuts to start at 0.0 with the clip's assigned headline, trims the video rapidly with FFmpeg, and renders standalone reels using Remotion. Packages all rendered MP4s plus formatted `clip_XX_post.txt` files into `{job_id}_viral_reels.zip`. Added `#btnBatchExportZip` in the frontend Trimmer dock.
   2. **Viral SFX & Lo-Fi Ambient Audio Layer (User Option)**: Synthesized local assets `sfx_pop.wav` (0.12s wooden/bubble pop) and `bg_lofi.wav` (8.0s warm ambient pad loop) in Remotion public directories. Added user checkboxes in Card 3 (`#soundEffectsToggle`, `#bgMusicToggle`), Remotion `<Audio>` layers for sticker/graphic pop-ins and speech-ducked lo-fi background beat.
