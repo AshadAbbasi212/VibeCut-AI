@@ -505,9 +505,14 @@ class JobManager:
             camera_cuts = None
             if resolved_layout == "active_speaker":
                 from backend.pipeline.reframe import build_active_speaker_cuts
+                num_spk = 2
+                if scene_analysis_data:
+                    num_spk = scene_analysis_data.get("num_speakers", 2)
                 camera_cuts = build_active_speaker_cuts(
                     phrases=phrases_doc.phrases,
                     video_duration=probe.duration,
+                    num_speakers=num_spk,
+                    scene_analysis=scene_analysis_data,
                 )
 
             timeline = Timeline(

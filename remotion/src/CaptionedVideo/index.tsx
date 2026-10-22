@@ -375,10 +375,10 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
         return (
           <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "15% center" }} />
+              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "20% center" }} />
             </div>
             <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "85% center" }} />
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "82% center" }} />
             </div>
             <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "4px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 16px rgba(56, 189, 248, 0.65), 0 2px 10px rgba(0, 0, 0, 0.8)", zIndex: 3 }} />
           </AbsoluteFill>

@@ -251,6 +251,30 @@ def _validate_and_parse_llm_json(
             item["start"] = max(0.0, min(float(item.get("start", w_start)), w_start + 0.15))
             item["end"] = min(video_duration, max(float(item.get("end", w_end)), w_end - 0.15))
 
+        # Sanitize graphic field
+        g = item.get("graphic")
+        if isinstance(g, dict):
+            valid_kinds = {"emoji", "icon", "image", "sticker3d"}
+            if g.get("kind") not in valid_kinds:
+                val = str(g.get("value", ""))
+                # If value contains an emoji, normalize kind to emoji
+                if any(ord(c) > 1000 for c in val):
+                    g["kind"] = "emoji"
+                else:
+                    item.pop("graphic", None)
+            if "graphic" in item and isinstance(item["graphic"], dict):
+                valid_positions = {"above", "below", "left", "right"}
+                if item["graphic"].get("position") not in valid_positions:
+                    item["graphic"]["position"] = "above"
+
+        # Sanitize highlights field
+        hl_list = item.get("highlights")
+        if isinstance(hl_list, list):
+            valid_hl_kinds = {"color", "italic", "pill", "underline", "scale"}
+            for hl in hl_list:
+                if isinstance(hl, dict) and hl.get("kind") not in valid_hl_kinds:
+                    hl["kind"] = "color"
+
         ev_start = round(float(item.get("start", 0.0)), 2)
         ev_end = max(round(float(item.get("end", 0.0)), 2), round(ev_start + 0.35, 2))
         if video_duration > 0 and ev_end > video_duration:
@@ -266,6 +290,15 @@ def _validate_and_parse_llm_json(
 
 
 # ── Build Scene-Aware Prompt ─────────────────────────────────────────────────
+
+def _is_ignorable_watermark(text: str, start: float, end: float) -> bool:
+    """Check if an existing caption entry is a logo, persistent watermark, or teaser bug."""
+    if end - start > 12.0:
+        return True
+    t = (text or "").lower()
+    watermark_keywords = ["logo", "podcast", "coming up", "subscribe", "@", "channel", "watermark", "show", "corner"]
+    return any(k in t for k in watermark_keywords)
+
 
 def _build_scene_aware_prompt(
     phrases: list[Phrase],
@@ -283,12 +316,16 @@ def _build_scene_aware_prompt(
     num_speakers = scene_analysis.get("num_speakers", 1)
     has_burned_in = scene_analysis.get("has_burned_in_captions", False)
 
-    # Build skip instruction
+    # Build skip instruction (ignoring persistent channel logos / watermarks)
     existing_captions_instruction = "No existing captions detected — generate captions for the entire video."
-    if has_burned_in and existing_captions:
+    valid_existing = [
+        ec for ec in existing_captions
+        if not _is_ignorable_watermark(ec.get("text", ""), ec.get("start", 0), ec.get("end", 0))
+    ]
+    if has_burned_in and valid_existing:
         skip_ranges = "\n".join(
             f"  - {ec.get('start', 0):.1f}s to {ec.get('end', 0):.1f}s: \"{ec.get('text', '')}\""
-            for ec in existing_captions
+            for ec in valid_existing
         )
         existing_captions_instruction = (
             f"The video already has burned-in captions/titles in these time ranges. "
@@ -336,18 +373,23 @@ def _build_basic_prompt(phrases: list[Phrase], preset: str) -> str:
 
 
 def _build_base_events(phrases: list[Phrase], scene_analysis: Optional[dict] = None) -> list[TimelineEvent]:
-    """Build base pill_word events for all phrases, skipping burned-in caption ranges."""
+    """Build base pill_word events for all phrases, skipping confirmed burned-in dialogue ranges."""
     skip_ranges = []
     if scene_analysis and scene_analysis.get("has_burned_in_captions"):
         for ec in scene_analysis.get("existing_captions", []):
-            skip_ranges.append((ec.get("start", 0), ec.get("end", 0)))
+            start = ec.get("start", 0)
+            end = ec.get("end", 0)
+            text = ec.get("text", "")
+            if _is_ignorable_watermark(text, start, end):
+                continue
+            skip_ranges.append((start, end))
 
     base_events = []
     for p in phrases:
         if not p.word_indices:
             continue
 
-        # Check if this phrase overlaps with any burned-in caption
+        # Check if this phrase overlaps with any confirmed burned-in dialogue
         if skip_ranges:
             should_skip = any(
                 p.start < ec_end and p.end > ec_start

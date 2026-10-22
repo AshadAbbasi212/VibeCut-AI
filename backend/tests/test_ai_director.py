@@ -112,6 +112,24 @@ def test_build_base_events_skips_burned_in_captions():
     assert "base_p2" in phrase_ids
 
 
+def test_build_base_events_keeps_subtitles_on_watermarks():
+    phrases = _make_sample_phrases()
+    # Scenario: stationary podcast watermark spanning 0.0 - 60.0s
+    scene_data = {
+        "has_burned_in_captions": True,
+        "existing_captions": [
+            {"start": 0.0, "end": 60.0, "text": "BIG TECHNOLOGY PODCAST logo", "region": "lower"}
+        ],
+    }
+
+    events = _build_base_events(phrases, scene_data)
+    phrase_ids = [ev.id for ev in events]
+    # Watermarks should NOT suppress spoken subtitles
+    assert "base_p1" in phrase_ids
+    assert "base_p2" in phrase_ids
+    assert len(events) == 2
+
+
 def test_parse_json_response_helper():
     # Test wrapped in markdown fence
     fenced = '```json\n{"video_type": "podcast", "num_speakers": 2}\n```'

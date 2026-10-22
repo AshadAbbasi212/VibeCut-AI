@@ -1,5 +1,12 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: Smart Watermark Filtering, Full-Duration Keyframes & Scene-Aware Auto-Framing
+- **Decision**: 
+  1. Refined `SCENE_ANALYSIS_PROMPT` and `plan_llm.py` so stationary channel logos, corner bugs (e.g. "BIG TECHNOLOGY PODCAST"), and teaser tags ("Coming up...") are NOT classified as burned-in dialogue captions. Any entry > 12s or matching watermark keywords is excluded from subtitle suppression, ensuring base speech captions remain visible across the full video.
+  2. Enhanced `build_active_speaker_cuts` in `reframe.py` to accept `scene_analysis` and distinguish solo centered camera angles (`focusX = 0.50`) from wide two-shot angles (`focusX = 0.20` and `0.82`), and prevented camera cut merging when `focusX` changes.
+  3. Updated `extract_keyframes` in `analyze.py` to use an `effective_interval` so keyframe extraction spans the full duration of the video rather than cutting off at 120s.
+- **Why**: Eliminates blank caption periods caused by stationary watermarks, prevents extreme horizontal crops from cutting speakers off on multi-camera podcast videos, and ensures scene analysis covers the entire video duration.
+
 ## 2026-10-22: AI Director with Mistral Free Tier, Scene Analysis & Smart Heading Detection
 - **Decision**: Added `MistralPlanner` (using `mistralai` SDK with `mistral-small-latest` for prompt planning and `pixtral-12b-2409` for keyframe vision analysis), client-side per-provider API key storage via `localStorage`, an optional `analyze_video` pipeline step extracting keyframes via FFmpeg to detect scenes, speakers, mood, and burned-in captions, and scene-aware creative director prompting. When burned-in captions are detected, both base and feature events are skipped for those timestamps.
 - **Why**: Allows users to use Mistral's free tier for AI-directed caption styling (mimicking editors like Ali Abdaal who use distinct recurring styles for headings, special one-time styles for key hooks, and match style energy to video mood), while automatically preventing collisions with pre-existing hardcoded captions in video clips.

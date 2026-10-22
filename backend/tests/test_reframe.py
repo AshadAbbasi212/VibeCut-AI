@@ -99,3 +99,36 @@ def test_timeline_with_camera_cuts_schema():
     assert len(tl.cameraCuts) == 2
     assert tl.cameraCuts[0].focusX == 0.15
     assert tl.cameraCuts[1].focusX == 0.85
+
+
+def test_active_speaker_scene_awareness():
+    # Test that a solo centered shot maintains focusX = 0.50 even if alternating
+    phrases = [
+        Phrase(id="p1", text="Welcome to the interview.", start=0.5, end=3.0, speech_start=0.5, speech_end=3.0, word_indices=[0, 1, 2, 3], words=[]),
+        Phrase(id="p2", text="In this wide shot we talk.", start=4.0, end=7.0, speech_start=4.0, speech_end=7.0, word_indices=[4, 5, 6, 7, 8], words=[]),
+    ]
+    scene_analysis = {
+        "scenes": [
+            {
+                "timestamp": 0.0,
+                "description": "Solo speaker in center",
+                "speakers": [{"position": "center", "is_speaking": True}],
+            },
+            {
+                "timestamp": 3.5,
+                "description": "Wide two-shot with host on left and guest on right",
+                "speakers": [{"position": "left", "is_speaking": False}, {"position": "right", "is_speaking": True}],
+            },
+        ]
+    }
+    cuts = build_active_speaker_cuts(
+        phrases=phrases,
+        video_duration=8.0,
+        scene_analysis=scene_analysis,
+    )
+    assert len(cuts) >= 2
+    # First cut during solo centered shot must have focusX = 0.50
+    assert cuts[0].focusX == 0.50
+    # Second cut during wide shot with right speaker must have focusX near 0.82
+    assert cuts[1].focusX == 0.82
+

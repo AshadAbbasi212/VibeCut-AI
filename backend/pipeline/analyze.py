@@ -109,12 +109,15 @@ def extract_keyframes(
     else:
         duration = 300.0
 
-    # Calculate timestamps
+    # Calculate timestamps evenly distributed across the full video duration
+    if duration <= 0:
+        duration = 300.0
+    effective_interval = max(interval_sec, duration / max(1, max_frames))
     timestamps = []
     t = 0.0
     while t < duration and len(timestamps) < max_frames:
-        timestamps.append(t)
-        t += interval_sec
+        timestamps.append(round(t, 2))
+        t += effective_interval
 
     if not timestamps:
         timestamps = [0.0]
@@ -159,13 +162,14 @@ SCENE_ANALYSIS_PROMPT = """You are an expert video editor analyzing keyframes fr
 For each keyframe (provided with timestamps), analyze:
 1. **Scene description** — what's happening visually
 2. **Speaker positions** — where people are (left/center/right), who is speaking
-3. **Existing on-screen text** — any burned-in captions, titles, lower-thirds, watermarks already visible
+3. **Existing on-screen text** — any burned-in subtitles, hardcoded dialogue captions, or section titles visible.
+   NOTE: Channel logos, podcast title graphics/watermarks (e.g. "BIG TECHNOLOGY PODCAST" in corner), teaser tags ("Coming up..."), and station bugs are NOT captions/subtitles! Do NOT list watermarks or channel logos in existing_captions.
 4. **Mood/Energy** — the emotional tone (excited, calm, serious, funny, dramatic, neutral) and energy level (low/medium/high)
 
 Also determine overall:
 - **video_type**: one of "podcast", "tutorial", "vlog", "talking_head", "interview", "presentation"
 - **num_speakers**: how many distinct people appear
-- **has_burned_in_captions**: whether the video already has hardcoded subtitles/captions visible
+- **has_burned_in_captions**: whether the video already has hardcoded spoken subtitles/dialogue captions visible (do NOT set true for logos or watermarks)
 
 Return ONLY valid JSON matching this schema:
 {{
@@ -181,7 +185,7 @@ Return ONLY valid JSON matching this schema:
     }}
   ],
   "existing_captions": [
-    {{"start": <float>, "end": <float>, "text": "<burned-in text>", "region": "upper|center|lower"}}
+    {{"start": <float>, "end": <float>, "text": "<burned-in spoken subtitle text>", "region": "upper|center|lower"}}
   ],
   "video_type": "<type>",
   "num_speakers": <int>,

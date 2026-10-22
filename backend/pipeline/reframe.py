@@ -8,12 +8,26 @@ from backend.pipeline.chunk import Phrase
 from backend.schemas.timeline import CameraCut
 
 
+def _get_scene_for_time(scenes: list[dict], t: float) -> Optional[dict]:
+    """Find the scene keyframe analysis corresponding to timestamp t."""
+    if not scenes:
+        return None
+    matched = None
+    for s in scenes:
+        if s.get("timestamp", 0) <= t:
+            matched = s
+        else:
+            break
+    return matched
+
+
 def build_active_speaker_cuts(
     phrases: list[Phrase],
     video_duration: float,
     num_speakers: int = 2,
     min_shot_duration: float = 1.8,
     hold_buffer: float = 0.6,
+    scene_analysis: Optional[dict] = None,
 ) -> list[CameraCut]:
     """
     Generate broadcast-quality dynamic camera cuts tracking the active speaker.
@@ -24,6 +38,7 @@ def build_active_speaker_cuts(
         num_speakers: 2 (duo interview) or 3 (trio panel)
         min_shot_duration: Minimum duration (seconds) before switching cameras (hysteresis)
         hold_buffer: Extra time (seconds) to hold camera on speaker after phrase ends
+        scene_analysis: Optional AI scene analysis with keyframe speaker positions
     
     Returns:
         List of non-overlapping CameraCut objects covering [0.0, video_duration]
@@ -40,14 +55,15 @@ def build_active_speaker_cuts(
             )
         ]
 
-    # 1. Assign speaker turns to phrases
-    # Speaker seat spatial mapping:
-    # 2 speakers: Left (0.15) and Right (0.85)
-    # 3 speakers: Left (0.15), Center (0.50), Right (0.85)
+    scenes = (scene_analysis or {}).get("scenes", [])
+
+    # Default seat positions for wide 2-shot or 3-shot fallback:
+    # 2 speakers: Left (0.20) and Right (0.82)
+    # 3 speakers: Left (0.20), Center (0.50), Right (0.82)
     seat_positions = {
-        0: 0.15,
-        1: 0.85 if num_speakers == 2 else 0.50,
-        2: 0.85,
+        0: 0.20,
+        1: 0.82 if num_speakers == 2 else 0.50,
+        2: 0.82,
     }
 
     raw_cuts: list[dict] = []
@@ -68,27 +84,52 @@ def build_active_speaker_cuts(
         # Check for cross-talk / interruption (current start is before previous end)
         is_cross_talk = prev_phrase and (p_start < prev_phrase.end)
 
-        if is_cross_talk:
-            # Overlapping speech -> cut to Split Stack
-            raw_cuts.append({
-                "start": p_start,
-                "end": max(p_end, prev_phrase.end) + hold_buffer,
-                "focusX": 0.5,
-                "speaker": -1, # Cross-talk
-                "layout": "split_duo" if num_speakers == 2 else "split_trio",
-            })
-            continue
-
         if has_pause or prev_question:
-            current_speaker = (current_speaker + 1) % num_speakers
+            current_speaker = (current_speaker + 1) % max(1, num_speakers)
 
-        focus_x = seat_positions.get(current_speaker, 0.5)
+        # Determine camera focus and layout using scene analysis if available
+        matched_scene = _get_scene_for_time(scenes, p_start) if scenes else None
+        if matched_scene:
+            spk_list = matched_scene.get("speakers", [])
+            positions = [
+                sp.get("position") for sp in spk_list
+                if isinstance(sp, dict) and sp.get("position")
+            ]
+            if not positions or all(pos == "center" for pos in positions) or (len(positions) == 1 and positions[0] == "center"):
+                # Solo close-up camera angle centered on the speaker
+                focus_x = 0.50
+                layout = "solo"
+            elif "left" in positions and "right" in positions:
+                # Wide 2-shot table view
+                if is_cross_talk:
+                    focus_x = 0.50
+                    layout = "split_duo" if num_speakers == 2 else "split_trio"
+                else:
+                    focus_x = 0.20 if current_speaker == 0 else 0.82
+                    layout = "solo"
+            elif "left" in positions and "right" not in positions:
+                focus_x = 0.20
+                layout = "solo"
+            elif "right" in positions and "left" not in positions:
+                focus_x = 0.82
+                layout = "solo"
+            else:
+                focus_x = 0.50
+                layout = "solo"
+        else:
+            if is_cross_talk:
+                focus_x = 0.50
+                layout = "split_duo" if num_speakers == 2 else "split_trio"
+            else:
+                focus_x = seat_positions.get(current_speaker, 0.50)
+                layout = "solo"
+
         raw_cuts.append({
             "start": p_start,
             "end": p_end + hold_buffer,
             "focusX": focus_x,
-            "speaker": current_speaker,
-            "layout": "solo",
+            "speaker": -1 if (is_cross_talk and layout != "solo") else current_speaker,
+            "layout": layout,
         })
 
     if not raw_cuts:
@@ -96,9 +137,9 @@ def build_active_speaker_cuts(
             CameraCut(
                 start=0.0,
                 end=video_duration,
-                focusX=0.15,
+                focusX=0.50,
                 speakerId="speaker_0",
-                layout="split_duo",
+                layout="split_duo" if num_speakers == 2 else "solo",
             )
         ]
 
@@ -113,8 +154,12 @@ def build_active_speaker_cuts(
 
         last = merged_cuts[-1]
         
-        # If same speaker or layout, extend duration
-        if last["speaker"] == c["speaker"] and last["layout"] == c["layout"]:
+        # If same speaker, layout, and camera framing, extend duration
+        if (
+            last["speaker"] == c["speaker"]
+            and last["layout"] == c["layout"]
+            and abs(last["focusX"] - c["focusX"]) < 0.05
+        ):
             last["end"] = max(last["end"], c["end"])
             continue
 
