@@ -380,7 +380,7 @@ class MistralPlanner(BasePlanner):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "mistral-small-latest",
+        model: str = "open-mistral-7b",
         preset: str = "bold_creator",
     ):
         self.api_key = api_key or os.getenv("MISTRAL_API_KEY")
@@ -402,10 +402,13 @@ class MistralPlanner(BasePlanner):
             return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         try:
-            from mistralai import Mistral
+            from mistralai.client import Mistral
         except ImportError:
-            logger.warning("mistralai SDK not installed. Falling back to RulePlanner.")
-            return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
+            try:
+                from mistralai import Mistral
+            except ImportError:
+                logger.warning("mistralai SDK not installed. Falling back to RulePlanner.")
+                return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
         base_events = _build_base_events(phrases, scene_analysis)
 
@@ -416,25 +419,32 @@ class MistralPlanner(BasePlanner):
         client = Mistral(api_key=self.api_key)
         feature_events: list[TimelineEvent] = []
 
+        # Candidate models prioritizing free-tier accessible models
+        models_to_try = [self.model]
+        for fallback_m in ["open-mistral-7b", "pixtral-12b-2409", "mistral-small-latest"]:
+            if fallback_m not in models_to_try:
+                models_to_try.append(fallback_m)
+
         last_error = None
-        for attempt in range(3):
+        for attempt, target_model in enumerate(models_to_try):
             try:
                 current_prompt = prompt
                 if last_error:
                     current_prompt += f"\n\nPrevious attempt returned invalid output: {last_error}. Please fix and return ONLY valid JSON array."
 
+                logger.info(f"MistralPlanner calling model {target_model} (attempt {attempt + 1}/{len(models_to_try)})")
                 response = client.chat.complete(
-                    model=self.model,
+                    model=target_model,
                     messages=[{"role": "user", "content": current_prompt}],
                     temperature=0.3,
                 )
                 text = response.choices[0].message.content or ""
                 feature_events = _validate_and_parse_llm_json(text, phrases, video_duration)
-                logger.info(f"MistralPlanner successfully generated {len(feature_events)} feature events on attempt {attempt + 1}")
+                logger.info(f"MistralPlanner successfully generated {len(feature_events)} feature events with model {target_model}")
                 break
             except Exception as e:
                 last_error = str(e)
-                logger.warning(f"MistralPlanner attempt {attempt + 1} failed: {e}")
+                logger.warning(f"MistralPlanner model {target_model} attempt {attempt + 1} failed: {e}")
 
         if not feature_events:
             logger.warning("MistralPlanner failed after retries. Falling back to RulePlanner.")

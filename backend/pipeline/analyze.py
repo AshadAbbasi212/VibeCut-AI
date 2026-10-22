@@ -45,7 +45,7 @@ class TopicSegment(BaseModel):
     """A detected topic/heading segment."""
     start: float = Field(..., description="Segment start time")
     end: float = Field(..., description="Segment end time")
-    title: str = Field(..., description="Main point / heading text")
+    title: str = Field(default="Main Point", description="Main point / heading text")
     importance: str = Field(default="normal", description="hook, heading, key_point, normal, conclusion")
     energy: str = Field(default="medium", description="low, medium, high, climax")
 
@@ -168,25 +168,25 @@ Also determine overall:
 - **has_burned_in_captions**: whether the video already has hardcoded subtitles/captions visible
 
 Return ONLY valid JSON matching this schema:
-{
+{{
   "scenes": [
-    {
+    {{
       "timestamp": <float>,
       "description": "<brief description>",
-      "speakers": [{"position": "left|center|right", "is_speaking": true|false}],
+      "speakers": [{{"position": "left|center|right", "is_speaking": true|false}}],
       "has_existing_text": true|false,
       "existing_text": "<text visible on screen or empty>",
       "mood": "excited|calm|serious|funny|dramatic|neutral",
       "energy": "low|medium|high"
-    }
+    }}
   ],
   "existing_captions": [
-    {"start": <float>, "end": <float>, "text": "<burned-in text>", "region": "upper|center|lower"}
+    {{"start": <float>, "end": <float>, "text": "<burned-in text>", "region": "upper|center|lower"}}
   ],
   "video_type": "<type>",
   "num_speakers": <int>,
   "has_burned_in_captions": true|false
-}
+}}
 
 Keyframe timestamps: {timestamps}
 """
@@ -205,18 +205,18 @@ The transcript with timestamps:
 {existing_captions_context}
 
 Return ONLY valid JSON:
-{
+{{
   "topic_segments": [
-    {
+    {{
       "start": <float>,
       "end": <float>,
       "title": "<heading or summary of this segment>",
       "importance": "hook|heading|key_point|normal|conclusion",
       "energy": "low|medium|high|climax"
-    }
+    }}
   ],
   "dominant_mood": "excited|calm|serious|educational|motivational|neutral"
-}
+}}
 """
 
 
@@ -229,7 +229,10 @@ def _analyze_with_mistral(
     existing_captions_ctx: str = "",
 ) -> VideoAnalysis:
     """Analyze video using Mistral Pixtral (vision) + mistral-small (topics)."""
-    from mistralai import Mistral
+    try:
+        from mistralai.client import Mistral
+    except ImportError:
+        from mistralai import Mistral
 
     client = Mistral(api_key=api_key)
     analysis = VideoAnalysis()
@@ -237,15 +240,19 @@ def _analyze_with_mistral(
     # 1. Vision analysis with Pixtral (keyframes)
     if frames:
         try:
-            # Build message with keyframes as images
+            # Pixtral allows maximum 8 images per request
+            if len(frames) <= 8:
+                selected_frames = frames
+            else:
+                step = len(frames) / 8.0
+                selected_frames = [frames[int(i * step)] for i in range(8)]
+
             content_parts = [
                 {"type": "text", "text": SCENE_ANALYSIS_PROMPT.format(
-                    timestamps=", ".join(f"{ts:.1f}s" for ts, _ in frames)
+                    timestamps=", ".join(f"{ts:.1f}s" for ts, _ in selected_frames)
                 )}
             ]
 
-            # Include up to 20 frames (Pixtral can handle multiple images)
-            selected_frames = frames[:20]
             for ts, frame_path in selected_frames:
                 b64 = _load_frame_base64(frame_path)
                 content_parts.append({
@@ -284,7 +291,7 @@ def _analyze_with_mistral(
         except Exception as e:
             logger.warning(f"Pixtral vision analysis failed: {e}")
 
-    # 2. Topic analysis with text model
+    # 2. Topic analysis with text model (use open-mistral-7b for free tier reliability)
     if transcript_phrases:
         try:
             existing_ctx = ""
@@ -300,11 +307,20 @@ def _analyze_with_mistral(
                 existing_captions_context=existing_ctx or existing_captions_ctx,
             )
 
-            response = client.chat.complete(
-                model="mistral-small-latest",
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.2,
-            )
+            # Try open-mistral-7b (free tier friendly) with fallback to mistral-small-latest
+            topic_text = ""
+            for topic_model in ["open-mistral-7b", "mistral-small-latest"]:
+                try:
+                    response = client.chat.complete(
+                        model=topic_model,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.2,
+                    )
+                    topic_text = response.choices[0].message.content or ""
+                    if topic_text:
+                        break
+                except Exception as model_err:
+                    logger.warning(f"Mistral topic model {topic_model} failed: {model_err}")
 
             topic_text = response.choices[0].message.content or ""
             topic_data = _parse_json_response(topic_text)
