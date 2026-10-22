@@ -70,6 +70,8 @@ async def create_job(
     headline_hook: Optional[str] = Form(None),
     headline_style: Literal["badge", "glass", "clean", "cyber"] = Form("badge"),
     auto_emojis: bool = Form(True),
+    ai_enhance: bool = Form(False),
+    api_key: Optional[str] = Form(None),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -108,6 +110,8 @@ async def create_job(
             headline_hook=headline_hook.strip() if headline_hook and headline_hook.strip() else None,
             headline_style=headline_style,
             auto_emojis=auto_emojis,
+            ai_enhance=ai_enhance,
+            api_key=api_key.strip() if api_key and api_key.strip() else None,
         )
         return job
     finally:

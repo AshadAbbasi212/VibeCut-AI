@@ -1915,15 +1915,54 @@
             </div>
           </div>
 
-          <div class="options-grid">
-            <div class="field">
-              <label for="llmProvider">Planner Intelligence</label>
-              <select id="llmProvider" class="input">
-                <option value="none">Deterministic (10-15 Styles)</option>
-                <option value="gemini">Google Gemini 2.5</option>
-                <option value="anthropic">Anthropic Claude</option>
-              </select>
+          <!-- 🧠 AI Director Section -->
+          <div style="margin-bottom: 14px; padding: 14px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08)); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: var(--radius-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">🧠</span>
+                <label style="margin: 0; font-size: 13px; font-weight: 800; color: #fff;">AI Director</label>
+              </div>
+              <span class="card-badge" id="aiDirectorBadge" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border-color: rgba(139, 92, 246, 0.3);">OFF</span>
             </div>
+
+            <div class="options-grid" style="margin-bottom: 10px;">
+              <div class="field">
+                <label for="llmProvider" style="font-size: 11px;">LLM Provider</label>
+                <select id="llmProvider" class="input" style="font-size: 12px;">
+                  <option value="none">Rule-Based (No AI)</option>
+                  <option value="mistral" selected>Mistral (Free)</option>
+                  <option value="gemini">Google Gemini</option>
+                  <option value="anthropic">Anthropic Claude</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="aiEnhanceToggle" style="font-size: 11px;">AI Vision Analysis</label>
+                <label class="checkbox-row" for="aiEnhanceToggle" style="padding-top: 4px; border: none;">
+                  <input type="checkbox" id="aiEnhanceToggle">
+                  <span style="font-size: 12px;">🎬 Scene-Aware</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- API Key Input -->
+            <div id="apiKeySection" style="margin-top: 8px;">
+              <label for="apiKeyInput" style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 4px; display: block;">API Key <span style="color: var(--text-dim); font-weight: 400;">(stored locally, never sent to our servers)</span></label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <input type="password" id="apiKeyInput" class="input" placeholder="Enter your API key..." style="flex: 1; font-size: 12px; padding: 8px 12px; border-radius: var(--radius-xs); font-family: var(--font-mono);">
+                <button type="button" id="toggleApiKeyVisibility" class="btn-chip" style="padding: 8px 10px; font-size: 11px; white-space: nowrap;">👁️</button>
+                <button type="button" id="saveApiKeyBtn" class="btn-chip active" style="padding: 8px 12px; font-size: 11px; white-space: nowrap;">Save</button>
+              </div>
+              <div id="apiKeySavedBadge" class="hidden" style="margin-top: 6px; font-size: 11px; color: #22c55e; display: flex; align-items: center; gap: 4px;">
+                <span>✓</span> <span>Key saved to browser</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 10px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: var(--radius-xs); font-size: 10.5px; color: var(--text-dim); line-height: 1.5;">
+              <strong style="color: var(--text-sub);">What AI Director does:</strong> Analyzes your video with vision AI to detect scenes, speakers, headings & existing captions. The LLM acts as creative director — picking the right style for each moment, skipping already-captioned parts, and matching energy to mood.
+            </div>
+          </div>
+
+          <div class="options-grid">
             <div class="field">
               <label for="draftToggle">Draft Preview</label>
               <label class="checkbox-row" for="draftToggle" style="padding-top: 4px; border: none;">

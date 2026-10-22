@@ -67,6 +67,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const subPosition = document.getElementById("subPosition");
   const videoLanguage = document.getElementById("videoLanguage");
   const llmProvider = document.getElementById("llmProvider");
+  const aiDirectorBadge = document.getElementById("aiDirectorBadge");
+  const aiEnhanceToggle = document.getElementById("aiEnhanceToggle");
+  const apiKeySection = document.getElementById("apiKeySection");
+  const apiKeyInput = document.getElementById("apiKeyInput");
+  const toggleApiKeyVisibility = document.getElementById("toggleApiKeyVisibility");
+  const saveApiKeyBtn = document.getElementById("saveApiKeyBtn");
+  const apiKeySavedBadge = document.getElementById("apiKeySavedBadge");
   const draftToggle = document.getElementById("draftToggle");
 
   const startJobBtn = document.getElementById("startJobBtn");
@@ -606,6 +613,91 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast(`Highlight color: ${btn.title}`);
     });
   });
+
+  // AI Director UI & Local API Key Management
+  function updateAiDirectorUI() {
+    const prov = llmProvider ? llmProvider.value : "none";
+    const isAi = prov !== "none";
+
+    if (aiDirectorBadge) {
+      if (isAi) {
+        aiDirectorBadge.textContent = prov.toUpperCase();
+        aiDirectorBadge.style.background = "rgba(139, 92, 246, 0.25)";
+        aiDirectorBadge.style.color = "#c084fc";
+        aiDirectorBadge.style.borderColor = "rgba(168, 85, 247, 0.5)";
+      } else {
+        aiDirectorBadge.textContent = "OFF";
+        aiDirectorBadge.style.background = "rgba(100, 116, 139, 0.15)";
+        aiDirectorBadge.style.color = "#94a3b8";
+        aiDirectorBadge.style.borderColor = "rgba(100, 116, 139, 0.3)";
+      }
+    }
+
+    if (apiKeySection) {
+      apiKeySection.style.display = isAi ? "block" : "none";
+    }
+
+    if (apiKeyInput && isAi) {
+      const savedKey = localStorage.getItem(`dcs_key_${prov}`) || localStorage.getItem("dcs_key_default") || "";
+      apiKeyInput.value = savedKey;
+      apiKeyInput.placeholder = `Enter your ${prov} API key...`;
+    }
+
+    if (aiEnhanceToggle) {
+      aiEnhanceToggle.disabled = !isAi;
+      if (!isAi) aiEnhanceToggle.checked = false;
+    }
+  }
+
+  if (llmProvider) {
+    llmProvider.addEventListener("change", updateAiDirectorUI);
+  }
+
+  // Initialize AI Director UI state
+  updateAiDirectorUI();
+
+  if (toggleApiKeyVisibility && apiKeyInput) {
+    toggleApiKeyVisibility.addEventListener("click", () => {
+      const isPwd = apiKeyInput.type === "password";
+      apiKeyInput.type = isPwd ? "text" : "password";
+      toggleApiKeyVisibility.textContent = isPwd ? "🙈" : "👁️";
+    });
+  }
+
+  function saveCurrentApiKey() {
+    if (!apiKeyInput || !llmProvider) return;
+    const val = apiKeyInput.value.trim();
+    const prov = llmProvider.value;
+    if (prov !== "none") {
+      if (val) {
+        localStorage.setItem(`dcs_key_${prov}`, val);
+        localStorage.setItem("dcs_key_default", val);
+      } else {
+        localStorage.removeItem(`dcs_key_${prov}`);
+      }
+      if (apiKeySavedBadge) {
+        apiKeySavedBadge.classList.remove("hidden");
+        setTimeout(() => apiKeySavedBadge.classList.add("hidden"), 2500);
+      }
+      showToast(`${prov.toUpperCase()} API key saved locally!`);
+    }
+  }
+
+  if (saveApiKeyBtn) {
+    saveApiKeyBtn.addEventListener("click", saveCurrentApiKey);
+  }
+
+  if (apiKeyInput) {
+    apiKeyInput.addEventListener("blur", () => {
+      if (apiKeyInput.value.trim()) {
+        const prov = llmProvider ? llmProvider.value : "none";
+        if (prov !== "none") {
+          localStorage.setItem(`dcs_key_${prov}`, apiKeyInput.value.trim());
+          localStorage.setItem("dcs_key_default", apiKeyInput.value.trim());
+        }
+      }
+    });
+  }
 
   // 3. File Selection & Instant Video Preview
   browseBtn.addEventListener("click", (e) => {
@@ -1662,6 +1754,15 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("file", selectedFile);
     formData.append("preset", getSelectedPreset());
     formData.append("llm_provider", llmProvider.value);
+    if (aiEnhanceToggle && aiEnhanceToggle.checked) {
+      formData.append("ai_enhance", "true");
+    }
+    const currentApiKey = (apiKeyInput ? apiKeyInput.value.trim() : "") ||
+      (llmProvider ? localStorage.getItem(`dcs_key_${llmProvider.value}`) : "") ||
+      localStorage.getItem("dcs_key_default") || "";
+    if (currentApiKey) {
+      formData.append("api_key", currentApiKey);
+    }
     formData.append("language", videoLanguage.value);
     formData.append("aspect_ratio", selectedAspectRatio);
     formData.append("subtitle_position", subPosition ? subPosition.value : "lower");
@@ -1805,6 +1906,7 @@ document.addEventListener("DOMContentLoaded", () => {
       probing: "Analyzing dimensions & audio channels...",
       transcribing: "Aligning speech with faster-whisper...",
       chunking: "Structuring natural cadence & phrases...",
+      analyzing: "AI Director: Analyzing video scenes, speakers & context...",
       planning: "Assigning 10–15 distinct styles...",
       rendering: "Composing animated frames in Remotion...",
       completed: "Finalizing and muxing MP4...",

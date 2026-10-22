@@ -49,6 +49,8 @@ class JobInfo(BaseModel):
     headline_hook: Optional[str] = None
     headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge"
     auto_emojis: bool = True
+    ai_enhance: bool = False
+    api_key: Optional[str] = Field(default=None, exclude=True)
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
     input_file: str = ""
@@ -198,6 +200,8 @@ class JobManager:
         headline_hook: Optional[str] = None,
         headline_style: Literal["badge", "glass", "clean", "cyber"] = "badge",
         auto_emojis: bool = True,
+        ai_enhance: bool = False,
+        api_key: Optional[str] = None,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
         job_id = f"job_{uuid.uuid4().hex[:10]}"
@@ -233,6 +237,8 @@ class JobManager:
             headline_hook=headline_hook,
             headline_style=headline_style,
             auto_emojis=auto_emojis,
+            ai_enhance=ai_enhance,
+            api_key=api_key,
             input_file=str(target_input),
         )
         self.save_job(job)
@@ -376,7 +382,7 @@ class JobManager:
             words_json.write_text(transcript.model_dump_json(indent=2), encoding="utf-8")
             update_progress("transcribing", 0.35)
 
-            # 3. Chunking (0.35 -> 0.45)
+            # 3. Chunking (0.35 -> 0.42)
             update_progress("chunking", 0.38)
             phrases = chunk_words(
                 words=transcript.words,
@@ -388,11 +394,53 @@ class JobManager:
                 phrases=phrases,
             )
             phrases_json.write_text(phrases_doc.model_dump_json(indent=2), encoding="utf-8")
-            update_progress("chunking", 0.45)
+            update_progress("chunking", 0.42)
 
-            # 4. Planning & Layout (0.45 -> 0.55)
-            update_progress("planning", 0.48)
-            planner = get_planner(provider=job.llm_provider, preset=job.preset)
+            # 3.5. AI Scene Analysis (0.42 -> 0.50) — optional
+            scene_analysis_data = None
+            if getattr(job, 'ai_enhance', False) and job.llm_provider != "none":
+                update_progress("analyzing", 0.43)
+                try:
+                    from backend.pipeline.analyze import analyze_video
+                    # Prepare transcript phrases for the analyzer
+                    analysis_phrases = [
+                        {
+                            "id": p.id,
+                            "text": p.text,
+                            "start": round(p.start, 2),
+                            "end": round(p.end, 2),
+                        }
+                        for p in phrases_doc.phrases
+                    ]
+                    analysis_result = analyze_video(
+                        video_path=input_path,
+                        transcript_phrases=analysis_phrases,
+                        provider=job.llm_provider,
+                        api_key=getattr(job, 'api_key', None),
+                        keyframes_dir=job_dir / "keyframes",
+                    )
+                    scene_analysis_data = analysis_result.model_dump()
+                    # Save analysis to disk
+                    analysis_json = job_dir / "analysis.json"
+                    analysis_json.write_text(
+                        json.dumps(scene_analysis_data, indent=2),
+                        encoding="utf-8",
+                    )
+                    logger.info(f"Job {job_id}: AI scene analysis complete — "
+                                f"{len(analysis_result.topic_segments)} topics, "
+                                f"type={analysis_result.video_type}")
+                except Exception as e:
+                    logger.warning(f"Job {job_id}: AI scene analysis failed (non-fatal): {e}")
+                    scene_analysis_data = None
+            update_progress("analyzing" if scene_analysis_data else "chunking", 0.50)
+
+            # 4. Planning & Layout (0.50 -> 0.55)
+            update_progress("planning", 0.51)
+            planner = get_planner(
+                provider=job.llm_provider,
+                preset=job.preset,
+                api_key=getattr(job, 'api_key', None),
+            )
             selected_styles_list = (
                 [s.strip() for s in job.selected_styles.split(",") if s.strip()]
                 if job.selected_styles
@@ -410,6 +458,7 @@ class JobManager:
                 selected_styles=selected_styles_list,
                 subtitle_y=job.subtitle_y,
                 auto_emojis=getattr(job, "auto_emojis", True),
+                scene_analysis=scene_analysis_data,
             )
 
             # Copy input asset to remotion public dir

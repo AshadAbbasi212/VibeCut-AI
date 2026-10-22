@@ -1,5 +1,10 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: AI Director with Mistral Free Tier, Scene Analysis & Smart Heading Detection
+- **Decision**: Added `MistralPlanner` (using `mistralai` SDK with `mistral-small-latest` for prompt planning and `pixtral-12b-2409` for keyframe vision analysis), client-side per-provider API key storage via `localStorage`, an optional `analyze_video` pipeline step extracting keyframes via FFmpeg to detect scenes, speakers, mood, and burned-in captions, and scene-aware creative director prompting. When burned-in captions are detected, both base and feature events are skipped for those timestamps.
+- **Why**: Allows users to use Mistral's free tier for AI-directed caption styling (mimicking editors like Ali Abdaal who use distinct recurring styles for headings, special one-time styles for key hooks, and match style energy to video mood), while automatically preventing collisions with pre-existing hardcoded captions in video clips.
+
+
 ## 2026-10-16: Use Python 3.11 for venv instead of Python 3.14
 - **Decision**: Target Python 3.11.9 (`py -3.11 -m venv .venv`).
 - **Why**: Python 3.14 lacks prebuilt binary wheels for key dependencies including `ctranslate2` and `faster-whisper`. Python 3.11 has full binary wheel support across Windows, macOS, and Linux.
