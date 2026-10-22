@@ -170,6 +170,8 @@ def test_render_clip_endpoint(client, mock_parent_job, monkeypatch):
         "subtitle_y": 0.50,
         "selected_styles": "beast_impact",
         "watermark_text": "@testbrand",
+        "video_layout": "split_podcast",
+        "ai_enhance": True,
         "kinetic_zoom": True,
         "sound_effects": True,
         "bg_music": "lofi",
@@ -187,3 +189,57 @@ def test_render_clip_endpoint(client, mock_parent_job, monkeypatch):
     assert data["headline_style"] == "glass"
     assert data["headline_y"] == 0.42
     assert data["watermark_text"] == "@testbrand"
+    assert data["video_layout"] == "split_podcast"
+    assert data["ai_enhance"] is True
+
+
+def test_slice_timeline_reframe_and_scene_analysis(mock_parent_job):
+    """Verify slice_timeline_for_clip sets chosen layout and recalculates scene-aware active speaker cuts."""
+    job_id, base_timeline = mock_parent_job
+
+    # 1. Test split_podcast layout (clears dynamic cuts so remotion uses split stack)
+    sliced_split = slice_timeline_for_clip(
+        timeline=base_timeline,
+        clip_start=10.0,
+        clip_end=12.5,
+        video_layout="split_podcast",
+    )
+    assert sliced_split.video.layout == "split_podcast"
+    assert sliced_split.videoLayout == "split_podcast"
+    assert sliced_split.cameraCuts is None
+
+    # 2. Test blur_fit layout
+    sliced_blur = slice_timeline_for_clip(
+        timeline=base_timeline,
+        clip_start=10.0,
+        clip_end=12.5,
+        video_layout="blur_fit",
+    )
+    assert sliced_blur.video.layout == "blur_fit"
+    assert sliced_blur.videoLayout == "blur_fit"
+    assert sliced_blur.cameraCuts is None
+
+    # 3. Test active_speaker layout with scene_analysis
+    scene_data = {
+        "num_speakers": 1,
+        "scenes": [
+            {
+                "timestamp": 0.0,
+                "speakers": [{"position": "center", "is_speaking": True}],
+                "description": "Solo speaker centered",
+            }
+        ],
+    }
+    sliced_active = slice_timeline_for_clip(
+        timeline=base_timeline,
+        clip_start=10.0,
+        clip_end=12.5,
+        video_layout="active_speaker",
+        ai_enhance=True,
+        scene_analysis=scene_data,
+    )
+    assert sliced_active.video.layout == "active_speaker"
+    assert sliced_active.cameraCuts is not None
+    assert len(sliced_active.cameraCuts) > 0
+    # Because scene has centered speaker, focusX is 0.50
+    assert sliced_active.cameraCuts[0].focusX == 0.50

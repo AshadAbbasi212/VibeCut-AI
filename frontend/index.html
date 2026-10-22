@@ -2868,6 +2868,63 @@
               </div>
             </div>
 
+            <!-- Tweak G: Video Reframe Layout -->
+            <div class="tweaker-section">
+              <div class="tweaker-section-title">
+                <div>
+                  <span>🪞 Video Reframe Layout</span>
+                  <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Frame 16:9 landscape video for vertical 9:16 reels:</div>
+                </div>
+                <span class="tweaker-value-badge" id="clipLayoutLabel">Podcast Split Stack</span>
+              </div>
+              <div class="custom-chip-group" id="clipLayoutChips" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
+                <button type="button" class="btn-custom-chip" data-layout="active_speaker">
+                  <span class="chip-label" style="font-size: 11px;">⚡ Active Speaker</span>
+                  <span class="chip-sub" style="font-size: 9px;">Dynamic Auto-Cut</span>
+                </button>
+                <button type="button" class="btn-custom-chip active" data-layout="split_podcast">
+                  <span class="chip-label" style="font-size: 11px;">👥 Podcast Split</span>
+                  <span class="chip-sub" style="font-size: 9px;">Dual-Cam Stack</span>
+                </button>
+                <button type="button" class="btn-custom-chip" data-layout="blur_fit">
+                  <span class="chip-label" style="font-size: 11px;">✨ Ambient Blur</span>
+                  <span class="chip-sub" style="font-size: 9px;">Full 16:9 Frosted</span>
+                </button>
+                <button type="button" class="btn-custom-chip" data-layout="fill">
+                  <span class="chip-label" style="font-size: 11px;">📱 Center Zoom</span>
+                  <span class="chip-sub" style="font-size: 9px;">9:16 Full Fill</span>
+                </button>
+                <button type="button" class="btn-custom-chip" data-layout="focus_left">
+                  <span class="chip-label" style="font-size: 11px;">👈 Left Focus</span>
+                  <span class="chip-sub" style="font-size: 9px;">Host Framing</span>
+                </button>
+                <button type="button" class="btn-custom-chip" data-layout="focus_right">
+                  <span class="chip-label" style="font-size: 11px;">👉 Right Focus</span>
+                  <span class="chip-sub" style="font-size: 9px;">Guest Framing</span>
+                </button>
+              </div>
+              <div id="clipLayoutDescNotice" style="font-size: 10px; color: #38bdf8; display: flex; align-items: center; gap: 4px;">
+                <span>👥 Podcast Split Stack keeps both host and guest in frame simultaneously — ideal for 16:9 podcast interviews.</span>
+              </div>
+            </div>
+
+            <!-- Tweak H: AI Vision Analysis (Scene-Aware) -->
+            <div class="tweaker-section">
+              <div class="tweaker-section-title">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label for="clipAiEnhanceToggle" style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;">
+                    <input type="checkbox" id="clipAiEnhanceToggle" checked style="width: 15px; height: 15px; accent-color: #a855f7; cursor: pointer;">
+                    <span style="font-size: 11px; font-weight: 700; color: #fff;">🎬 AI Vision Analysis (Scene-Aware)</span>
+                  </label>
+                  <span class="badge" style="font-size: 9px; background: rgba(168,85,247,0.2); color: #c084fc; border-color: rgba(168,85,247,0.4);">Smart Vision</span>
+                </div>
+                <span class="tweaker-value-badge" id="clipAiEnhanceBadge">Active</span>
+              </div>
+              <div style="font-size: 10px; color: var(--text-dim); margin-top: 4px; line-height: 1.4;">
+                Analyzes keyframes with AI Computer Vision to detect speaker faces and auto-center solo shots vs wide shots, ensuring heads are never cut off.
+              </div>
+            </div>
+
             <!-- Action Buttons -->
             <div style="margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(168, 85, 247, 0.25);">
               <button type="button" class="btn-primary" id="btnRenderSingleClip" style="background: linear-gradient(135deg, #a855f7, #6366f1); box-shadow: 0 4px 18px rgba(168, 85, 247, 0.45);">

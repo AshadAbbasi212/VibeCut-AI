@@ -1,5 +1,12 @@
 # Architectural and Technical Decisions
 
+## 2026-10-22: Reframe Layout in Reel Studio, Scene-Aware AI Vision & Boundary Validation Hardening
+- **Decision**:
+  1. **Video Reframe Layout in Reel Tweaker**: Integrated interactive Video Reframe Layout selector chips (`active_speaker`, `split_podcast`, `blur_fit`, `fill`, `focus_left`, `focus_right`) into the AI Viral Reels Tweaker card. Synchronized live framing preview directly onto the Studio Monitor (`#sourceSplitWrap`, `#sourceBlurWrap`, `#sourceSingleWrap`).
+  2. **Scene-Aware AI Vision Analysis in Reel Tweaker**: Added `🎬 AI Vision Analysis (Scene-Aware)` toggle in the Reel Tweaker. Enabled keyframe vision extraction on trimmed clips (or sliced parent `analysis.json`) to accurately detect speaker coordinates, distinguishing solo close-ups (centered at `focusX = 0.50`) from wide 2-shots (at `0.20` and `0.82`) to prevent cut-off heads.
+  3. **Event Boundary Duration & Concurrency Fix**: Fixed `TimelineEvent` validation failure where sliced clip events near trim boundaries resulted in sub-0.3s fragments (e.g. `0.299999s < 0.30s` due to float precision) or overlapping start adjustments triggering `More than 3 concurrent events`. Sliced events now extend forward within `clip_duration` or cleanly omit trailing partial fragments, and `TimelineEvent` duration validation uses `round(self.end - self.start, 2) < 0.30`.
+- **Why**: Allows creators to immediately reframe any viral clip (e.g. using `split_podcast` Dual-Cam Stack for interview reels or `blur_fit` for zero-crop widescreen) and eliminates camera framing errors and render stalls.
+
 ## 2026-10-22: Creator Booster Pack: Batch ZIP Export, Viral Audio Layer, Kinetic Zooms, Social Copy & Auto Multi-Speaker Diarization
 - **Decision**:
   1. **Batch Multi-Clip Export to ZIP**: Built `slice_timeline_for_clip` and `batch_render_viral_clips` in `backend/pipeline/clips.py` with endpoints `POST /api/jobs/{job_id}/batch-render-clips` and `GET /api/jobs/{job_id}/download-zip`. Slices the timeline down to each clip's time window, offsets all events and words to start at 0.0, extracts the sub-video via FFmpeg fast stream copy, renders standalone vertical MP4s via Remotion, generates matching `clip_XX_post.txt` files, and bundles them into `{job_id}_viral_reels.zip`.

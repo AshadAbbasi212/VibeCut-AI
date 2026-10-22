@@ -151,7 +151,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const clipBtnProgressFill = document.getElementById("clipBtnProgressFill");
   const clipBtnTextLabel = document.getElementById("clipBtnTextLabel");
   const btnBatchExportZipDedicated = document.getElementById("btnBatchExportZipDedicated");
+  const clipLayoutChips = document.querySelectorAll("#clipLayoutChips .btn-custom-chip");
+  const clipLayoutLabel = document.getElementById("clipLayoutLabel");
+  const clipLayoutDescNotice = document.getElementById("clipLayoutDescNotice");
+  const clipAiEnhanceToggle = document.getElementById("clipAiEnhanceToggle");
+  const clipAiEnhanceBadge = document.getElementById("clipAiEnhanceBadge");
 
+  let selectedClipLayout = "split_podcast";
   let selectedHeadlinePosRatio = 0.08;
 
   // Prominent Pipeline Progress Card references
@@ -1793,6 +1799,42 @@ document.addEventListener("DOMContentLoaded", () => {
       clipPosLabel.textContent = subPosLabel ? subPosLabel.textContent : "Bottom (79% Safe Zone)";
     }
 
+    const clipLayoutDescriptions = {
+      split_podcast: "👥 Podcast Split Stack keeps both host and guest in frame simultaneously — ideal for 16:9 podcast interviews.",
+      active_speaker: "⚡ Active Speaker cuts dynamically between speakers with broadcast pacing.",
+      blur_fit: "✨ Ambient Blur fits the full 16:9 video over a frosted mirror backdrop — zero cropping.",
+      fill: "📱 Center Zoom crops the center 9:16 window for vertical feeds.",
+      focus_left: "👈 Left Focus locks onto the left side of the 16:9 frame (host seat).",
+      focus_right: "👉 Right Focus locks onto the right side of the 16:9 frame (guest seat).",
+    };
+    const clipLayoutNames = {
+      split_podcast: "Podcast Split Stack",
+      active_speaker: "Active Speaker (Auto-Cut)",
+      blur_fit: "Ambient Blur (16:9)",
+      fill: "Center Zoom (Fill)",
+      focus_left: "Left Host Focus",
+      focus_right: "Right Guest Focus",
+    };
+
+    // Initialize layout for this clip (default to split_podcast or active layout)
+    selectedClipLayout = selectedVideoLayout || "split_podcast";
+    if (clipLayoutChips) {
+      clipLayoutChips.forEach((b) => b.classList.toggle("active", b.dataset.layout === selectedClipLayout));
+    }
+    if (clipLayoutLabel) {
+      clipLayoutLabel.textContent = clipLayoutNames[selectedClipLayout] || selectedClipLayout;
+    }
+    if (clipLayoutDescNotice) {
+      clipLayoutDescNotice.innerHTML = `<span>${clipLayoutDescriptions[selectedClipLayout] || ""}</span>`;
+    }
+    if (clipAiEnhanceToggle) {
+      clipAiEnhanceToggle.checked = aiEnhanceToggle ? aiEnhanceToggle.checked : true;
+    }
+    if (clipAiEnhanceBadge) {
+      clipAiEnhanceBadge.textContent = (clipAiEnhanceToggle && clipAiEnhanceToggle.checked) ? "Active" : "Disabled";
+    }
+    updateSourceSplitPreview();
+
     // Update status badge on studio monitor cleanly
     const shortHeadline = clip.headline.length > 20 ? clip.headline.slice(0, 18) + "..." : clip.headline;
     if (stageStatus) {
@@ -1950,6 +1992,61 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       updateWatermarkPreview();
       showToast(isChecked ? "Creator Watermark: Enabled" : "Creator Watermark: Disabled");
+    });
+  }
+
+  const clipLayoutDescriptionsGlobal = {
+    split_podcast: "👥 Podcast Split Stack keeps both host and guest in frame simultaneously — ideal for 16:9 podcast interviews.",
+    active_speaker: "⚡ Active Speaker cuts dynamically between speakers with broadcast pacing.",
+    blur_fit: "✨ Ambient Blur fits the full 16:9 video over a frosted mirror backdrop — zero cropping.",
+    fill: "📱 Center Zoom crops the center 9:16 window for vertical feeds.",
+    focus_left: "👈 Left Focus locks onto the left side of the 16:9 frame (host seat).",
+    focus_right: "👉 Right Focus locks onto the right side of the 16:9 frame (guest seat).",
+  };
+  const clipLayoutNamesGlobal = {
+    split_podcast: "Podcast Split Stack",
+    active_speaker: "Active Speaker (Auto-Cut)",
+    blur_fit: "Ambient Blur (16:9)",
+    fill: "Center Zoom (Fill)",
+    focus_left: "Left Host Focus",
+    focus_right: "Right Guest Focus",
+  };
+
+  if (clipLayoutChips) {
+    clipLayoutChips.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        clipLayoutChips.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        selectedClipLayout = btn.dataset.layout || "split_podcast";
+        selectedVideoLayout = selectedClipLayout;
+        if (clipLayoutLabel) {
+          clipLayoutLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
+        }
+        if (clipLayoutDescNotice) {
+          clipLayoutDescNotice.innerHTML = `<span>${clipLayoutDescriptionsGlobal[selectedClipLayout] || ""}</span>`;
+        }
+        if (allLayoutCards) {
+          allLayoutCards.forEach((card) => card.classList.toggle("active", card.dataset.layout === selectedClipLayout));
+        }
+        if (layoutSelectedLabel) {
+          layoutSelectedLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
+        }
+        updateSourceSplitPreview();
+        showToast(`Layout: ${clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout}`);
+      });
+    });
+  }
+
+  if (clipAiEnhanceToggle) {
+    clipAiEnhanceToggle.addEventListener("change", (e) => {
+      const isChecked = e.target.checked;
+      if (clipAiEnhanceBadge) {
+        clipAiEnhanceBadge.textContent = isChecked ? "Active" : "Disabled";
+      }
+      if (aiEnhanceToggle) {
+        aiEnhanceToggle.checked = isChecked;
+      }
+      showToast(isChecked ? "🎬 Scene-Aware Vision: Enabled" : "🎬 Scene-Aware Vision: Disabled");
     });
   }
 
@@ -2564,6 +2661,8 @@ document.addEventListener("DOMContentLoaded", () => {
             subtitle_y: currentSubtitleY,
             selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
             watermark_text: watermarkVal,
+            video_layout: selectedClipLayout || "split_podcast",
+            ai_enhance: clipAiEnhanceToggle ? clipAiEnhanceToggle.checked : false,
             kinetic_zoom: clipKineticZoomToggle ? clipKineticZoomToggle.checked : false,
             sound_effects: clipPopSfxToggle ? clipPopSfxToggle.checked : true,
             bg_music: (clipBgMusicToggle && clipBgMusicToggle.checked) ? "lofi" : null,
@@ -2611,6 +2710,8 @@ document.addEventListener("DOMContentLoaded", () => {
         subtitle_y: currentSubtitleY.toFixed(2),
         selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
         watermark_text: watermarkVal || "",
+        video_layout: selectedClipLayout || "split_podcast",
+        ai_enhance: clipAiEnhanceToggle ? (clipAiEnhanceToggle.checked ? "true" : "false") : "false",
         kinetic_zoom: clipKineticZoomToggle ? clipKineticZoomToggle.checked : false,
         sound_effects: clipPopSfxToggle ? clipPopSfxToggle.checked : true,
         bg_music: (clipBgMusicToggle && clipBgMusicToggle.checked) ? "lofi" : "",

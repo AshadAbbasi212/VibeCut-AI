@@ -351,6 +351,8 @@ class JobManager:
         subtitle_y: Optional[float] = 0.79,
         selected_styles: Optional[str] = None,
         watermark_text: Optional[str] = None,
+        video_layout: Optional[str] = "split_podcast",
+        ai_enhance: Optional[bool] = False,
         kinetic_zoom: Optional[bool] = False,
         sound_effects: Optional[bool] = False,
         bg_music: Optional[str] = None,
@@ -372,16 +374,57 @@ class JobManager:
         clip_dir.mkdir(parents=True, exist_ok=True)
 
         trimmed_mp4 = clip_dir / "input.mp4"
+        duration = max(0.1, round(end - start, 2))
         trim_cmd = [
             "ffmpeg", "-y",
             "-ss", str(round(start, 2)),
-            "-to", str(round(end, 2)),
+            "-t", str(duration),
             "-i", str(parent_job.input_file),
             "-c:v", "libx264", "-c:a", "aac",
             "-avoid_negative_ts", "make_zero",
             str(trimmed_mp4)
         ]
         subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Check for scene analysis (from parent job or freshly run if ai_enhance is enabled)
+        clip_scene_analysis = None
+        parent_analysis_file = Path(parent_job.timeline_file).parent / "analysis.json"
+        if parent_analysis_file.exists():
+            try:
+                parent_analysis = json.loads(parent_analysis_file.read_text(encoding="utf-8"))
+                # Slice parent scenes to clip window [start, end]
+                clip_scenes = []
+                for sc in parent_analysis.get("scenes", []):
+                    sc_t = sc.get("timestamp", 0.0)
+                    if start <= sc_t <= end:
+                        sc_copy = dict(sc)
+                        sc_copy["timestamp"] = max(0.0, round(sc_t - start, 2))
+                        clip_scenes.append(sc_copy)
+                clip_scene_analysis = dict(parent_analysis)
+                clip_scene_analysis["scenes"] = clip_scenes
+            except Exception as e:
+                logger.warning(f"Failed slicing parent scene analysis: {e}")
+
+        # If user explicitly requested AI Vision Analysis for this clip and parent didn't have analysis
+        if not clip_scene_analysis and ai_enhance and parent_job.llm_provider != "none":
+            try:
+                from backend.pipeline.analyze import analyze_video
+                analysis_result = analyze_video(
+                    video_path=trimmed_mp4,
+                    transcript_phrases=[],
+                    provider=parent_job.llm_provider,
+                    api_key=getattr(parent_job, 'api_key', None),
+                    keyframes_dir=clip_dir / "keyframes",
+                )
+                clip_scene_analysis = analysis_result.model_dump()
+            except Exception as e:
+                logger.warning(f"Clip scene analysis failed (non-fatal): {e}")
+
+        if clip_scene_analysis:
+            (clip_dir / "analysis.json").write_text(
+                json.dumps(clip_scene_analysis, indent=2),
+                encoding="utf-8",
+            )
 
         from backend.pipeline.clips import slice_timeline_for_clip
         rel_src = prepare_video_asset(trimmed_mp4, job_id=clip_job_id)
@@ -402,6 +445,9 @@ class JobManager:
             subtitle_y=subtitle_y,
             selected_styles=selected_styles,
             watermark_text=watermark_text,
+            video_layout=video_layout,
+            ai_enhance=ai_enhance,
+            scene_analysis=clip_scene_analysis,
             kinetic_zoom=kinetic_zoom,
             sound_effects=sound_effects,
             bg_music=bg_music,
@@ -430,6 +476,8 @@ class JobManager:
             headline_duration=headline_duration,
             headline_y=headline_y,
             watermark_text=watermark_text,
+            video_layout=video_layout or "split_podcast",
+            ai_enhance=bool(ai_enhance),
             kinetic_zoom=kinetic_zoom,
             sound_effects=sound_effects,
             bg_music=bg_music,

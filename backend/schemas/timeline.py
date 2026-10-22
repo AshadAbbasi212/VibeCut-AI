@@ -132,7 +132,7 @@ class TimelineEvent(BaseModel):
             raise ValueError(f"Unknown style '{self.style}'. Must be one of {VALID_STYLES}")
         if self.end <= self.start:
             raise ValueError(f"Event {self.id}: end ({self.end}) must be greater than start ({self.start})")
-        if self.end - self.start < 0.3:
+        if round(self.end - self.start, 2) < 0.30:
             raise ValueError(f"Event {self.id}: duration ({self.end - self.start:.2f}s) too short (< 0.3s)")
         return self
 

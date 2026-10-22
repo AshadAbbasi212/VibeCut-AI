@@ -537,6 +537,9 @@ def slice_timeline_for_clip(
     subtitle_y: Optional[float] = None,
     selected_styles: Optional[str] = None,
     watermark_text: Optional[str] = None,
+    video_layout: Optional[str] = None,
+    ai_enhance: Optional[bool] = False,
+    scene_analysis: Optional[dict] = None,
     kinetic_zoom: Optional[bool] = None,
     sound_effects: Optional[bool] = None,
     bg_music: Optional[str] = None,
@@ -546,15 +549,19 @@ def slice_timeline_for_clip(
     """Slice a Timeline to a specific clip window [clip_start, clip_end].
     
     Adjusts all events, words, camera cuts, and video duration to start at 0.0,
-    and applies any tweaker overrides (headline, location, style, font size, boosters).
+    and applies any tweaker overrides (headline, location, style, font size, boosters, layout, scene analysis).
     """
     clip_duration = round(clip_end - clip_start, 2)
 
-    # 1. Slice video metadata
+    # 1. Determine layout
+    chosen_layout = video_layout or timeline.video.layout or "split_podcast"
+
+    # Slice video metadata
     new_video = timeline.video.model_copy(
         update={
             "durationSec": clip_duration,
             "src": trimmed_video_src or timeline.video.src,
+            "layout": chosen_layout,
         }
     )
 
@@ -578,7 +585,17 @@ def slice_timeline_for_clip(
         if ev.end > clip_start and ev.start < clip_end:
             shifted_start = max(0.0, round(ev.start - clip_start, 2))
             shifted_end = min(clip_duration, round(ev.end - clip_start, 2))
-            if shifted_end > shifted_start:
+            dur = round(shifted_end - shifted_start, 2)
+            if dur < 0.30:
+                # If event is cut off near boundary to < 0.3s, extend end if within clip_duration
+                if round(shifted_start + 0.30, 2) <= clip_duration:
+                    shifted_end = round(shifted_start + 0.30, 2)
+                    dur = round(shifted_end - shifted_start, 2)
+                else:
+                    # Trailing sub-0.3s fragment at the end of the clip — omit to avoid concurrency collisions
+                    continue
+
+            if dur >= 0.30:
                 updates = {"start": shifted_start, "end": shifted_end}
                 if caption_size:
                     updates["captionSize"] = caption_size
@@ -599,20 +616,40 @@ def slice_timeline_for_clip(
             if shifted_end > shifted_start:
                 new_words.append(w.model_copy(update={"start": shifted_start, "end": shifted_end}))
 
-    # 4. Slice camera cuts
+    # 4. Handle camera cuts for chosen layout
     new_cuts = None
-    if timeline.cameraCuts:
-        new_cuts = []
-        for cut in timeline.cameraCuts:
-            if cut.end > clip_start and cut.start < clip_end:
-                shifted_start = max(0.0, round(cut.start - clip_start, 2))
-                shifted_end = min(clip_duration, round(cut.end - clip_start, 2))
-                if shifted_end > shifted_start:
-                    new_cuts.append(cut.model_copy(update={"start": shifted_start, "end": shifted_end}))
+    if chosen_layout == "active_speaker":
+        from backend.pipeline.chunk import Phrase
+        from backend.pipeline.reframe import build_active_speaker_cuts
+        clip_phrases = [
+            Phrase(
+                id=ev.id,
+                text=ev.text,
+                start=ev.start,
+                end=ev.end,
+                speech_start=ev.start,
+                speech_end=ev.end,
+                word_indices=ev.wordRange or [],
+                words=[],
+            )
+            for ev in new_events
+        ]
+        num_spk = (scene_analysis or {}).get("num_speakers", 2)
+        new_cuts = build_active_speaker_cuts(
+            phrases=clip_phrases,
+            video_duration=clip_duration,
+            num_speakers=num_spk,
+            scene_analysis=scene_analysis,
+        )
+    else:
+        # Non-active_speaker layouts (split_podcast, blur_fit, fill, focus_left, focus_right)
+        # do not require dynamic cuts
+        new_cuts = None
 
     # 5. Build sub-timeline with overrides
     timeline_updates = {
         "video": new_video,
+        "videoLayout": chosen_layout,
         "events": new_events,
         "words": new_words,
         "cameraCuts": new_cuts,

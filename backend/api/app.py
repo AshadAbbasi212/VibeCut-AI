@@ -404,6 +404,8 @@ class RenderClipPayload(BaseModel):
     subtitle_y: Optional[float] = 0.79
     selected_styles: Optional[str] = None
     watermark_text: Optional[str] = None
+    video_layout: Optional[str] = "split_podcast"
+    ai_enhance: Optional[bool] = False
     kinetic_zoom: Optional[bool] = False
     sound_effects: Optional[bool] = False
     bg_music: Optional[str] = None
@@ -438,6 +440,8 @@ def render_single_clip_endpoint(
             subtitle_y=payload.subtitle_y,
             selected_styles=payload.selected_styles,
             watermark_text=payload.watermark_text,
+            video_layout=payload.video_layout,
+            ai_enhance=payload.ai_enhance,
             kinetic_zoom=payload.kinetic_zoom,
             sound_effects=payload.sound_effects,
             bg_music=payload.bg_music,

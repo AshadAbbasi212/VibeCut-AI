@@ -60,8 +60,9 @@ def build_active_speaker_cuts(
     # Default seat positions for wide 2-shot or 3-shot fallback:
     # 2 speakers: Left (0.20) and Right (0.82)
     # 3 speakers: Left (0.20), Center (0.50), Right (0.82)
+    # 1 speaker: Center (0.50)
     seat_positions = {
-        0: 0.20,
+        0: 0.20 if num_speakers > 1 else 0.50,
         1: 0.82 if num_speakers == 2 else 0.50,
         2: 0.82,
     }
@@ -92,8 +93,9 @@ def build_active_speaker_cuts(
         if matched_scene:
             spk_list = matched_scene.get("speakers", [])
             positions = [
-                sp.get("position") for sp in spk_list
-                if isinstance(sp, dict) and sp.get("position")
+                sp.get("position") if isinstance(sp, dict) else str(sp)
+                for sp in spk_list
+                if sp
             ]
             if not positions or all(pos == "center" for pos in positions) or (len(positions) == 1 and positions[0] == "center"):
                 # Solo close-up camera angle centered on the speaker
