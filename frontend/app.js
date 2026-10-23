@@ -358,8 +358,14 @@ document.addEventListener("DOMContentLoaded", () => {
   updateSourcePreviewFraming();
 
   // Photo Comparison Modal Handlers
+  const btnClipOpenPhotoModal = document.getElementById("btnClipOpenPhotoModal");
   if (btnOpenPhotoModal && layoutPhotoModal) {
     btnOpenPhotoModal.addEventListener("click", () => {
+      layoutPhotoModal.classList.add("open");
+    });
+  }
+  if (btnClipOpenPhotoModal && layoutPhotoModal) {
+    btnClipOpenPhotoModal.addEventListener("click", () => {
       layoutPhotoModal.classList.add("open");
     });
   }
@@ -383,6 +389,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const chosen = btn.dataset.selectLayout;
       if (chosen) {
         setVideoLayout(chosen);
+        if (typeof setClipLayout === "function") {
+          setClipLayout(chosen);
+        }
         if (layoutPhotoModal) layoutPhotoModal.classList.remove("open");
       }
     });
@@ -969,6 +978,96 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     updateCaptionShowcase();
+    if (typeof renderClipStylesPool === "function") {
+      renderClipStylesPool();
+    }
+  }
+
+  const STYLE_CATEGORIES = {
+    punchy: ["hormozi_bold", "beast_impact", "fire_burn", "title3d", "comic_bubble"],
+    explainer: ["highlighter_marker", "blob_card", "numbered_point", "paper_cutout", "handwritten"],
+    clean: ["cinematic_minimal", "pill_word", "minimal_underline", "quote_editorial", "serif_title"],
+    creative: ["cyber_hud", "retro_vaporwave", "karaoke_bounce", "neon_glow", "typewriter_terminal", "glitch_kinetic", "gradient_outline", "arc_letters", "sticker"],
+  };
+
+  const clipStylesPoolGrid = document.getElementById("clipStylesPoolGrid");
+  const clipCategoryFilterTabs = document.querySelectorAll("#clipCategoryFilterTabs .btn-chip");
+  let activeClipStyleCategory = "all";
+
+  function renderClipStylesPool(filterCategory = activeClipStyleCategory) {
+    if (!clipStylesPoolGrid) return;
+    activeClipStyleCategory = filterCategory;
+    clipStylesPoolGrid.innerHTML = "";
+
+    const filtered = ALL_AVAILABLE_STYLES.filter((style) => {
+      if (filterCategory === "all") return true;
+      return STYLE_CATEGORIES[filterCategory]?.includes(style.id);
+    });
+
+    filtered.forEach((style) => {
+      const isSelected = selectedStyles.includes(style.id) || selectedStyles.includes("ai_auto");
+      const card = document.createElement("div");
+      card.className = `style-chip-item ${isSelected ? "active" : ""}`;
+      card.dataset.styleId = style.id;
+      card.title = `${style.name} — ${style.desc}`;
+      card.style.padding = "6px 5px";
+
+      card.innerHTML = `
+        <div class="style-chip-top" style="margin-bottom: 2px;">
+          <span class="style-chip-icon" style="font-size: 13px;">${style.icon}</span>
+          <span class="style-chip-check" title="Toggle style inclusion" style="font-size: 10px;">✓</span>
+        </div>
+        <span class="style-chip-title" style="font-size: 9px; margin-bottom: 2px;">${style.name}</span>
+        <div class="style-mini-sample style-sample-${style.id}" style="font-size: 8px; padding: 2px 4px;">
+          ${style.sampleText || style.tag}
+        </div>
+      `;
+
+      card.addEventListener("click", (e) => {
+        if (e.target.closest(".style-chip-check")) {
+          if (selectedStyles.includes("ai_auto")) {
+            selectedStyles = [style.id];
+          } else if (selectedStyles.includes(style.id)) {
+            if (selectedStyles.length > 1) {
+              selectedStyles = selectedStyles.filter((id) => id !== style.id);
+            }
+          } else {
+            selectedStyles.push(style.id);
+          }
+        } else {
+          selectedStyles = [style.id];
+        }
+
+        if (clipStyleChips) {
+          clipStyleChips.forEach((b) => b.classList.toggle("active", b.dataset.stylePick === style.id));
+        }
+        if (clipStyleLabel) {
+          clipStyleLabel.textContent = selectedStyles.length === 1 ? style.name : `${selectedStyles.length} Styles Selected`;
+        }
+        if (clipStyleAiNotice) {
+          clipStyleAiNotice.classList.add("hidden");
+        }
+        if (draggableCaptionBox) {
+          draggableCaptionBox.className = `draggable-caption-box style-${style.id} size-${selectedCaptionSize}`;
+        }
+        renderStylesPool();
+        renderClipStylesPool(activeClipStyleCategory);
+        if (typeof updateCaptionShowcase === "function") updateCaptionShowcase(style.id);
+        showToast(`Reel Style: ${style.name}`);
+      });
+
+      clipStylesPoolGrid.appendChild(card);
+    });
+  }
+
+  if (clipCategoryFilterTabs) {
+    clipCategoryFilterTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        clipCategoryFilterTabs.forEach((t) => t.classList.remove("active"));
+        tab.classList.add("active");
+        renderClipStylesPool(tab.dataset.category || "all");
+      });
+    });
   }
 
   function updateCaptionShowcase(styleId) {
@@ -1261,6 +1360,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   renderStylesPool();
+  renderClipStylesPool();
 
   // =========================================================================
   // 5. CapCut-Style Dual-Handle Visual Video Trimmer
@@ -1440,7 +1540,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (selectedHeadlineHookEnabled && canvasHeadlineHook) {
-        if (selectedHeadlineDuration !== null && cur > selectedHeadlineDuration) {
+        const clipElapsed = isPlayingCut ? Math.max(0, cur - (trimStartSec || 0)) : cur;
+        if (selectedHeadlineDuration !== null && clipElapsed > selectedHeadlineDuration) {
           canvasHeadlineHook.style.opacity = "0";
           canvasHeadlineHook.style.transition = "opacity 0.4s ease";
         } else {
@@ -1879,18 +1980,68 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ── Unified Headline Hook Duration Handler (Vanishing Seconds & Sticky Mode) ──
+  const headlineDurationValueBadge = document.getElementById("headlineDurationValueBadge");
+  const headlineDurationSlider = document.getElementById("headlineDurationSlider");
+  const clipHeadlineDurationBadge = document.getElementById("clipHeadlineDurationBadge");
+  const clipHeadlineDurationSlider = document.getElementById("clipHeadlineDurationSlider");
+
+  function setHeadlineDuration(dur, fromUser = true) {
+    selectedHeadlineDuration = dur === null || dur === "full" ? null : parseFloat(dur);
+    const durStr = selectedHeadlineDuration !== null ? `${selectedHeadlineDuration.toFixed(1)}s` : "Sticky";
+
+    if (headlineDurationInput) headlineDurationInput.value = selectedHeadlineDuration !== null ? selectedHeadlineDuration.toString() : "";
+    if (headlineDurationValueBadge) {
+      headlineDurationValueBadge.textContent = selectedHeadlineDuration !== null ? `⏱️ Vanishes after ${durStr}` : `📌 Sticky (Full Video)`;
+    }
+    if (headlineDurationSlider && selectedHeadlineDuration !== null) {
+      headlineDurationSlider.value = selectedHeadlineDuration;
+    }
+    if (headlineDurationChips) {
+      headlineDurationChips.forEach((b) => {
+        if (selectedHeadlineDuration === null) {
+          b.classList.toggle("active", b.dataset.duration === "full");
+        } else {
+          b.classList.toggle("active", Math.abs(parseFloat(b.dataset.duration) - selectedHeadlineDuration) < 0.25);
+        }
+      });
+    }
+
+    if (clipHeadlineDurationBadge) {
+      clipHeadlineDurationBadge.textContent = selectedHeadlineDuration !== null ? `Vanishes ${durStr}` : "Sticky (Full)";
+    }
+    if (clipHeadlineDurationSlider && selectedHeadlineDuration !== null) {
+      clipHeadlineDurationSlider.value = selectedHeadlineDuration;
+    }
+    if (clipHeadlineDurationChips) {
+      clipHeadlineDurationChips.forEach((b) => {
+        if (selectedHeadlineDuration === null) {
+          b.classList.toggle("active", b.dataset.duration === "full");
+        } else {
+          b.classList.toggle("active", Math.abs(parseFloat(b.dataset.duration) - selectedHeadlineDuration) < 0.25);
+        }
+      });
+    }
+
+    if (fromUser) {
+      showToast(selectedHeadlineDuration !== null ? `Headline Duration: Vanishes after ${durStr}` : "Headline Duration: Sticky for Full Video");
+    }
+    updateHeadlineHookPreview();
+  }
+
   if (clipHeadlineDurationChips) {
     clipHeadlineDurationChips.forEach((btn) => {
       btn.addEventListener("click", () => {
-        clipHeadlineDurationChips.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
         const dur = btn.dataset.duration;
-        selectedHeadlineDuration = dur === "full" ? null : parseFloat(dur);
-        if (headlineDurationChips) {
-          headlineDurationChips.forEach((b) => b.classList.toggle("active", b.dataset.duration === dur));
-        }
-        showToast(`Headline duration: ${btn.querySelector(".chip-label").textContent}`);
+        setHeadlineDuration(dur === "full" ? null : parseFloat(dur));
       });
+    });
+  }
+
+  if (clipHeadlineDurationSlider) {
+    clipHeadlineDurationSlider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      setHeadlineDuration(val, false);
     });
   }
 
@@ -1902,22 +2053,34 @@ document.addEventListener("DOMContentLoaded", () => {
         const stylePick = btn.dataset.stylePick;
         if (stylePick === "ai_auto") {
           selectedStyles = ["ai_auto"];
-          if (clipStyleLabel) clipStyleLabel.textContent = "AI Smart Director";
+          if (clipStyleLabel) clipStyleLabel.textContent = "AI Multi-Style Director (Ali Abdaal Mix)";
           if (clipStyleAiNotice) clipStyleAiNotice.classList.remove("hidden");
+          if (draggableCaptionBox) {
+            draggableCaptionBox.className = `draggable-caption-box style-highlighter_marker size-${selectedCaptionSize}`;
+          }
+          showToast("🤖 AI Multi-Style Director: Highlighting core takeaways with Ali Abdaal markers & beast pop");
+        } else if (stylePick === "all") {
+          selectedStyles = ALL_AVAILABLE_STYLES.map((s) => s.id);
+          if (clipStyleLabel) clipStyleLabel.textContent = "Dynamic Mix (All 24)";
+          if (clipStyleAiNotice) clipStyleAiNotice.classList.add("hidden");
           if (draggableCaptionBox) {
             draggableCaptionBox.className = `draggable-caption-box style-beast_impact size-${selectedCaptionSize}`;
           }
-          showToast("🤖 AI Smart Director: Tone-matched dynamic styles");
+          showToast("🌟 All 24 Styles: Active rotation enabled");
         } else {
           selectedStyles = [stylePick];
-          if (clipStyleLabel) clipStyleLabel.textContent = btn.textContent;
+          const found = ALL_AVAILABLE_STYLES.find((s) => s.id === stylePick);
+          const styleName = found ? found.name : btn.textContent;
+          if (clipStyleLabel) clipStyleLabel.textContent = styleName;
           if (clipStyleAiNotice) clipStyleAiNotice.classList.add("hidden");
           if (draggableCaptionBox) {
             draggableCaptionBox.className = `draggable-caption-box style-${stylePick} size-${selectedCaptionSize}`;
           }
-          if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
-          showToast(`Active Style: ${btn.textContent}`);
+          if (typeof updateCaptionShowcase === "function") updateCaptionShowcase(stylePick);
+          showToast(`Reel Caption Style: ${styleName}`);
         }
+        renderStylesPool();
+        renderClipStylesPool(activeClipStyleCategory);
       });
     });
   }
@@ -1947,21 +2110,43 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ── Unified Highlight Accent Color Handler ──
+  const clipHighlightColorSelectedLabel = document.getElementById("clipHighlightColorSelectedLabel");
+  const clipCustomColorPicker = document.getElementById("clipCustomColorPicker");
+
+  function applyHighlightColor(colorHex, labelText = null) {
+    if (!colorHex) return;
+    selectedHighlightColor = colorHex;
+    const displayLabel = labelText || colorHex;
+    if (clipHighlightColorSelectedLabel) clipHighlightColorSelectedLabel.textContent = displayLabel;
+    if (highlightColorSelectedLabel) highlightColorSelectedLabel.textContent = displayLabel;
+    if (clipCustomColorPicker && colorHex.startsWith("#") && colorHex.length === 7) {
+      clipCustomColorPicker.value = colorHex;
+    }
+    if (clipHighlightColorSwatches) {
+      clipHighlightColorSwatches.forEach((b) => b.classList.toggle("active", b.dataset.color?.toLowerCase() === colorHex.toLowerCase()));
+    }
+    const mainSwatches = document.querySelectorAll("#highlightColorSwatches .btn-color-swatch");
+    if (mainSwatches) {
+      mainSwatches.forEach((b) => b.classList.toggle("active", b.dataset.color?.toLowerCase() === colorHex.toLowerCase()));
+    }
+    const canvasHighlight = document.querySelector("#draggableCaptionBox .highlight");
+    if (canvasHighlight) canvasHighlight.style.color = selectedHighlightColor;
+    if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
+    showToast(`Accent Color: ${displayLabel}`);
+  }
+
   if (clipHighlightColorSwatches) {
     clipHighlightColorSwatches.forEach((btn) => {
       btn.addEventListener("click", () => {
-        clipHighlightColorSwatches.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        selectedHighlightColor = btn.dataset.color || "#38BDF8";
-        const mainSwatches = document.querySelectorAll("#highlightColorSwatches .btn-color-swatch");
-        if (mainSwatches) {
-          mainSwatches.forEach((b) => b.classList.toggle("active", b.dataset.color === selectedHighlightColor));
-        }
-        const canvasHighlight = document.querySelector("#draggableCaptionBox .highlight");
-        if (canvasHighlight) canvasHighlight.style.color = selectedHighlightColor;
-        if (typeof updateCaptionShowcase === "function") updateCaptionShowcase();
-        showToast(`Accent Color: ${selectedHighlightColor}`);
+        applyHighlightColor(btn.dataset.color || "#38BDF8", `${btn.title || "Color"} (${btn.dataset.color || "#38BDF8"})`);
       });
+    });
+  }
+
+  if (clipCustomColorPicker) {
+    clipCustomColorPicker.addEventListener("input", (e) => {
+      applyHighlightColor(e.target.value, `Custom (${e.target.value})`);
     });
   }
 
@@ -2004,6 +2189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     split_podcast: "👥 Podcast Split Stack keeps both host and guest in frame simultaneously — ideal for 16:9 podcast interviews.",
     active_speaker: "⚡ Active Speaker cuts dynamically between speakers with broadcast pacing.",
     blur_fit: "✨ Ambient Blur fits the full 16:9 video over a frosted mirror backdrop — zero cropping.",
+    split_triple: "👥👤 3-Way Stack splits frame into three tiers (host, guest, wide/screen share).",
     fill: "📱 Center Zoom crops the center 9:16 window for vertical feeds.",
     focus_left: "👈 Left Focus locks onto the left side of the 16:9 frame (host seat).",
     focus_right: "👉 Right Focus locks onto the right side of the 16:9 frame (guest seat).",
@@ -2012,32 +2198,42 @@ document.addEventListener("DOMContentLoaded", () => {
     split_podcast: "Podcast Split Stack",
     active_speaker: "Active Speaker (Auto-Cut)",
     blur_fit: "Ambient Blur (16:9)",
+    split_triple: "3-Way Stack (Triple Panel)",
     fill: "Center Zoom (Fill)",
     focus_left: "Left Host Focus",
     focus_right: "Right Guest Focus",
   };
 
+  function setClipLayout(layout) {
+    selectedClipLayout = layout || "split_podcast";
+    selectedVideoLayout = selectedClipLayout;
+    if (clipLayoutChips) {
+      clipLayoutChips.forEach((b) => b.classList.toggle("active", b.dataset.layout === selectedClipLayout));
+    }
+    if (clipLayoutLabel) {
+      clipLayoutLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
+    }
+    if (clipLayoutDescNotice) {
+      clipLayoutDescNotice.innerHTML = `<span>${clipLayoutDescriptionsGlobal[selectedClipLayout] || ""}</span>`;
+    }
+    if (allLayoutCards) {
+      allLayoutCards.forEach((card) => card.classList.toggle("active", card.dataset.layout === selectedClipLayout));
+    }
+    if (allLayoutButtons) {
+      allLayoutButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.layout === selectedClipLayout));
+    }
+    if (layoutSelectedLabel) {
+      layoutSelectedLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
+    }
+    updateSourceSplitPreview();
+    updateSourcePreviewFraming();
+    showToast(`Layout: ${clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout}`);
+  }
+
   if (clipLayoutChips) {
     clipLayoutChips.forEach((btn) => {
       btn.addEventListener("click", () => {
-        clipLayoutChips.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        selectedClipLayout = btn.dataset.layout || "split_podcast";
-        selectedVideoLayout = selectedClipLayout;
-        if (clipLayoutLabel) {
-          clipLayoutLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
-        }
-        if (clipLayoutDescNotice) {
-          clipLayoutDescNotice.innerHTML = `<span>${clipLayoutDescriptionsGlobal[selectedClipLayout] || ""}</span>`;
-        }
-        if (allLayoutCards) {
-          allLayoutCards.forEach((card) => card.classList.toggle("active", card.dataset.layout === selectedClipLayout));
-        }
-        if (layoutSelectedLabel) {
-          layoutSelectedLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
-        }
-        updateSourceSplitPreview();
-        showToast(`Layout: ${clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout}`);
+        setClipLayout(btn.dataset.layout);
       });
     });
   }
@@ -2349,23 +2545,16 @@ document.addEventListener("DOMContentLoaded", () => {
   if (headlineDurationChips) {
     headlineDurationChips.forEach((btn) => {
       btn.addEventListener("click", () => {
-        headlineDurationChips.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
         const dur = btn.dataset.duration;
-        if (dur === "5") {
-          selectedHeadlineDuration = 5.0;
-          if (headlineDurationInput) headlineDurationInput.value = "5";
-          showToast("Headline Duration: Vanishes after 5s");
-        } else if (dur === "10") {
-          selectedHeadlineDuration = 10.0;
-          if (headlineDurationInput) headlineDurationInput.value = "10";
-          showToast("Headline Duration: Vanishes after 10s");
-        } else {
-          selectedHeadlineDuration = null;
-          if (headlineDurationInput) headlineDurationInput.value = "";
-          showToast("Headline Duration: Sticky for Full Video");
-        }
+        setHeadlineDuration(dur === "full" ? null : parseFloat(dur));
       });
+    });
+  }
+
+  if (headlineDurationSlider) {
+    headlineDurationSlider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      setHeadlineDuration(val, false);
     });
   }
 
@@ -2492,7 +2681,7 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("highlight_color", overrides.highlight_color || selectedHighlightColor);
     formData.append("selected_styles", overrides.selected_styles !== undefined ? overrides.selected_styles : selectedStyles.join(","));
     formData.append("subtitle_y", overrides.subtitle_y !== undefined ? overrides.subtitle_y : currentSubtitleY.toFixed(2));
-    formData.append("video_layout", selectedVideoLayout);
+    formData.append("video_layout", overrides.video_layout || selectedVideoLayout);
     formData.append("progress_bar", (overrides.progress_bar !== undefined ? overrides.progress_bar : selectedProgressBar) ? "true" : "false");
     formData.append("progress_bar_position", selectedProgressBarPos);
 
@@ -2664,7 +2853,7 @@ document.addEventListener("DOMContentLoaded", () => {
             headline_y: selectedHeadlinePosRatio,
             caption_size: selectedCaptionSize,
             subtitle_y: currentSubtitleY,
-            selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
+            selected_styles: selectedStyles.length > 0 ? (selectedStyles.includes("ai_auto") ? "ai_auto" : selectedStyles.join(",")) : "ai_auto",
             watermark_text: watermarkVal,
             video_layout: selectedClipLayout || "split_podcast",
             ai_enhance: clipAiEnhanceToggle ? clipAiEnhanceToggle.checked : false,
@@ -2675,6 +2864,7 @@ document.addEventListener("DOMContentLoaded", () => {
             auto_emojis: clipAutoEmojisToggle ? clipAutoEmojisToggle.checked : true,
             aspect_ratio: "9:16",
             draft: draftToggle ? draftToggle.checked : false,
+            highlight_color: selectedHighlightColor || "#38BDF8",
           };
 
           const res = await fetch(`/api/jobs/${currentJobId}/render-clip`, {
@@ -2713,7 +2903,8 @@ document.addEventListener("DOMContentLoaded", () => {
         headline_y: selectedHeadlinePosRatio,
         caption_size: selectedCaptionSize,
         subtitle_y: currentSubtitleY.toFixed(2),
-        selected_styles: selectedStyles.length > 0 ? selectedStyles[0] : "ai_auto",
+        selected_styles: selectedStyles.length > 0 ? (selectedStyles.includes("ai_auto") ? "ai_auto" : selectedStyles.join(",")) : "ai_auto",
+        highlight_color: selectedHighlightColor || "#38BDF8",
         watermark_text: watermarkVal || "",
         video_layout: selectedClipLayout || "split_podcast",
         ai_enhance: clipAiEnhanceToggle ? (clipAiEnhanceToggle.checked ? "true" : "false") : "false",

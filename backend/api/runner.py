@@ -361,6 +361,7 @@ class JobManager:
         aspect_ratio: Optional[str] = "9:16",
         draft: bool = False,
         concurrency: Optional[int] = None,
+        highlight_color: Optional[str] = None,
     ) -> JobInfo:
         """Create and queue a lightning-fast render for an edited viral clip from an existing job."""
         parent_job = self.get_job(parent_job_id)
@@ -432,6 +433,8 @@ class JobManager:
         tl_data = json.loads(Path(parent_job.timeline_file).read_text(encoding="utf-8"))
         base_timeline = Timeline.model_validate(tl_data)
 
+        effective_hl = highlight_color or getattr(parent_job, 'highlight_color', None) or base_timeline.highlightColor
+
         sub_timeline = slice_timeline_for_clip(
             timeline=base_timeline,
             clip_start=start,
@@ -453,6 +456,7 @@ class JobManager:
             bg_music=bg_music,
             progress_bar=progress_bar,
             auto_emojis=auto_emojis,
+            highlight_color=effective_hl,
         )
 
         timeline_json = clip_dir / "timeline.json"
@@ -485,6 +489,7 @@ class JobManager:
             auto_emojis=auto_emojis if auto_emojis is not None else True,
             caption_size=caption_size or "medium",
             subtitle_y=subtitle_y or 0.79,
+            highlight_color=effective_hl,
         )
         self.save_job(clip_job)
         self.executor.submit(self._run_clip_render_task, clip_job_id)

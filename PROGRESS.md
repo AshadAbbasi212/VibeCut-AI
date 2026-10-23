@@ -30,9 +30,25 @@
 - [x] Phase 29 Optional Watermark Badge, Viral Booster Explanations, Headmarker Location Positioning, AI Smart Director Styling, & Lightning Single-Clip Render Engine
 - [x] Phase 30 Output Video Error Analysis, Scene-Aware AI Vision in Reels Studio, Reframe Layout Options, & Boundary Validation Hardening
 - [x] Phase 31 Uncapped AI Viral Clip Discovery & Full-Duration Coverage (No 8/10 Limit, Multi-Window Full Transcript Scanning, 50-100+ Clips Support)
+- [x] Phase 32 Anti-Collision Guard, Granular Headmarker Vanish Timer, Ali Abdaal Multi-Style Director & Complete Studio Parity
 
 ## Notes / known issues
-- Phase 31:
+- Phase 32:
+  1. **Safe-Zone Collision Avoidance (Captions Never Behind Headmarker or Over Face)**:
+     - In `remotion/src/CaptionedVideo/index.tsx` and `backend/pipeline/clips.py`: Captions are strictly prohibited from rendering in the `upper` safe zone (`y < 0.28`) when a headline hook is active, and forbidden from covering the speaker's face in the `center` zone (`y: 0.35–0.58`).
+     - Any caption assigned to those zones is automatically shifted down to an elevated callout stack (`zone = "free", x = 0.50, y = 0.68`) resting safely between the speaker's chin and the dialogue subtitles, or to left/right flank editorial slots (`x = 0.26, y = 0.70` or `x = 0.74, y = 0.70`).
+     - Caption container z-index is elevated (`(event.layer || 1) + 20`) to prevent any z-fighting behind card backgrounds.
+  2. **Custom Vanishing Headmarker Timer (Seconds Slider + Quick Chips)**:
+     - Replaced rigid 5s/10s options with a continuous seconds slider (`1.0s` to `15.0s`, `0.5s` step) and 6 quick chips (`2s`, `3s`, `4s`, `5s`, `8s`, `Sticky`) in both the Full Video Studio and AI Reel Studio Tweaker.
+     - In `frontend/app.js`, fixed the canvas preview bug on trimmed clips by computing `clipElapsed = isPlayingCut ? Math.max(0, cur - (trimStartSec || 0)) : cur;`, preventing the headmarker from erroneously vanishing on frame 0 during clip previews.
+  3. **Full 24-Style Library & Color Swatch Parity in AI Reel Studio**:
+     - Upgraded Reel Tweaker to provide complete access to all 24 dynamic caption styles organized into categorized filter tabs (`All (24)`, `⚡ Punchy`, `🖍️ Explainer`, `🎬 Clean`, `🔮 Cyber/Retro`) and one-click Director Presets (`Ali Abdaal Mix`, `MrBeast`, `Marker`, `Hormozi`, `Blob Card`, `Numbered Step`, `Minimal`, `Cyber`, `All 24 Mix`).
+     - Unified accent color swatches with all 7 presets plus a native Hex Color Picker (`#clipCustomColorPicker`), syncing with word highlights across both preview canvas and backend renderer.
+     - Added the `📸 Compare Photos` layout modal button and 3-Way Stack (`split_triple`) layout option to the Reel Tweaker.
+  4. **Ali Abdaal Editorial LLM Prompting & Content-Aware Keyword Styling**:
+     - Overhauled system prompts in `backend/pipeline/plan_llm.py` to instruct LLMs to identify 3–5 core takeaways/rules, applying contrasting styles (`highlighter_marker`, `blob_card`, `beast_impact`, `numbered_point`, `typewriter_terminal`) and word-level highlights without cluttering the screen.
+     - In `backend/pipeline/clips.py`, added content-aware style assignment for `ai_auto` mode detecting numbered steps (`numbered_point`), punchlines (`beast_impact`), educational definitions (`highlighter_marker`), and technical stats (`typewriter_terminal`).
+  5. **Verification & Hardening**: Full backend test suite passing (`99 passed, 2 skipped`), Remotion TypeScript typecheck passing (`0 errors`), and Remotion bundle building cleanly.
   1. **Removed Artificial 8/10 Clip Cap**: Eliminated the hardcoded `len(selected) >= 8` break in `_rule_based_clip_finder`. Both rule-based and AI discovery now extract and return all qualifying high-impact non-overlapping moments across the entire video runtime without artificial limits.
   2. **Full Transcript Time-Window Scanning**: Replaced the arbitrary `[:12000]` character cutoffs and `[:10]` topic segment limits in `_find_clips_with_mistral` and `_find_clips_with_gemini`. Long videos are now segmented into overlapping sliding time windows (`_generate_time_windows`), prompting the AI for exhaustive coverage of every viable moment with `max_tokens=4096` to avoid JSON truncation.
   3. **Multi-Window Clip Assembly & Overlap Deduplication**: Implemented `_assemble_and_deduplicate_clips` which aggregates clips across all time windows, snaps timestamps to phrase boundaries, drops >50% redundant overlaps in favor of higher virality scores, and indexes all discovered clips (`clip_1` through `clip_N`).

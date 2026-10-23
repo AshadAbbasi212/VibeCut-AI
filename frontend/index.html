@@ -2481,20 +2481,34 @@
                   </div>
                 </div>
                 <div style="margin-top: 10px;">
-                  <label style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 6px; display: block;">Headline Duration / Fade-out:</label>
-                  <div class="custom-chip-group" id="headlineDurationChips" style="grid-template-columns: repeat(3, 1fr);">
-                    <button type="button" class="btn-custom-chip" data-duration="5">
-                      <span class="chip-label">⏱️ 5 Sec</span>
-                      <span class="chip-sub">Vanishes</span>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin: 0;">Headline Duration / Fade-out:</label>
+                    <span class="badge" id="headlineDurationValueBadge" style="font-size: 10px; font-family: var(--font-mono); color: var(--accent);">📌 Sticky (Full Video)</span>
+                  </div>
+                  <div class="custom-chip-group" id="headlineDurationChips" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 6px;">
+                    <button type="button" class="btn-custom-chip" data-duration="2" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">2s</span>
                     </button>
-                    <button type="button" class="btn-custom-chip" data-duration="10">
-                      <span class="chip-label">⏱️ 10 Sec</span>
-                      <span class="chip-sub">Vanishes</span>
+                    <button type="button" class="btn-custom-chip" data-duration="3" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">3s</span>
                     </button>
-                    <button type="button" class="btn-custom-chip active" data-duration="full">
-                      <span class="chip-label">📌 Full Video</span>
-                      <span class="chip-sub">Sticky</span>
+                    <button type="button" class="btn-custom-chip" data-duration="4" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">4s</span>
                     </button>
+                    <button type="button" class="btn-custom-chip" data-duration="5" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">5s</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-duration="8" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">8s</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip active" data-duration="full" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 10px;">Sticky</span>
+                    </button>
+                  </div>
+                  <div class="pos-slider-row" style="margin-top: 4px;">
+                    <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">1.0s</span>
+                    <input type="range" id="headlineDurationSlider" class="pos-slider" min="1.0" max="15.0" step="0.5" value="5.0" style="flex: 1;">
+                    <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">15.0s</span>
                   </div>
                   <input type="hidden" id="headlineDurationInput" value="">
                 </div>
@@ -2679,17 +2693,34 @@
                   </div>
                 </div>
                 <div>
-                  <label style="font-size: 10.5px; color: var(--text-dim); display: block; margin-bottom: 4px;">Duration / Fade-Out:</label>
-                  <div class="custom-chip-group" id="clipHeadlineDurationChips" style="grid-template-columns: repeat(3, 1fr);">
-                    <button type="button" class="btn-custom-chip" data-duration="5" style="padding: 5px 4px;">
-                      <span class="chip-label" style="font-size: 10px;">5s</span>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="font-size: 10.5px; color: var(--text-dim); margin: 0;">Duration / Fade-Out:</label>
+                    <span class="tweaker-value-badge" id="clipHeadlineDurationBadge" style="font-size: 9px;">Sticky (Full)</span>
+                  </div>
+                  <div class="custom-chip-group" id="clipHeadlineDurationChips" style="grid-template-columns: repeat(6, 1fr); margin-bottom: 4px;">
+                    <button type="button" class="btn-custom-chip" data-duration="2" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">2s</span>
                     </button>
-                    <button type="button" class="btn-custom-chip" data-duration="10" style="padding: 5px 4px;">
-                      <span class="chip-label" style="font-size: 10px;">10s</span>
+                    <button type="button" class="btn-custom-chip" data-duration="3" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">3s</span>
                     </button>
-                    <button type="button" class="btn-custom-chip active" data-duration="full" style="padding: 5px 4px;">
-                      <span class="chip-label" style="font-size: 10px;">Full</span>
+                    <button type="button" class="btn-custom-chip" data-duration="4" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">4s</span>
                     </button>
+                    <button type="button" class="btn-custom-chip" data-duration="5" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">5s</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip" data-duration="8" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">8s</span>
+                    </button>
+                    <button type="button" class="btn-custom-chip active" data-duration="full" style="padding: 4px 2px;">
+                      <span class="chip-label" style="font-size: 9.5px;">Sticky</span>
+                    </button>
+                  </div>
+                  <div class="pos-slider-row" style="margin-top: 3px;">
+                    <span style="font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);">1.0s</span>
+                    <input type="range" id="clipHeadlineDurationSlider" class="pos-slider" min="1.0" max="15.0" step="0.5" value="5.0" style="flex: 1;">
+                    <span style="font-size: 9px; color: var(--text-dim); font-family: var(--font-mono);">15.0s</span>
                   </div>
                 </div>
               </div>
@@ -2783,30 +2814,68 @@
               </div>
             </div>
 
-            <!-- Tweak D: Style & Highlight Color -->
+            <!-- Tweak D: Full Caption Style Library & Accent Color -->
             <div class="tweaker-section">
               <div class="tweaker-section-title">
-                <span>🎨 Caption Style & Accent Color</span>
-                <span class="tweaker-value-badge" id="clipStyleLabel">AI Smart Director</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span>🎨 Caption Style & Accent Color</span>
+                  <span class="badge" style="font-size: 9px; background: rgba(168,85,247,0.15); color: #c084fc;">FULL 24 STYLES</span>
+                </div>
+                <span class="tweaker-value-badge" id="clipStyleLabel">AI Multi-Style Director</span>
               </div>
+
+              <!-- Quick Director Presets -->
               <div class="styles-preset-quick-row" id="clipStylePresetRow" style="margin-bottom: 8px;">
-                <button type="button" class="btn-style-preset-quick active" data-style-pick="ai_auto" style="background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(99,102,241,0.35)); border-color: #a855f7; color: #f3e8ff; font-weight: 800;">🤖 AI Smart Director</button>
+                <button type="button" class="btn-style-preset-quick active" data-style-pick="ai_auto" style="background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(99,102,241,0.35)); border-color: #a855f7; color: #f3e8ff; font-weight: 800;">🤖 AI Multi-Style (Ali Abdaal Mix)</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="beast_impact">⚡ MrBeast</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="highlighter_marker">🖍️ Ali Marker</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="hormozi_bold">💪 Hormozi</button>
-                <button type="button" class="btn-style-preset-quick" data-style-pick="highlighter_marker">🖍️ Marker</button>
-                <button type="button" class="btn-style-preset-quick" data-style-pick="neon_glow">💡 Neon</button>
-                <button type="button" class="btn-style-preset-quick" data-style-pick="cyber_hud">🤖 Cyber</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="blob_card">🫧 Blob Card</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="numbered_point">🔢 Numbered Step</button>
                 <button type="button" class="btn-style-preset-quick" data-style-pick="cinematic_minimal">🎬 Minimal</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="cyber_hud">🤖 Cyber</button>
+                <button type="button" class="btn-style-preset-quick" data-style-pick="all">🌟 All 24 Mix</button>
               </div>
+
+              <!-- Category Filter Tabs -->
+              <div style="display: flex; gap: 4px; margin-bottom: 6px; overflow-x: auto; padding-bottom: 2px;" id="clipCategoryFilterTabs">
+                <button type="button" class="btn-chip active" data-category="all" style="font-size: 10px; padding: 3px 8px;">All (24)</button>
+                <button type="button" class="btn-chip" data-category="punchy" style="font-size: 10px; padding: 3px 8px;">⚡ Bold & Punchy</button>
+                <button type="button" class="btn-chip" data-category="explainer" style="font-size: 10px; padding: 3px 8px;">🖍️ Explainer & Marker</button>
+                <button type="button" class="btn-chip" data-category="clean" style="font-size: 10px; padding: 3px 8px;">🎬 Cinematic & Clean</button>
+                <button type="button" class="btn-chip" data-category="creative" style="font-size: 10px; padding: 3px 8px;">🔮 Cyber & Retro</button>
+              </div>
+
+              <!-- Full 24-Styles Scrollable Grid -->
+              <div class="styles-grid" id="clipStylesPoolGrid" style="grid-template-columns: repeat(auto-fill, minmax(98px, 1fr)); max-height: 190px; overflow-y: auto; padding-right: 4px; margin-bottom: 8px;">
+                <!-- Dynamically populated via JS from ALL_AVAILABLE_STYLES -->
+              </div>
+
               <div id="clipStyleAiNotice" style="font-size: 10px; color: #c084fc; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-                <span>✨ AI Director dynamically chooses high-retention styles suited for this clip's energy and speech pacing.</span>
+                <span>✨ AI Director dynamically highlights core takeaways using Ali Abdaal markers, floating cards, numbered points, and punchy hooks.</span>
               </div>
-              <div class="color-swatch-group" id="clipHighlightColorSwatches">
-                <button type="button" class="btn-color-swatch active" data-color="#38BDF8" style="background: #38BDF8;" title="Electric Cyan"></button>
-                <button type="button" class="btn-color-swatch" data-color="#FBBF24" style="background: #FBBF24;" title="Cyber Gold"></button>
-                <button type="button" class="btn-color-swatch" data-color="#22C55E" style="background: #22C55E;" title="Neon Green"></button>
-                <button type="button" class="btn-color-swatch" data-color="#EF4444" style="background: #EF4444;" title="Crimson Rose"></button>
-                <button type="button" class="btn-color-swatch" data-color="#FFFFFF" style="background: #FFFFFF;" title="Clean White"></button>
+
+              <!-- Word Highlight & Accent Color Swatches + Custom Picker -->
+              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label style="margin: 0; font-size: 11px; font-weight: 700; color: #fff;">Word Highlight Accent Color:</label>
+                  <span style="font-size: 10px; color: var(--accent); font-weight: 700; font-family: var(--font-mono);" id="clipHighlightColorSelectedLabel">Electric Cyan (#38BDF8)</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <div class="color-swatch-group" id="clipHighlightColorSwatches" style="margin: 0;">
+                    <button type="button" class="btn-color-swatch active" data-color="#38BDF8" style="background: #38BDF8;" title="Electric Cyan"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#FBBF24" style="background: #FBBF24;" title="Cyber Gold"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#22C55E" style="background: #22C55E;" title="Neon Green"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#EF4444" style="background: #EF4444;" title="Crimson Rose"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#A855F7" style="background: #A855F7;" title="Purple Pop"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#F97316" style="background: #F97316;" title="Sunset Orange"></button>
+                    <button type="button" class="btn-color-swatch" data-color="#FFFFFF" style="background: #FFFFFF;" title="Clean White"></button>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 3px 6px; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="color" id="clipCustomColorPicker" value="#38BDF8" style="width: 20px; height: 20px; border: none; border-radius: 50%; cursor: pointer; background: transparent; padding: 0;" title="Custom Color Picker">
+                    <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);" id="clipCustomColorHexLabel">Custom</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2872,35 +2941,42 @@
             <div class="tweaker-section">
               <div class="tweaker-section-title">
                 <div>
-                  <span>🪞 Video Reframe Layout</span>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span>🪞 Video Reframe Layout</span>
+                    <button type="button" class="layout-btn-compare" id="btnClipOpenPhotoModal" title="Compare layout photos" style="font-size: 10px; padding: 2px 7px;">📸 Compare</button>
+                  </div>
                   <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Frame 16:9 landscape video for vertical 9:16 reels:</div>
                 </div>
                 <span class="tweaker-value-badge" id="clipLayoutLabel">Podcast Split Stack</span>
               </div>
-              <div class="custom-chip-group" id="clipLayoutChips" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 8px;">
+              <div class="custom-chip-group" id="clipLayoutChips" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 8px;">
                 <button type="button" class="btn-custom-chip" data-layout="active_speaker">
-                  <span class="chip-label" style="font-size: 11px;">⚡ Active Speaker</span>
-                  <span class="chip-sub" style="font-size: 9px;">Dynamic Auto-Cut</span>
+                  <span class="chip-label" style="font-size: 10.5px;">⚡ Active Speaker</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Dynamic Auto-Cut</span>
                 </button>
                 <button type="button" class="btn-custom-chip active" data-layout="split_podcast">
-                  <span class="chip-label" style="font-size: 11px;">👥 Podcast Split</span>
-                  <span class="chip-sub" style="font-size: 9px;">Dual-Cam Stack</span>
+                  <span class="chip-label" style="font-size: 10.5px;">👥 Podcast Split</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Dual-Cam Stack</span>
                 </button>
                 <button type="button" class="btn-custom-chip" data-layout="blur_fit">
-                  <span class="chip-label" style="font-size: 11px;">✨ Ambient Blur</span>
-                  <span class="chip-sub" style="font-size: 9px;">Full 16:9 Frosted</span>
+                  <span class="chip-label" style="font-size: 10.5px;">✨ Ambient Blur</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Full 16:9 Frosted</span>
+                </button>
+                <button type="button" class="btn-custom-chip" data-layout="split_triple">
+                  <span class="chip-label" style="font-size: 10.5px;">👥👤 3-Way Stack</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Three-Tier Panel</span>
                 </button>
                 <button type="button" class="btn-custom-chip" data-layout="fill">
-                  <span class="chip-label" style="font-size: 11px;">📱 Center Zoom</span>
-                  <span class="chip-sub" style="font-size: 9px;">9:16 Full Fill</span>
+                  <span class="chip-label" style="font-size: 10.5px;">📱 Center Zoom</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">9:16 Full Fill</span>
                 </button>
                 <button type="button" class="btn-custom-chip" data-layout="focus_left">
-                  <span class="chip-label" style="font-size: 11px;">👈 Left Focus</span>
-                  <span class="chip-sub" style="font-size: 9px;">Host Framing</span>
+                  <span class="chip-label" style="font-size: 10.5px;">👈 Left Focus</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Host Framing</span>
                 </button>
                 <button type="button" class="btn-custom-chip" data-layout="focus_right">
-                  <span class="chip-label" style="font-size: 11px;">👉 Right Focus</span>
-                  <span class="chip-sub" style="font-size: 9px;">Guest Framing</span>
+                  <span class="chip-label" style="font-size: 10.5px;">👉 Right Focus</span>
+                  <span class="chip-sub" style="font-size: 8.5px;">Guest Framing</span>
                 </button>
               </div>
               <div id="clipLayoutDescNotice" style="font-size: 10px; color: #38bdf8; display: flex; align-items: center; gap: 4px;">

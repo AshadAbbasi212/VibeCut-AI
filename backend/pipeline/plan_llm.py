@@ -30,7 +30,7 @@ logger = logging.getLogger("captions_planner")
 
 # ── Shared Prompt Template ───────────────────────────────────────────────────
 
-SYSTEM_PROMPT_TEMPLATE = """You are an expert short-form video editor who designs dynamic animated captions for vertical videos (Reels/Shorts/TikTok). You receive a list of timed phrases from a transcript. For each phrase, decide how it should appear on screen.
+SYSTEM_PROMPT_TEMPLATE = """You are an expert short-form video editor who designs dynamic animated captions for vertical videos (Reels/Shorts/TikTok) in the style of Ali Abdaal and Alex Hormozi. You receive a list of timed phrases from a transcript. For each phrase, decide how it should appear on screen.
 
 Return ONLY valid JSON matching the following schema: a JSON array of event objects.
 Each event object has:
@@ -38,7 +38,7 @@ Each event object has:
 - "style": one of ["title3d", "serif_title", "blob_card", "numbered_point", "handwritten", "arc_letters", "sticker", "neon_glow", "typewriter_terminal", "paper_cutout", "glitch_kinetic", "quote_editorial", "comic_bubble", "gradient_outline", "minimal_underline", "hormozi_bold", "retro_vaporwave", "karaoke_bounce", "fire_burn", "beast_impact", "highlighter_marker", "cinematic_minimal", "cyber_hud"]
 - "start": float (seconds)
 - "end": float (seconds)
-- "zone": "upper" or "center"
+- "zone": "callout_stack", "left", "right", or "lower"
 - "wordRange": [firstWordIndex, lastWordIndex] (inclusive integers)
 - "text": string (must match words in phrase)
 - "variant": optional string (e.g. "glow" or "frosted" for blob_card)
@@ -46,6 +46,12 @@ Each event object has:
 - "decorations": optional array of strings ["sparkles", "ellipse", "underline_scribble"]
 - "highlights": optional array of {{"wordIndex": int, "kind": "color"|"italic"|"pill", "value": "#HEX"}}
 - "graphic": optional {{"kind": "emoji"|"icon", "value": "🔥", "position": "above"}}
+
+CRITICAL PLACEMENT & ANTI-COLLISION RULES:
+1. NEVER cover the speaker's face: in vertical video, the face is at y: 0.30 to 0.55. NEVER use center y: 0.50!
+2. NEVER place text behind the top headline hook / headmarker: NEVER use "upper" (y < 0.28).
+3. Place main points in "callout_stack" (y: 0.68, right above the lower subtitle line) or on margins ("left" x: 0.26, "right" x: 0.74).
+4. Continuous speech captions belong in "lower" (y: 0.79).
 
 Guidelines:
 - A readable pill_word base caption is added automatically for every phrase in the lower zone, so ONLY return feature impact events.
@@ -62,27 +68,37 @@ Phrase list (JSON):
 
 # ── Scene-Aware Enhanced Prompt ──────────────────────────────────────────────
 
-SCENE_AWARE_PROMPT_TEMPLATE = """You are a professional video editor and creative director designing dynamic, multi-style animated captions — think Ali Abdaal, MrBeast, or Hormozi-level production quality.
+SCENE_AWARE_PROMPT_TEMPLATE = """You are an elite video editor and creative director designing dynamic, multi-style animated captions — think Ali Abdaal, MrBeast, and Alex Hormozi-level production quality.
 
 You receive a transcript (timed phrases) and a scene analysis of the video. Your job is to be the CREATIVE DIRECTOR: decide which caption style goes where, with professional editorial judgment.
 
 ## Your Responsibilities:
 
-### 1. HEADINGS & MAIN POINTS → Feature Styles
-When the speaker announces a topic, makes a key claim, lists a numbered point, or delivers a punchline:
-- Use a DISTINCT feature style (title3d, serif_title, beast_impact, numbered_point, etc.)
-- These appear in the "upper" or "center" zone OVERLAPPING with the base caption
-- Headings/main points should feel like editorial callouts
+### 1. MAIN POINTS & KEY TAKEAWAYS (Ali Abdaal Editorial Technique)
+Identify 3-5 pivotal moments in the video: key claims, counter-intuitive rules, core takeaways, numbered steps, or mind-blowing insights.
+For these moments, elevate them into FEATURE HIGHLIGHTS:
+- Educational / Explanations / Core Rules → "highlighter_marker" (marker stroke over key words), "blob_card" (clean floating card), "numbered_point" (clean [01] badge).
+- High Impact / Viral Hooks / Punchlines → "beast_impact" (explosive text pop), "hormozi_bold" (high-contrast active word glow), "fire_burn".
+- Deep Insights / Reflections → "cinematic_minimal" (clean tracking), "serif_title", "quote_editorial".
+- Tech / Data / Numbers → "typewriter_terminal", "cyber_hud".
+Use word-level highlights on the punch words (e.g. highlights: [{{"wordIndex": 2, "kind": "color", "value": "#F59E0B"}}]) and contextual graphics/emojis.
 
-### 2. REGULAR SPEECH → Consistent Base (auto-handled)
-A pill_word base caption is auto-added for every phrase in the "lower" zone.
-You do NOT need to generate these. Only return FEATURE events.
+### 2. STRICT PLACEMENT & ANTI-COLLISION RULES (MANDATORY)
+- Continuous Speech Subtitles: always in the lower third safe zone ("lower", y: 0.79).
+- Main Points & Editorial Callouts:
+  * "callout_stack" (y: 0.68): elevated cleanly just above the dialogue subtitle, safely between the speaker's chest and the bottom captions.
+  * "left" (x: 0.26, y: 0.70): professional callout in the left margin.
+  * "right" (x: 0.74, y: 0.70): professional callout in the right margin.
+- CRITICAL PROHIBITIONS:
+  * NEVER use "upper" (y < 0.28): text will be hidden behind or collide with the top headmarker / headline hook card!
+  * NEVER use "center" (y: 0.40 - 0.55): text will appear directly in front of the speaker's face!
+  * All main points must appear cleanly in "callout_stack", "left", "right", or "lower".
 
 ### 3. STYLE VARIETY & REPETITION RULES
-- **Headings/Main Points**: Use 2-3 recurring "heading styles" like serif_title, beast_impact, or highlighter_marker. These REPEAT throughout to feel consistent.
-- **Key Moments**: Use one-time special styles for hooks (title3d), conclusions (cinematic_minimal), funny moments (comic_bubble), technical terms (typewriter_terminal).
+- **Headings/Main Points**: Use 2-3 recurring "heading styles" like highlighter_marker, beast_impact, or blob_card. These REPEAT throughout to feel cohesive.
+- **Key Moments**: Use one-time special styles for hooks (beast_impact), conclusions (cinematic_minimal), technical terms (typewriter_terminal).
 - **NEVER repeat the same style more than 3 times in a row.**
-- **Use at least 5 different styles across the video.**
+- **Use at least 4-5 different styles across the video.**
 
 ### 4. SKIP EXISTING CAPTIONS
 {existing_captions_instruction}
@@ -111,10 +127,10 @@ Return ONLY valid JSON — an array of feature event objects:
 [
   {{
     "id": "feat_p1",
-    "style": "serif_title",
+    "style": "highlighter_marker",
     "start": 0.5,
     "end": 2.3,
-    "zone": "upper",
+    "zone": "callout_stack",
     "wordRange": [0, 5],
     "text": "The three secrets to success",
     "highlights": [{{"wordIndex": 2, "kind": "color", "value": "#FBBF24"}}],
@@ -281,7 +297,22 @@ def _validate_and_parse_llm_json(
             ev_end = round(video_duration, 2)
             ev_start = max(0.0, round(ev_end - 0.35, 2))
         item["start"] = ev_start
-        item["end"] = ev_end
+        # Zone sanitization: prevent hiding behind headmarker ("upper") or blocking speaker face ("center")
+        z = item.get("zone", "lower")
+        if z in ("upper", "center", "callout_stack"):
+            item["zone"] = "free"
+            item["x"] = 0.5
+            item["y"] = 0.68
+        elif z == "left":
+            item["zone"] = "free"
+            item["x"] = 0.26
+            item["y"] = 0.70
+        elif z == "right":
+            item["zone"] = "free"
+            item["x"] = 0.74
+            item["y"] = 0.70
+        elif z not in ("lower", "upper", "center", "free"):
+            item["zone"] = "lower"
 
         ev = TimelineEvent(**item)
         parsed_events.append(ev)

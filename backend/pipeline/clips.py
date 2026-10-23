@@ -740,11 +740,13 @@ def slice_timeline_for_clip(
     bg_music: Optional[str] = None,
     progress_bar: Optional[bool] = None,
     auto_emojis: Optional[bool] = None,
+    highlight_color: Optional[str] = None,
 ) -> Timeline:
     """Slice a Timeline to a specific clip window [clip_start, clip_end].
     
     Adjusts all events, words, camera cuts, and video duration to start at 0.0,
-    and applies any tweaker overrides (headline, location, style, font size, boosters, layout, scene analysis).
+    and applies any tweaker overrides (headline, location, style, font size, boosters, layout, scene analysis, accent color).
+    Guarantees strict safe-zone collision avoidance: captions never render behind the headmarker or over the speaker's face.
     """
     clip_duration = round(clip_end - clip_start, 2)
 
@@ -760,18 +762,29 @@ def slice_timeline_for_clip(
         }
     )
 
-    # Determine styles to apply
+    # Determine styles to apply (Ali Abdaal multi-style editorial director)
     custom_styles = None
+    is_ai_director = False
     if selected_styles and selected_styles.strip() and selected_styles != "ai_auto":
         custom_styles = [s.strip() for s in selected_styles.split(",") if s.strip()]
-    elif selected_styles == "ai_auto":
-        # Dynamic AI Creator Director styles based on clip duration / energy
-        if clip_duration <= 20.0:
-            custom_styles = ["beast_impact", "hormozi_bold"]
-        elif clip_duration <= 45.0:
-            custom_styles = ["highlighter_marker", "beast_impact", "hormozi_bold"]
-        else:
-            custom_styles = ["cinematic_minimal", "highlighter_marker"]
+    elif selected_styles == "ai_auto" or not selected_styles:
+        is_ai_director = True
+        custom_styles = [
+            "highlighter_marker",
+            "beast_impact",
+            "numbered_point",
+            "blob_card",
+            "typewriter_terminal",
+            "hormozi_bold",
+        ]
+        if clip_duration > 45.0:
+            custom_styles.extend(["cinematic_minimal", "quote_editorial"])
+
+    has_headmarker = bool(
+        (clip_headline is not None and clip_headline.strip())
+        or (timeline.headlineHook and timeline.headlineHook.strip())
+    )
+    resolved_hl = highlight_color or timeline.highlightColor
 
     # 2. Slice events
     new_events = []
@@ -796,8 +809,68 @@ def slice_timeline_for_clip(
                     updates["captionSize"] = caption_size
                 if subtitle_y is not None:
                     updates["subtitleY"] = subtitle_y
+
+                # Style assignment
                 if custom_styles:
-                    updates["style"] = custom_styles[event_idx % len(custom_styles)]
+                    if is_ai_director:
+                        text_lower = (ev.text or "").lower()
+                        # Numbered step detection (e.g. "step 1", "number one", "first", "rule")
+                        if any(k in text_lower for k in ["rule", "step", "number", "first", "second", "third", "01", "02", "1.", "2."]):
+                            assigned_style = "numbered_point" if "numbered_point" in custom_styles else custom_styles[event_idx % len(custom_styles)]
+                        # High-impact punchlines & viral moments
+                        elif any(k in text_lower for k in ["viral", "moment", "never", "always", "insane", "million", "secret", "biggest", "shocking", "fail", "win", "stop"]):
+                            assigned_style = "beast_impact" if (event_idx % 2 == 0) else "hormozi_bold"
+                            if assigned_style not in custom_styles:
+                                assigned_style = custom_styles[event_idx % len(custom_styles)]
+                        # Key educational takeaway / advice / definition
+                        elif any(k in text_lower for k in ["because", "means", "remember", "reason", "key", "lesson", "concept", "focus", "how to"]):
+                            assigned_style = "highlighter_marker" if "highlighter_marker" in custom_styles else custom_styles[event_idx % len(custom_styles)]
+                        # Numbers / stats / tech
+                        elif any(ch.isdigit() for ch in ev.text or "") or any(k in text_lower for k in ["system", "code", "ai", "percent", "%", "data"]):
+                            assigned_style = "typewriter_terminal" if "typewriter_terminal" in custom_styles else custom_styles[event_idx % len(custom_styles)]
+                        # Deep reflection
+                        elif len(ev.text or "") > 45:
+                            assigned_style = "cinematic_minimal" if "cinematic_minimal" in custom_styles else custom_styles[event_idx % len(custom_styles)]
+                        else:
+                            assigned_style = custom_styles[event_idx % len(custom_styles)]
+                        updates["style"] = assigned_style
+                    else:
+                        updates["style"] = custom_styles[event_idx % len(custom_styles)]
+
+                # Collision avoidance & Safe zone enforcement:
+                # Captions must NEVER render behind the top headmarker ("upper") or across the speaker's face ("center").
+                cur_zone = ev.zone or "lower"
+                if (has_headmarker and cur_zone == "upper") or cur_zone == "center" or cur_zone == "callout_stack":
+                    updates["zone"] = "free"
+                    updates["x"] = 0.5
+                    updates["y"] = 0.68
+                elif cur_zone == "left":
+                    updates["zone"] = "free"
+                    updates["x"] = 0.26
+                    updates["y"] = 0.70
+                elif cur_zone == "right":
+                    updates["zone"] = "free"
+                    updates["x"] = 0.74
+                    updates["y"] = 0.70
+                elif cur_zone not in ("lower", "upper", "center", "free"):
+                    updates["zone"] = "lower"
+
+                # Editorial cards stay stacked safely between speaker's chin and dialogue subtitles
+                assigned_st = updates.get("style", ev.style)
+                if assigned_st in ("blob_card", "numbered_point") and updates.get("zone") != "free":
+                    updates["zone"] = "free"
+                    updates["x"] = 0.5
+                    updates["y"] = 0.68
+
+                # Word Highlight & Accent Color
+                if resolved_hl:
+                    updates["highlightColor"] = resolved_hl
+                    if ev.highlights:
+                        new_hls = []
+                        for hl in ev.highlights:
+                            new_hls.append(hl.model_copy(update={"value": resolved_hl}))
+                        updates["highlights"] = new_hls
+
                 ev_copy = ev.model_copy(update=updates)
                 new_events.append(ev_copy)
                 event_idx += 1
@@ -837,7 +910,7 @@ def slice_timeline_for_clip(
             scene_analysis=scene_analysis,
         )
     else:
-        # Non-active_speaker layouts (split_podcast, blur_fit, fill, focus_left, focus_right)
+        # Non-active_speaker layouts (split_podcast, blur_fit, fill, focus_left, focus_right, split_triple)
         # do not require dynamic cuts
         new_cuts = None
 
@@ -868,6 +941,8 @@ def slice_timeline_for_clip(
         timeline_updates["progressBar"] = progress_bar
     if auto_emojis is not None:
         timeline_updates["autoEmojis"] = auto_emojis
+    if resolved_hl is not None:
+        timeline_updates["highlightColor"] = resolved_hl
 
     return timeline.model_copy(update=timeline_updates)
 

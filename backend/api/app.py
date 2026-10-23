@@ -414,6 +414,7 @@ class RenderClipPayload(BaseModel):
     aspect_ratio: Optional[str] = "9:16"
     draft: Optional[bool] = False
     concurrency: Optional[int] = None
+    highlight_color: Optional[str] = "#38BDF8"
 
 
 @app.post("/api/jobs/{job_id}/render-clip", response_model=JobInfo, status_code=status.HTTP_201_CREATED)
@@ -450,6 +451,7 @@ def render_single_clip_endpoint(
             aspect_ratio=payload.aspect_ratio,
             draft=payload.draft or False,
             concurrency=payload.concurrency,
+            highlight_color=payload.highlight_color,
         )
         return clip_job
     except Exception as e:

@@ -243,3 +243,67 @@ def test_slice_timeline_reframe_and_scene_analysis(mock_parent_job):
     assert len(sliced_active.cameraCuts) > 0
     # Because scene has centered speaker, focusX is 0.50
     assert sliced_active.cameraCuts[0].focusX == 0.50
+
+
+def test_slice_timeline_collision_avoidance(mock_parent_job):
+    """Verify captions never render behind the headmarker or over the speaker's face."""
+    job_id, base_timeline = mock_parent_job
+
+    # Modify base timeline event to have zone='upper' and zone='center'
+    ev_upper = base_timeline.events[0].model_copy(update={"zone": "upper", "start": 10.0, "end": 12.0})
+    ev_center = base_timeline.events[1].model_copy(update={"zone": "center", "start": 10.0, "end": 12.0})
+    modified_tl = base_timeline.model_copy(update={"events": [ev_upper, ev_center]})
+
+    # With headline hook present, upper zone must be sanitized to callout_stack
+    sliced = slice_timeline_for_clip(
+        timeline=modified_tl,
+        clip_start=10.0,
+        clip_end=12.5,
+        clip_headline="🔥 TOP HEADMARKER",
+        highlight_color="#FBBF24",
+    )
+
+    for ev in sliced.events:
+        assert ev.zone != "upper", "Event must not be placed in 'upper' zone behind headmarker!"
+        assert ev.zone == "free"
+        assert ev.y == 0.68
+        assert ev.highlightColor == "#FBBF24"
+
+
+def test_slice_timeline_vanishing_headline_and_highlight(mock_parent_job):
+    """Verify custom vanishing duration (e.g. 3.0s) and custom highlight color propagate."""
+    job_id, base_timeline = mock_parent_job
+
+    sliced = slice_timeline_for_clip(
+        timeline=base_timeline,
+        clip_start=10.0,
+        clip_end=12.5,
+        clip_headline="💡 KEY TAKEAWAY",
+        clip_headline_duration=3.0,
+        highlight_color="#A855F7",
+    )
+
+    assert sliced.headlineHook == "💡 KEY TAKEAWAY"
+    assert sliced.headlineDuration == 3.0
+    assert sliced.highlightColor == "#A855F7"
+
+
+def test_slice_timeline_ali_abdaal_content_aware_styles(mock_parent_job):
+    """Verify Ali Abdaal content-aware style assignment picks numbered_point, typewriter_terminal, highlighter_marker based on text keywords."""
+    job_id, base_timeline = mock_parent_job
+
+    ev_step = base_timeline.events[0].model_copy(update={"text": "Step 1: Focus on your core output", "start": 10.0, "end": 12.0})
+    ev_tech = base_timeline.events[1].model_copy(update={"text": "The AI model processes 100% of data", "start": 12.0, "end": 14.0})
+    modified_tl = base_timeline.model_copy(update={"events": [ev_step, ev_tech]})
+
+    sliced = slice_timeline_for_clip(
+        timeline=modified_tl,
+        clip_start=10.0,
+        clip_end=25.0,
+        selected_styles="ai_auto",
+    )
+
+    assert sliced.events[0].style == "numbered_point"
+    assert sliced.events[1].style == "typewriter_terminal"
+
+
