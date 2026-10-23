@@ -265,6 +265,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
   const currentTime = frame / fps;
 
   const layout = timeline.videoLayout || timeline.video.layout || "fill";
+  const isSplitLayout = layout === "split_podcast" || layout === "split_triple";
   const isVerticalComp = (timeline.video.width || 1080) < (timeline.video.height || 1920);
   const isSourceLandscape =
     timeline.video.originalWidth && timeline.video.originalHeight
@@ -386,8 +387,22 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       };
     }
 
-    const hookYRatio = timeline.headlineY !== undefined && timeline.headlineY !== null ? timeline.headlineY : 0.08;
+    let hookYRatio = timeline.headlineY !== undefined && timeline.headlineY !== null ? timeline.headlineY : 0.08;
+    if (isSplitLayout && hookYRatio === 0.08) {
+      // In split layout, top speaker's face occupies y: 0.06 - 0.25.
+      // Place compact headline badge above hairline at y: 0.02 (2%)
+      hookYRatio = 0.02;
+    }
     const hookYTop = `${Math.round(hookYRatio * 1000) / 10}%`;
+
+    // In split layout, scale card slightly for ceiling safe zone
+    if (isSplitLayout) {
+      cardStyle = {
+        ...cardStyle,
+        padding: "8px 24px",
+        fontSize: "24px",
+      };
+    }
 
     return (
       <div

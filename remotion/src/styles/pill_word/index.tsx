@@ -106,24 +106,27 @@ export const PillWord: React.FC<PillWordProps> = ({
         }
 
         return (
-          <span
-            key={w.i ?? idx}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: `${baseSize}px`,
-              fontWeight,
-              lineHeight: 1.25,
-              letterSpacing: "-0.01em",
-              color,
-              textShadow,
-              WebkitTextStroke: bgStyle !== "solid" ? "1px rgba(0, 0, 0, 0.45)" : undefined,
-              transition: "color 0.06s ease, transform 0.06s ease",
-              transform: isSpoken && bgStyle !== "solid" ? "scale(1.05)" : "none",
-              display: "inline-block",
-            }}
-          >
-            {w.text}
-          </span>
+          <React.Fragment key={w.i ?? idx}>
+            <span
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: `${baseSize}px`,
+                fontWeight,
+                lineHeight: 1.25,
+                letterSpacing: "-0.01em",
+                color,
+                textShadow,
+                WebkitTextStroke: bgStyle !== "solid" ? "1px rgba(0, 0, 0, 0.45)" : undefined,
+                transition: "color 0.06s ease, transform 0.06s ease",
+                transform: isSpoken && bgStyle !== "solid" ? "scale(1.05)" : "none",
+                display: "inline-block",
+                margin: "2px 6px",
+              }}
+            >
+              {w.text}
+            </span>
+            {idx < phraseWords.length - 1 && " "}
+          </React.Fragment>
         );
       })}
     </div>

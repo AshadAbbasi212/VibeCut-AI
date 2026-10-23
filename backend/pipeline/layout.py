@@ -168,7 +168,21 @@ def assign_layout(
             lines = split_lines_balanced(feat.text)
 
         # Zone assignment: feature events must NOT be 'lower'
-        target_zone = feat.zone if feat.zone in {"upper", "center", "free"} else "center"
+        # Prevent covering speaker's face: map 'center' to safe callout stack ('free' at y=0.68)
+        target_zone = feat.zone
+        target_x = feat.x
+        target_y = feat.y
+
+        if target_zone in ("center", "callout_stack") or (target_y is not None and 0.35 <= target_y <= 0.58):
+            target_zone = "free"
+            target_x = target_x or 0.50
+            target_y = 0.68
+        elif target_zone == "upper":
+            target_zone = "upper"
+        elif target_zone not in ("upper", "free"):
+            target_zone = "free"
+            target_x = target_x or 0.50
+            target_y = target_y or 0.68
 
         # Check if target_zone collides with existing placed features
         colliding = [
@@ -177,16 +191,25 @@ def assign_layout(
         ]
 
         if colliding:
-            # Try alternate zone
-            alt_zone = "upper" if target_zone == "center" else "center"
+            # Try alternate safe zone or flank callout
+            if target_zone == "upper":
+                alt_zone = "free"
+                alt_x = 0.50
+                alt_y = 0.68
+            else:
+                alt_zone = "upper"
+                alt_x = 0.50
+                alt_y = 0.18
+
             alt_colliding = [
                 placed for placed in resolved_features
                 if placed.zone == alt_zone and _overlaps(placed.start, placed.end, feat.start, feat.end)
             ]
             if not alt_colliding:
                 target_zone = alt_zone
+                target_x = alt_x
+                target_y = alt_y
             else:
-                # Both center and upper are occupied during this window.
                 # If overlap can be resolved by shifting start or end, try that:
                 latest_end = max(c.end for c in colliding)
                 if feat.end - latest_end >= min_event_duration:
@@ -200,6 +223,8 @@ def assign_layout(
             update={
                 "style": style,
                 "zone": target_zone,
+                "x": target_x,
+                "y": target_y,
                 "lines": lines,
             }
         )
@@ -219,14 +244,18 @@ def assign_layout(
     final_events: list[TimelineEvent] = list(all_events)
     for t in sorted(timestamps):
         active = [e for e in final_events if e.start <= t < e.end]
-        if len(active) > max_concurrent:
-            # Too many active events: drop the lowest-priority feature event
+        while len(active) > max_concurrent:
+            # Too many active events: drop lowest-priority feature event
             # Base pill_word has high priority for readability; drop newest or shortest feature event
             features_active = [e for e in active if not (e.style == "pill_word" and e.id.startswith("base_"))]
             if features_active:
                 features_active.sort(key=lambda x: (x.end - x.start, x.start))
                 to_remove = features_active[0]
                 final_events = [e for e in final_events if e.id != to_remove.id]
+                active.remove(to_remove)
+            else:
+                break
+
 
     # 4b. Pacing check on surviving feature events
     final_events.sort(key=lambda x: (x.start, x.end))

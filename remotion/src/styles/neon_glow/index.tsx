@@ -59,24 +59,28 @@ export const NeonGlow: React.FC<NeonGlowProps> = ({
       {phraseWords.map((w, idx) => {
         const isSpoken = currentTime >= w.start;
         return (
-          <span
-            key={w.i ?? idx}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-              lineHeight: 1.2,
-              color: isSpoken ? "#22D3EE" : "rgba(226, 232, 240, 0.45)",
-              textShadow: isSpoken
-                ? `0 0 10px #06B6D4, 0 0 22px #06B6D4, 0 0 35px #3B82F6`
-                : "none",
-              transition: "color 0.05s ease, text-shadow 0.05s ease",
-            }}
-          >
-            {w.text}
-          </span>
+          <React.Fragment key={w.i ?? idx}>
+            <span
+              style={{
+                display: "inline-block",
+                margin: "2px 6px",
+                fontFamily: fonts.sans,
+                fontSize: `${getCaptionFontSize(event.captionSize, 52)}px`,
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                lineHeight: 1.2,
+                color: isSpoken ? "#22D3EE" : "rgba(226, 232, 240, 0.45)",
+                textShadow: isSpoken
+                  ? `0 0 10px #06B6D4, 0 0 22px #06B6D4, 0 0 35px #3B82F6`
+                  : "none",
+                transition: "color 0.05s ease, text-shadow 0.05s ease",
+              }}
+            >
+              {w.text}
+            </span>
+            {idx < phraseWords.length - 1 && " "}
+          </React.Fragment>
         );
       })}
     </div>

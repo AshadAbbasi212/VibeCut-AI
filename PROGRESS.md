@@ -32,8 +32,27 @@
 - [x] Phase 31 Uncapped AI Viral Clip Discovery & Full-Duration Coverage (No 8/10 Limit, Multi-Window Full Transcript Scanning, 50-100+ Clips Support)
 - [x] Phase 32 Anti-Collision Guard, Granular Headmarker Vanish Timer, Ali Abdaal Multi-Style Director & Complete Studio Parity
 - [x] Phase 33 End-to-End Deep Video Verification, Layout-Aware Split Safe Zones, & WebKit Stroke Word Separation
+- [x] Phase 34 10-Minute Long Video Pipeline Validation, Concurrency Loop Pruning, Split Headline Safe Zones, & Universal Word Separation
 
 ## Notes / known issues
+- Phase 34 (10-Minute Long-Form Video Deep Forensic Analysis & Defect Corrections):
+  1. **10-Minute Real Video Pipeline Execution**:
+     - Extracted 600.16s (10:00.07) from long-form landscape podcast video (`scratch/ten_minute_test.mp4`, 27.76 MB).
+     - Executed full end-to-end processing pipeline via faster-whisper: transcribed 1,479 words in 150.3s, chunked into 308 sentences, planned with dynamic 24-style library, and reframed via dual-camera split podcast (`job_02dc0eec51`).
+  2. **Defect #1 Identified & Fixed — Timeline Concurrency Pruning Leak**:
+     - Timeline analysis of 308 sentences across 10 minutes revealed 158 timestamp slices where concurrent active events exceeded the invariant threshold of 3 (reaching 4 simultaneous events).
+     - Root cause: In `backend/pipeline/layout.py`, `assign_layout` evaluated active overlapping events with a single `if len(active) > max_concurrent:`, which evicted only 1 event per sampled instant rather than draining down to `<= 3`.
+     - Fix: Converted to `while len(active) > max_concurrent: active.remove(to_remove)`. In addition, hardened `plan_rules.py` by pacing non-keyword sentence features to ~35% of sentences and preventing `center` face zone conflicts. Verified maximum concurrent events dropped to 2 across all 600 seconds.
+  3. **Defect #2 Identified & Fixed — Headline Hook Eye Occlusion in Split Layout**:
+     - In dual-camera split podcast layouts (`split_podcast`, `split_triple`), the top speaker is framed in the upper half (`y: 0.0 to 0.50`). A headline hook at default `y = 0.08` landed directly across the top host's eyes.
+     - Fix: In `remotion/src/CaptionedVideo/index.tsx`, added `isSplitLayout` detection for headline hooks. When split layout is active and `headlineY == 0.08`, adapts `top: 2%` (`hookYRatio = 0.02`), `fontSize: 24px`, and compact padding (`8px 24px`), anchoring the hook cleanly in the dark ceiling space above the hairline. Verified in frame `scratch/ten_min_frames/frame_01.5s.jpg`.
+  4. **Defect #3 Identified & Fixed — Universal Word Fusing in Continuous Subtitles**:
+     - Microscopic inspection of rendered frames at 7.5s and 12.0s revealed word fusing in continuous subtitle styles (`pill_word`, `neon_glow`, `karaoke_bounce`) where array mapping rendered word spans directly adjacent without whitespace (e.g. "AndSundar", "Welcometo theshow.").
+     - Fix: In `remotion/src/styles/pill_word/index.tsx`, `neon_glow/index.tsx`, and `karaoke_bounce/index.tsx`, wrapped word spans in `<React.Fragment key={...}>`, added explicit `margin: "2px 6px"`, and inserted `{idx < phraseWords.length - 1 && " "}` to guarantee HTML word separation. Verified in frames `frame_07.5s.jpg` and `frame_12.0s.jpg`.
+  5. **Verification Suite**:
+     - 100/100 pytest tests passing (`100 passed, 2 skipped in 17.34s`).
+     - Remotion pre-bundled Webpack production build clean (0 errors).
+     - Stills verified clear eye line and typography.
 - Phase 33 (Comprehensive End-to-End Testing & Visual Quality Assurance):
   1. **Full Integration Testing Across Studios**:
      - Verified end-to-end workflows in both the Full Video Studio and AI Viral Reels Studio using real vertical video (`sample-video.mp4`) and 16:9 landscape podcast footage.

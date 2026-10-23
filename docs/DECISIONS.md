@@ -1,5 +1,21 @@
 # Architectural and Technical Decisions
 
+## 2026-10-23: 10-Minute Video Deep Analysis: Concurrency Loop Pruning, Safe Zone Fallback & Universal Word Separation
+- **Decision**:
+  1. **Concurrency While-Loop Pruning in `layout.py`**:
+     - On long 10-minute videos (1,479 words, 308 sentences), 158 timestamp slices exceeded the invariant limit of 3 concurrent events because `assign_layout` used an `if len(active) > max_concurrent:` statement, removing only 1 event per sampled instant instead of all exceeding events.
+     - Upgraded to `while len(active) > max_concurrent:`, removing the lowest-priority feature event and updating `active.remove(to_remove)` until the count strictly satisfies `<= 3`. Concurrency is now verified `<= 2` across the entire 10-minute timeline.
+  2. **Elimination of Center Face Occlusion in RulePlanner & Layout Engine**:
+     - `RulePlanner` was previously assigning `zone = "center"` to feature events, placing text right over the speaker's face (`y: 0.35 .. 0.58`).
+     - In `layout.py`, any feature event with `zone in ("center", "callout_stack")` or `0.35 <= y <= 0.58` is automatically converted to `zone = "free", x = 0.50, y = 0.68` (safe callout stack on the chest between face and subtitles) or flank margins. In `plan_rules.py`, feature events now default to `zone = "free"` and non-keyword sentences are paced to ~35% of sentences, eliminating visual clutter.
+  3. **Layout-Aware Headline Hook in Split Layouts**:
+     - In dual-camera split podcast setups (`split_podcast`, `split_triple`), the top speaker's face occupies `top: 6% .. 25%`. Placing the headline hook at single-camera default `top: 8%` covered the top host's eyes.
+     - In `CaptionedVideo/index.tsx`, when `isSplitLayout` is true and default `headlineY = 0.08` is used, it automatically adapts to `top: 2%` (`hookYRatio = 0.02`) with a compact header badge that sits cleanly in the ceiling margin above the hairline, preserving 100% facial visibility.
+  4. **Universal Word Separation (`pill_word`, `neon_glow`, `karaoke_bounce`)**:
+     - Frame analysis of rendered video at 7.5s and 12.0s revealed fused words like "AndSundar" and "Welcometo theshow." because words inside flex-wrap containers lacked explicit whitespace characters and outer margin.
+     - Wrapped word spans in `<React.Fragment key={w.i ?? idx}>`, added `margin: "2px 6px"`, and inserted `{idx < phraseWords.length - 1 && " "}` to guarantee visual whitespace across all continuous speech captions. Verified in re-rendered frames `frame_07.5s.jpg` ("And Sundar") and `frame_12.0s.jpg` ("Welcome to the show.").
+- **Why**: Guarantees that 10-minute and long-form videos render with broadcast-quality typography, zero facial obstruction across both single and split layouts, zero concurrency leaks, and well-paced feature styles.
+
 ## 2026-10-23: Safe-Zone Anti-Collision Guard, Granular Headmarker Vanish Timer, Ali Abdaal Multi-Style Director & Complete Studio Parity
 - **Decision**:
   1. **Safe-Zone Collision Avoidance (No Captions Behind Headmarker or Over Face)**:

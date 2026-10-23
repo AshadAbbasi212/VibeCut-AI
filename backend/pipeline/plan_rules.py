@@ -412,7 +412,9 @@ class RulePlanner:
             all_words_in_group = [w.text.lower().strip(".,!?:;\"'") for p in group for w in p.words]
 
             feature_style: Optional[str] = None
-            feature_zone = "upper"
+            feature_zone = "free"
+            feature_x: Optional[float] = 0.50
+            feature_y: Optional[float] = 0.68
             feature_variant: Optional[str] = None
             feature_palette = "monochrome" if self.preset == "calm_serif" else "sunset"
             feature_decorations: list[str] = []
@@ -427,71 +429,99 @@ class RulePlanner:
 
             elif g_idx == 0:
                 feature_style = "serif_title" if self.preset == "calm_serif" else "title3d"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
                 feature_decorations = ["sparkles"]
 
             elif any(w in text_lower for w in ["code", "system", "logic", "terminal", "dollar", "percent", "data"]):
                 feature_style = "typewriter_terminal"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
 
             elif any(w in text_lower for w in ["fast", "electric", "power", "money", "future", "online", "crypto"]):
                 feature_style = "neon_glow"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
 
             elif any(w in text_lower for w in ["quote", "remember", "said", "truth", "life", "why"]):
                 feature_style = "quote_editorial"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
 
             elif "?" in group_text or "!" in group_text or any(w in text_lower for w in ["wow", "crazy", "secret", "shout", "boom"]):
                 feature_style = "comic_bubble"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
 
             elif any(w in text_lower for w in ["stop", "tip", "note", "rule", "warning", "advice"]):
                 feature_style = "paper_cutout"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
 
             elif any(w in text_lower for w in ["suddenly", "break", "glitch", "crash", "wrong", "shock", "never"]):
                 feature_style = "glitch_kinetic"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
 
             elif any(w in text_lower for w in ["key", "grow", "core", "focus", "goal", "scale"]):
                 feature_style = "minimal_underline"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
 
             elif any(w in text_lower for w in ["how to", "plan", "start", "action"]):
                 feature_style = "serif_title"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
                 feature_decorations = ["ellipse"]
 
             elif any(w in text_lower for w in ["everything", "basically", "definition", "concept"]):
                 feature_style = "blob_card"
                 feature_variant = "frosted" if self.preset == "calm_serif" else "glow"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
                 feature_decorations = ["sparkles"]
 
             elif any(w in text_lower for w in ["rather than", "luck", "maybe", "whisper", "honestly"]):
                 feature_style = "handwritten"
                 feature_zone = "upper"
+                feature_x = 0.50
+                feature_y = 0.18
 
             elif len(all_words_in_group) in (2, 3) and all(len(w) <= 4 for w in all_words_in_group):
                 feature_style = "arc_letters"
-                feature_zone = "center"
+                feature_zone = "free"
+                feature_x = 0.50
+                feature_y = 0.68
 
             else:
                 detected_graphic = detect_graphic_for_text(group_text) if self.preset != "calm_serif" else None
                 if detected_graphic:
                     feature_style = "sticker"
                     feature_graphic = detected_graphic
-                    feature_zone = "center"
-                elif total_groups >= 4:
-                    # Rotate in fresh unused styles to guarantee rich variety
+                    feature_zone = "free"
+                    feature_x = 0.50
+                    feature_y = 0.68
+                elif total_groups >= 4 and (g_idx % 3 == 0):
+                    # Rotate in fresh unused styles on ~35% of non-keyword sentences
                     unused = [s for s in all_feature_styles if s not in used_styles]
                     if unused:
                         feature_style = unused[0]
                     else:
                         available = [s for s in all_feature_styles if s not in recent_styles]
                         feature_style = available[0] if available else all_feature_styles[g_idx % len(all_feature_styles)]
-                    feature_zone = "upper" if g_idx % 2 == 0 else "center"
+                    feature_zone = "free"
+                    feature_x = 0.50
+                    feature_y = 0.68
 
             if not feature_style:
                 continue
@@ -538,6 +568,8 @@ class RulePlanner:
                         start=feat_s,
                         end=feat_e,
                         zone=feature_zone,
+                        x=feature_x,
+                        y=feature_y,
                         layer=2,
                         wordRange=[p.word_indices[0], p.word_indices[-1]],
                         text=p.text,

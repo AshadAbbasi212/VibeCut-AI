@@ -64,41 +64,44 @@ export const KaraokeBounce: React.FC<KaraokeBounceProps> = ({
         }
 
         return (
-          <span
-            key={w.i ?? idx}
-            style={{
-              position: "relative",
-              display: "inline-block",
-              fontFamily: fonts.sans,
-              fontSize: `${baseSize}px`,
-              fontWeight: 800,
-              lineHeight: 1.2,
-              color: isSpoken ? activeColor : "#FFFFFF",
-              textShadow: isSpoken
-                ? `0 0 12px ${activeColor}AA, 0 2px 8px rgba(0, 0, 0, 0.9)`
-                : "0 2px 6px rgba(0, 0, 0, 0.8)",
-              transition: "color 0.06s ease",
-            }}
-          >
-            {/* Bouncing ball indicator over active spoken word */}
-            {isCurrentlyActive && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: "-14px",
-                  left: "50%",
-                  transform: `translateX(-50%) translateY(${bounceY}px)`,
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  backgroundColor: activeColor,
-                  boxShadow: `0 0 10px ${activeColor}, 0 2px 4px rgba(0,0,0,0.6)`,
-                  pointerEvents: "none",
-                }}
-              />
-            )}
-            {w.text}
-          </span>
+          <React.Fragment key={w.i ?? idx}>
+            <span
+              style={{
+                position: "relative",
+                display: "inline-block",
+                margin: "2px 6px",
+                fontFamily: fonts.sans,
+                fontSize: `${baseSize}px`,
+                fontWeight: 800,
+                lineHeight: 1.2,
+                color: isSpoken ? activeColor : "#FFFFFF",
+                textShadow: isSpoken
+                  ? `0 0 12px ${activeColor}AA, 0 2px 8px rgba(0, 0, 0, 0.9)`
+                  : "0 2px 6px rgba(0, 0, 0, 0.8)",
+                transition: "color 0.06s ease",
+              }}
+            >
+              {/* Bouncing ball indicator over active spoken word */}
+              {isCurrentlyActive && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: "-14px",
+                    left: "50%",
+                    transform: `translateX(-50%) translateY(${bounceY}px)`,
+                    width: "10px",
+                    height: "10px",
+                    borderRadius: "50%",
+                    backgroundColor: activeColor,
+                    boxShadow: `0 0 10px ${activeColor}, 0 2px 4px rgba(0,0,0,0.6)`,
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+              {w.text}
+            </span>
+            {idx < phraseWords.length - 1 && " "}
+          </React.Fragment>
         );
       })}
     </div>
