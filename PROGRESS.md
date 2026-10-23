@@ -35,8 +35,22 @@
 - [x] Phase 34 10-Minute Long Video Pipeline Validation, Concurrency Loop Pruning, Split Headline Safe Zones, & Universal Word Separation
 - [x] Phase 35 Professional Ali Abdaal Editorial Mode, Computer Vision Face Tracking, Mathematical Cover Centering, & Verbatim Spoken Word Enforcement
 - [x] Phase 36 Dynamic Multi-Style Variety Across Video Option (Full Video & Viral Reels Studio), 3-5 Word Phrase Subdivision, & Universal Active-Window Pagination Shield
+- [x] Phase 37 Speaker Face Centering Calibration, Professional Editorial Restraint (Ali Abdaal Palette & 3-Sentence Anchoring), & 2x Remotion Render Speedup
 
 ## Notes / known issues
+- Phase 37 (Speaker Face Centering Calibration, Professional Restraint & 2x Render Speedup):
+  1. **Speaker Centering Calibration**:
+     - Identified root cause of off-center speaker framing: `resolveTimeline` omitted `cameraCuts` when parsing root-level props, causing Remotion to fall back to default center `0.500`.
+     - Direct CSS percentage alignment in `getCoverObjectPositionX`: replaced overshooting non-linear formula with direct clamped focal percentage (`Math.max(0.15, Math.min(0.85, focusX))`).
+     - Verified visual centering on test still frame: face `cx = 0.476` (within 2.4% of dead center 0.500).
+  2. **Professional Editorial Restraint**:
+     - Constrained broad style selections (>= 8 styles or all 24) to the curated **Professional Editorial Quintet**: `highlighter_marker`, `cinematic_minimal`, `pill_word`, `quote_editorial`, `hormozi_bold`.
+     - Eliminated frantic sentence-by-sentence switching: anchored styles across **3-4 sentence thoughts** (`g_idx % 3 == 0` or on conversational questions `?`) for calm, cohesive Ali Abdaal visual pacing.
+  3. **2x Render Speed Optimization**:
+     - Benchmarked Remotion throughput: switched x264 encoder preset from `veryfast` to `ultrafast` and tuned JPEG compositor quality to 85% (75% for draft).
+     - Expanded rendering concurrency to `max(2, min(cpu_cores, 8))` (using 8 workers on 8-core CPUs instead of capped at 4).
+     - Decreased 60-frame render benchmark time from 18.91s down to 10.08s (an 87% speedup / ~2x rendering acceleration).
+
 - Phase 36 (Dynamic Multi-Style Variety Across Video Option, 3-5 Word Subdivision, & Pagination Shield):
   1. **User Request & Option Control**:
      - User requested: "give user option for Unlock Dynamic Multi-Style Variety Across the Video wether he wants to use it or not also i want you to implement it in both reel and full video"

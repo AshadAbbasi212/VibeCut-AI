@@ -286,8 +286,28 @@ class RulePlanner:
             else:
                 groups = [[p] for p in phrases]
 
+            # If user selected a small custom subset (2-7 styles), rotate directly between them.
+            # If broad pool (>= 8 styles or all styles), constrain to professional editorial quintet and 3-sentence anchoring.
+            if len(custom_styles) >= 8:
+                from backend.pipeline.plan_llm import CREATOR_VARIETY_STYLES
+                pool = CREATOR_VARIETY_STYLES
+                use_anchoring = True
+            else:
+                pool = custom_styles
+                use_anchoring = False
+
+            current_style = pool[0]
             for g_idx, group in enumerate(groups):
-                group_style = custom_styles[g_idx % len(custom_styles)]
+                if use_anchoring:
+                    is_question = group[-1].text.strip().endswith("?") if group else False
+                    should_transition = is_question or (g_idx > 0 and g_idx % 3 == 0)
+                    if should_transition:
+                        candidates = [s for s in pool if s != current_style]
+                        current_style = candidates[(g_idx // 3) % len(candidates)] if candidates else pool[0]
+                    group_style = current_style
+                else:
+                    group_style = pool[g_idx % len(pool)]
+
                 sentence_id = f"sent_{g_idx}"
                 for p in group:
                     if not p.word_indices:

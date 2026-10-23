@@ -29,11 +29,18 @@ export type CaptionedVideoProps = {
 export const resolveTimeline = (props: CaptionedVideoProps): Timeline => {
   if (props.video && props.video.src && props.video.src !== "sample.mp4") {
     return {
+      ...(props as any),
       version: props.version ?? 1,
       video: props.video,
       language: props.language ?? "en",
       words: props.words ?? [],
       events: props.events ?? [],
+      cameraCuts: (props as any).cameraCuts ?? (props.timeline ? props.timeline.cameraCuts : undefined),
+      videoLayout: (props as any).videoLayout ?? props.video.layout ?? (props.timeline ? props.timeline.videoLayout : undefined),
+      subtitleY: (props as any).subtitleY ?? (props.timeline ? props.timeline.subtitleY : undefined),
+      captionSize: (props as any).captionSize ?? (props.timeline ? props.timeline.captionSize : undefined),
+      backgroundStyle: (props as any).backgroundStyle ?? (props.timeline ? props.timeline.backgroundStyle : undefined),
+      highlightColor: (props as any).highlightColor ?? (props.timeline ? props.timeline.highlightColor : undefined),
       headlineHook: (props as any).headlineHook,
       headlineStyle: (props as any).headlineStyle,
       headlineDuration: (props as any).headlineDuration,
@@ -45,21 +52,23 @@ export const resolveTimeline = (props: CaptionedVideoProps): Timeline => {
       watermarkText: (props as any).watermarkText,
       progressBar: (props as any).progressBar,
       progressBarPosition: (props as any).progressBarPosition,
-      highlightColor: (props as any).highlightColor,
       faceTracking: (props as any).faceTracking,
-    };
+    } as Timeline;
   }
   if (props.timeline && props.timeline.video) {
     return props.timeline;
   }
   if (props.video) {
     return {
+      ...(props as any),
       version: props.version ?? 1,
       video: props.video,
       language: props.language ?? "en",
       words: props.words ?? [],
       events: props.events ?? [],
-    };
+      cameraCuts: (props as any).cameraCuts,
+      videoLayout: (props as any).videoLayout ?? props.video.layout,
+    } as Timeline;
   }
   return {
     version: 1,
@@ -452,15 +461,11 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
 
   const getCoverObjectPositionX = (
     focusX: number,
-    sourceAspect: number = 16 / 9,
-    targetAspect: number = 9 / 16
   ): string => {
-    const ratio = sourceAspect / targetAspect;
-    if (ratio <= 1.0) return `${Math.round(focusX * 1000) / 10}%`;
-    const visible = 1.0 / ratio;
-    const overflow = 1.0 - visible;
-    const p = Math.max(0.0, Math.min(1.0, (focusX - visible / 2.0) / overflow));
-    return `${Math.round(p * 1000) / 10}%`;
+    // In CSS object-fit: cover, object-position: P% directly aligns the horizontal
+    // focal coordinate P with the viewport. Clamped between 15% and 85% to avoid edge borders.
+    const clamped = Math.max(0.15, Math.min(0.85, focusX));
+    return `${Math.round(clamped * 1000) / 10}%`;
   };
 
   const renderVideoLayer = () => {
@@ -475,8 +480,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
 
       // If cross-talk or interruption, cut to Split Stack
       if (currentCutLayout === "split_duo") {
-        const topPos = getCoverObjectPositionX(0.20, 16 / 9, 1080 / 960);
-        const botPos = getCoverObjectPositionX(0.85, 16 / 9, 1080 / 960);
+        const topPos = getCoverObjectPositionX(0.20);
+        const botPos = getCoverObjectPositionX(0.85);
         return (
           <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
@@ -508,8 +513,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
         );
       }
 
-      // Solo Active Speaker Broadcast Shot with mathematically centered face framing
-      const objPosX = getCoverObjectPositionX(currentFocusX, 16 / 9, 9 / 16);
+      // Solo Active Speaker Broadcast Shot with direct centered face framing
+      const objPosX = getCoverObjectPositionX(currentFocusX);
       return (
         <AbsoluteFill style={{ backgroundColor: "#000" }}>
           <OffthreadVideo
@@ -526,8 +531,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     }
     // 1. Podcast Split-Screen (Stacked Dual-Cam: Top Host / Bottom Guest)
     if (layout === "split_podcast" && isVerticalComp && isSourceLandscape) {
-      const topPos = getCoverObjectPositionX(0.20, 16 / 9, 1080 / 960);
-      const botPos = getCoverObjectPositionX(0.85, 16 / 9, 1080 / 960);
+      const topPos = getCoverObjectPositionX(0.20);
+      const botPos = getCoverObjectPositionX(0.85);
       return (
         <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
           {/* Top Speaker: Left side of 16:9 frame */}

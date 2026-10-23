@@ -220,9 +220,9 @@ def render(
         f"--props=./public/temp/{props_filename}",
         "--public-dir=./public",
         "--image-format=jpeg",
-        "--jpeg-quality=95",
+        "--jpeg-quality=85" if not draft else "--jpeg-quality=75",
         "--pixel-format=yuv420p",
-        "--x264-preset=veryfast",
+        "--x264-preset=ultrafast",
         "--crf=18",
         "--bundle-cache",
         "--offthreadvideo-cache-size-in-bytes=1073741824",
@@ -240,10 +240,10 @@ def render(
     if frames:
         cmd.append(f"--frames={frames}")
 
-    # Optimal concurrency prevents thread contention and memory thrashing
+    # Optimal concurrency prevents thread contention while utilizing available cores
     if concurrency is None:
         cpu_cores = os.cpu_count() or 4
-        concurrency = min(max(2, cpu_cores // 2), 4)
+        concurrency = max(2, min(cpu_cores, 8))
 
     cmd.append(f"--concurrency={concurrency}")
 

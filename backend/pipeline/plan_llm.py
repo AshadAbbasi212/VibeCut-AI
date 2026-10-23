@@ -462,11 +462,8 @@ def _build_basic_prompt(phrases: list[Phrase], preset: str) -> str:
 CREATOR_VARIETY_STYLES = [
     "highlighter_marker",
     "cinematic_minimal",
-    "neon_glow",
-    "typewriter_terminal",
     "pill_word",
-    "karaoke_bounce",
-    "gradient_outline",
+    "quote_editorial",
     "hormozi_bold",
 ]
 
@@ -478,7 +475,7 @@ def _build_base_events(
     selected_styles: Optional[list[str]] = None,
     style_pacing: str = "sentence",
 ) -> list[TimelineEvent]:
-    """Build base dialogue events with optional sentence-by-sentence dynamic style variety."""
+    """Build base dialogue events with optional professional editorial style variety."""
     skip_ranges = []
     if scene_analysis and scene_analysis.get("has_burned_in_captions"):
         for ec in scene_analysis.get("existing_captions", []):
@@ -489,20 +486,31 @@ def _build_base_events(
                 continue
             skip_ranges.append((start, end))
 
-    # Resolve style pool from user selection or curated high-retention creator pool
+    # Resolve style pool from user selection or curated professional editorial pool
     custom_pool = [s for s in selected_styles if s in VALID_STYLES] if selected_styles else []
-    if not custom_pool:
+    if not custom_pool or len(custom_pool) >= 8:
         custom_pool = CREATOR_VARIETY_STYLES
+        use_anchoring = True
+    else:
+        use_anchoring = False
 
     sentence_groups = group_phrases_into_sentences(phrases) if style_pacing == "sentence" else [[p] for p in phrases]
     base_events = []
-    last_style = None
+    current_style = custom_pool[0]
 
     for g_idx, group in enumerate(sentence_groups):
         if multi_style_variety and len(custom_pool) > 1:
-            candidates = [s for s in custom_pool if s != last_style]
-            group_style = candidates[g_idx % len(candidates)] if candidates else custom_pool[0]
-            last_style = group_style
+            if use_anchoring:
+                # Professional pacing: anchor style across 3-4 sentences (topic thought).
+                # Transition on questions or every 3 sentences for calm, cohesive visual flow.
+                is_question = group[-1].text.strip().endswith("?") if group else False
+                should_transition = is_question or (g_idx > 0 and g_idx % 3 == 0)
+                if should_transition:
+                    candidates = [s for s in custom_pool if s != current_style]
+                    current_style = candidates[(g_idx // 3) % len(candidates)] if candidates else custom_pool[0]
+                group_style = current_style
+            else:
+                group_style = custom_pool[g_idx % len(custom_pool)]
         else:
             group_style = custom_pool[0] if custom_pool else "pill_word"
 

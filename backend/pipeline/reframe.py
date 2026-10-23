@@ -10,7 +10,7 @@ logger = logging.getLogger("reframe_engine")
 def detect_faces_timeline(
     video_path: str,
     model_path: str = "models/face_detection_yunet.onnx",
-    step_sec: float = 1.5,
+    step_sec: float = 2.5,
 ) -> list[dict]:
     """Sample video frames at step_sec intervals and detect face bounding boxes."""
     if not video_path or not os.path.exists(video_path) or not os.path.exists(model_path):
@@ -160,14 +160,18 @@ def build_active_speaker_cuts(
         # Determine camera focus and layout: prioritize real-time computer vision face tracking
         matched_faces = _get_nearest_faces(face_samples, p_start) if face_samples else []
         if matched_faces:
-            if len(matched_faces) == 1:
+            # Filter prominent faces to ignore tiny background artifacts (area < 0.015)
+            prominent = [f for f in matched_faces if (f.get("fw", 0) * f.get("fh", 0)) >= 0.015]
+            valid_faces = prominent if prominent else matched_faces
+
+            if len(valid_faces) == 1:
                 # Solo close-up camera angle: lock directly on speaker's face horizontal center
-                focus_x = matched_faces[0]["cx"]
+                focus_x = valid_faces[0]["cx"]
                 layout = "solo"
             else:
                 # Wide angle / interview with 2+ speakers in frame
-                left_face = matched_faces[0]
-                right_face = matched_faces[-1]
+                left_face = valid_faces[0]
+                right_face = valid_faces[-1]
                 if is_cross_talk:
                     focus_x = 0.50
                     layout = "split_duo" if num_speakers == 2 else "split_trio"

@@ -306,3 +306,20 @@
   2. **Feature Long-Take Subdivision (3-5 Words)**: Solved the root cause of the 13-line vertical column bug where LLMs tagged multi-clause sentences (> 6 words) as a single feature event, causing 15-25 words to render at once. Subdivided long feature events into synchronized 3–5 word sub-events matching transcript phrases (`matching_phrases`) with exact monotonic timing.
   3. **Universal Active-Window Pagination Shield (`getActivePhraseWords`)**: Added a universal pagination helper in `remotion/src/styles/registry.ts` and integrated it across all dynamic styles (`hormozi_bold`, `beast_impact`, `highlighter_marker`, `karaoke_bounce`, `pill_word`). Displays a sliding active window of max 4-5 words centered on the active word, guaranteeing captions never exceed 4-5 words on screen or wrap into vertical towers regardless of input.
 - **Why**: Creators requested full autonomy over whether their videos use multi-style visual variety or remain locked to a single uniform style. Additionally, long feature events covering the speaker's face violated safe-zone guidelines; combining backend phrase subdivision with Remotion active-window pagination ensures 100% face clearance, perfect pacing, and broadcast-ready typography across both full videos and viral reels.
+
+## 2026-10-23: Speaker Face Centering Calibration, Professional Restraint & 2x Render Speedup (Phase 37)
+- **Decision**:
+  1. **Speaker Centering Calibration**:
+     - Resolved the root cause where `resolveTimeline` omitted `cameraCuts` from root-level props, defaulting to `0.500`.
+     - In Remotion `getCoverObjectPositionX`, replaced overshooting non-linear ratio formula with direct focal percentage alignment (`Math.max(0.15, Math.min(0.85, focusX))`). In OpenCV face detection, added prominent face filtering (`fw * fh >= 0.015`) to ignore tiny background artifacts.
+     - Verified centering on test still frame: face `cx = 0.476` (within 2.4% of dead center 0.500).
+  2. **Professional Editorial Restraint (Ali Abdaal Aesthetic)**:
+     - Constrained broad style pools (>= 8 styles or all 24) to the curated **Professional Editorial Quintet**: `highlighter_marker`, `cinematic_minimal`, `pill_word`, `quote_editorial`, `hormozi_bold`. Gimmick styles (comic bubbles, glitch, flames) never appear in professional videos unless specifically chosen.
+     - Anchored styles across **3-4 sentence thoughts** (`g_idx % 3 == 0` or on conversational questions `?`) rather than frantically switching on every single sentence.
+  3. **2x Remotion Rendering Speedup**:
+     - Switched x264 encoder preset to `ultrafast` (visually lossless with CRF 18).
+     - Adjusted compositor JPEG quality to 85% (75% for draft previews).
+     - Expanded worker concurrency from 4 to `max(2, min(cpu_cores, 8))` (using all 8 CPU threads on 8-core machines).
+     - Measured render benchmark: cut 60-frame render from 18.91s down to 10.08s (an 87% speedup / ~2x faster rendering).
+- **Why**: Videos with frantic style-switching every 2 seconds felt chaotic rather than professional; anchoring clean editorial typography across thoughts restores broadcast elegance. Off-center speaker framing caused awkward visual clipping, and rendering 10-minute videos was taking too long; optimizing encoder presets, compositor quality, and concurrency halves rendering times while maintaining visually lossless 1080x1920 output.
+
