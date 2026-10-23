@@ -838,29 +838,33 @@ def slice_timeline_for_clip(
                         updates["style"] = custom_styles[event_idx % len(custom_styles)]
 
                 # Collision avoidance & Safe zone enforcement:
-                # Captions must NEVER render behind the top headmarker ("upper") or across the speaker's face ("center").
+                # Captions must NEVER render behind the top headmarker ("upper") or across any speaker's face.
                 cur_zone = ev.zone or "lower"
+                is_split = chosen_layout in ("split_podcast", "split_triple")
+                safe_callout_y = 0.50 if is_split else 0.68
+                safe_flank_y = 0.50 if is_split else 0.70
+
                 if (has_headmarker and cur_zone == "upper") or cur_zone == "center" or cur_zone == "callout_stack":
                     updates["zone"] = "free"
                     updates["x"] = 0.5
-                    updates["y"] = 0.68
+                    updates["y"] = safe_callout_y
                 elif cur_zone == "left":
                     updates["zone"] = "free"
                     updates["x"] = 0.26
-                    updates["y"] = 0.70
+                    updates["y"] = safe_flank_y
                 elif cur_zone == "right":
                     updates["zone"] = "free"
                     updates["x"] = 0.74
-                    updates["y"] = 0.70
+                    updates["y"] = safe_flank_y
                 elif cur_zone not in ("lower", "upper", "center", "free"):
                     updates["zone"] = "lower"
 
-                # Editorial cards stay stacked safely between speaker's chin and dialogue subtitles
+                # Editorial cards stay stacked safely between speakers or above dialogue subtitles
                 assigned_st = updates.get("style", ev.style)
                 if assigned_st in ("blob_card", "numbered_point") and updates.get("zone") != "free":
                     updates["zone"] = "free"
                     updates["x"] = 0.5
-                    updates["y"] = 0.68
+                    updates["y"] = safe_callout_y
 
                 # Word Highlight & Accent Color
                 if resolved_hl:

@@ -31,8 +31,24 @@
 - [x] Phase 30 Output Video Error Analysis, Scene-Aware AI Vision in Reels Studio, Reframe Layout Options, & Boundary Validation Hardening
 - [x] Phase 31 Uncapped AI Viral Clip Discovery & Full-Duration Coverage (No 8/10 Limit, Multi-Window Full Transcript Scanning, 50-100+ Clips Support)
 - [x] Phase 32 Anti-Collision Guard, Granular Headmarker Vanish Timer, Ali Abdaal Multi-Style Director & Complete Studio Parity
+- [x] Phase 33 End-to-End Deep Video Verification, Layout-Aware Split Safe Zones, & WebKit Stroke Word Separation
 
 ## Notes / known issues
+- Phase 33 (Comprehensive End-to-End Testing & Visual Quality Assurance):
+  1. **Full Integration Testing Across Studios**:
+     - Verified end-to-end workflows in both the Full Video Studio and AI Viral Reels Studio using real vertical video (`sample-video.mp4`) and 16:9 landscape podcast footage.
+     - Sliced clips, reframed layouts, applied custom vanishing timers, accent colors, and rendered final broadcast MP4s via Remotion.
+  2. **Defect #1 Identified & Fixed — Split Layout Face Occlusion**:
+     - Frame-by-frame forensic analysis revealed that in dual-camera splits (`split_podcast`, `split_triple`), callout cards and headings rendered at `y = 0.68` landed directly across the bottom speaker's mouth.
+     - In `remotion/src/CaptionedVideo/index.tsx` and `backend/pipeline/clips.py`: Added `isSplitLayout` detection. Callouts and cards are anchored to the neutral horizontal dividing seam (`y = 0.50`), and dialogue subtitles drop safely to `y = 0.85` below the lower speaker's chin/microphone. Verified in extracted frame `scratch/test2_frames/frame_02.0s.jpg`.
+  3. **Defect #2 Identified & Fixed — WebKit Stroke Word Fusing**:
+     - In heavy stroke styles (`hormozi_bold`, `beast_impact`), `WebkitTextStroke: "5px black"` expanded outward and caused adjacent inline-block word spans to visually touch/fuse (e.g. "AREDEEPLY", "THESTATE").
+     - In `remotion/src/styles/hormozi_bold/index.tsx` and `remotion/src/styles/beast_impact/index.tsx`: Wrapped mapped words with `<React.Fragment>`, added `margin: "4px 8px"`, and inserted `{idx < phraseWords.length - 1 && " "}` to ensure guaranteed whitespace between words. Verified in `scratch/test2_frames/frame_05.5s.jpg` and `frame_08.0s.jpg`.
+  4. **Headmarker Vanishing Timer & Booster Verification**:
+     - Confirmed headline hooks smoothly vanish after the user-specified interval (e.g. 3.0s) and unmount completely from the DOM, verified via keyframes at 1.5s (visible) and 5.0s (vanished).
+     - Watermark badges, retention progress bars, and accent color swatches verified functional end-to-end.
+  5. **Verification Suite**: 100/100 pytest tests passing (`100 passed, 2 skipped in 15.40s`), Remotion TypeScript 0 errors, and pre-bundled Remotion build verified.
+
 - Phase 32:
   1. **Safe-Zone Collision Avoidance (Captions Never Behind Headmarker or Over Face)**:
      - In `remotion/src/CaptionedVideo/index.tsx` and `backend/pipeline/clips.py`: Captions are strictly prohibited from rendering in the `upper` safe zone (`y < 0.28`) when a headline hook is active, and forbidden from covering the speaker's face in the `center` zone (`y: 0.35–0.58`).

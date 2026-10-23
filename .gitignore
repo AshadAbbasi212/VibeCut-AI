@@ -17,3 +17,4 @@ remotion/public/temp/
 .DS_Store
 *.bundle
 remotion/build/
+scratch/

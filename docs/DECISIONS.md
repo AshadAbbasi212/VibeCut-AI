@@ -16,7 +16,11 @@
   4. **Ali Abdaal Editorial LLM Prompting & Content-Aware Keyword Styling**:
      - Overhauled system prompts in `backend/pipeline/plan_llm.py` to instruct LLMs to identify 3–5 core takeaways/rules, applying contrasting styles (`highlighter_marker`, `blob_card`, `beast_impact`, `numbered_point`, `typewriter_terminal`) and word-level highlights without cluttering the screen.
      - In `backend/pipeline/clips.py`, added content-aware style assignment for `ai_auto` mode detecting numbered steps (`numbered_point`), punchlines (`beast_impact`), educational definitions (`highlighter_marker`), and technical stats (`typewriter_terminal`).
-- **Why**: Solves headmarker overlap and speaker face occlusion, allows precise editorial control over hook badge visibility, brings the AI Reel Studio to 100% visual and functional feature parity with the Full Studio, and replicates Ali Abdaal's signature high-retention educational reel style.
+  5. **Layout-Aware Dual-Camera Split Safe Zones & Webkit Stroke Word Spacing**:
+     - Deep forensic keyframe analysis revealed that for `split_podcast` and `split_triple` vertical layouts, the lower speaker's face is positioned around `y: 0.56 - 0.74`. Placing callouts at generic single-camera `y = 0.68` placed text over the lower speaker's chin.
+     - Sliced timeline and Remotion renderer now detect `isSplitLayout`: callouts and cards are placed directly on the neutral horizontal dividing seam (`y = 0.50`), and dialogue subtitles sit safely on the lower chest at `y = 0.85`, preserving 100% facial visibility for both speakers.
+     - In `HormoziBold` and `BeastImpact`, added literal space separation `{idx < phraseWords.length - 1 && " "}` and `margin: "4px 8px"` so heavy 4-5px black text strokes never crowd or fuse adjacent words together.
+- **Why**: Solves headmarker overlap and speaker face occlusion across all single-camera and split-screen layouts, guarantees crisp word-level typography, brings the AI Reel Studio to 100% feature parity with the Full Studio, and replicates Ali Abdaal's signature high-retention educational reel format.
 
 
 ## 2026-10-22: Uncapped AI Viral Clip Discovery & Full-Duration Time-Window Scanning

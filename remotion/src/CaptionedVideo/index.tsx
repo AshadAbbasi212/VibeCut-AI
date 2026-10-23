@@ -93,30 +93,50 @@ const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSPrope
 
   // Safe headmarker and face clearance:
   // In vertical video, the headmarker is at 8%-22% (top), and the speaker's face is at 30%-55% (center).
-  // Captions must NEVER render behind the headmarker (upper) or on top of the speaker's face (center).
+  // In split podcast/triple layouts, lower speaker's face is at 56%-74%, with the neutral dividing line at 50% and lower chest at 85%.
+  // Captions must NEVER render behind the headmarker or on top of any speaker's face.
+  const isSplitLayout = timeline?.video?.layout === "split_podcast" || timeline?.video?.layout === "split_triple";
   const hasHeadmarker = Boolean(timeline?.headlineHook && timeline.headlineHook.trim());
 
   let zone = event.zone || "lower";
   let targetY = event.y ?? (zone === "lower" || zone === "free" ? timeline?.subtitleY : undefined);
   let targetX = event.x ?? 0.5;
 
-  if (hasHeadmarker && (zone === "upper" || (targetY !== undefined && targetY < 0.28))) {
-    const dialogueY = timeline?.subtitleY ?? 0.79;
-    targetY = Math.max(0.62, dialogueY - 0.11);
-    targetX = 0.5;
-    zone = "free";
-  } else if (zone === "center" || (targetY !== undefined && targetY >= 0.35 && targetY <= 0.58)) {
-    const dialogueY = timeline?.subtitleY ?? 0.79;
-    targetY = Math.max(0.62, dialogueY - 0.11);
-    targetX = 0.5;
-    zone = "free";
+  if (isSplitLayout) {
+    // In split podcast / triple layouts, the lower speaker's face is in danger zone y: 0.56 .. 0.75.
+    // The horizontal video divider at 0.50 and lower chest at 0.85 are the clear safe zones!
+    if (zone === "center" || (targetY !== undefined && targetY >= 0.56 && targetY <= 0.75)) {
+      targetY = 0.50; // Place right on the neutral dividing seam
+      targetX = 0.5;
+      zone = "free";
+    } else if (hasHeadmarker && (zone === "upper" || (targetY !== undefined && targetY < 0.28))) {
+      targetY = 0.50; // Center dividing seam between dual cameras
+      targetX = 0.5;
+      zone = "free";
+    } else if (zone === "lower" && targetY !== undefined && targetY >= 0.65 && targetY < 0.82) {
+      targetY = 0.85; // Drop lower subtitles below the lower speaker's chin/microphone
+    }
+  } else {
+    // Single-camera vertical video (face is at 0.35 - 0.55, chest is at 0.62 - 0.72, dialogue at 0.79)
+    if (hasHeadmarker && (zone === "upper" || (targetY !== undefined && targetY < 0.28))) {
+      const dialogueY = timeline?.subtitleY ?? 0.79;
+      targetY = Math.max(0.62, dialogueY - 0.11);
+      targetX = 0.5;
+      zone = "free";
+    } else if (zone === "center" || (targetY !== undefined && targetY >= 0.35 && targetY <= 0.58)) {
+      const dialogueY = timeline?.subtitleY ?? 0.79;
+      targetY = Math.max(0.62, dialogueY - 0.11);
+      targetX = 0.5;
+      zone = "free";
+    }
   }
 
   // Left-flank editorial callout (Ali Abdaal side highlight)
-  if ((zone as string) === "left" || (zone === "free" && targetX <= 0.35 && (targetY ?? 0.70) >= 0.65)) {
+  if ((zone as string) === "left" || (zone === "free" && targetX <= 0.35 && (targetY ?? 0.70) >= 0.60)) {
+    const flankY = isSplitLayout ? 0.50 : (targetY ?? 0.70);
     return {
       ...base,
-      top: `${(targetY ?? 0.70) * 100}%`,
+      top: `${flankY * 100}%`,
       left: `${(targetX ?? 0.26) * 100}%`,
       width: "auto",
       maxWidth: "46%",
@@ -127,10 +147,11 @@ const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSPrope
   }
 
   // Right-flank editorial callout (Ali Abdaal side highlight)
-  if ((zone as string) === "right" || (zone === "free" && targetX >= 0.65 && (targetY ?? 0.70) >= 0.65)) {
+  if ((zone as string) === "right" || (zone === "free" && targetX >= 0.65 && (targetY ?? 0.70) >= 0.60)) {
+    const flankY = isSplitLayout ? 0.50 : (targetY ?? 0.70);
     return {
       ...base,
-      top: `${(targetY ?? 0.70) * 100}%`,
+      top: `${flankY * 100}%`,
       left: `${(targetX ?? 0.74) * 100}%`,
       width: "auto",
       maxWidth: "46%",
@@ -141,7 +162,8 @@ const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSPrope
   }
 
   // If user custom-dragged position is set or zone is free/callout_stack
-  const customY = targetY ?? timeline?.subtitleY ?? 0.79;
+  const defaultY = isSplitLayout ? 0.85 : 0.79;
+  const customY = targetY ?? timeline?.subtitleY ?? defaultY;
   const leftPct = targetX * 100;
   return {
     ...base,

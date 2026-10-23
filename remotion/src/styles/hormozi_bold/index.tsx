@@ -40,7 +40,7 @@ export const HormoziBold: React.FC<HormoziBoldProps> = ({
         alignItems: "center",
         justifyContent: "center",
         flexWrap: "wrap",
-        gap: "12px",
+        gap: "10px 18px",
         transform: `scale(${scale})`,
         opacity,
         maxWidth: "92%",
@@ -57,28 +57,31 @@ export const HormoziBold: React.FC<HormoziBoldProps> = ({
         const strokeColor = "#000000";
 
         return (
-          <span
-            key={w.i ?? idx}
-            style={{
-              display: "inline-block",
-              fontFamily: fonts.sans,
-              fontSize: `${baseSize}px`,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.02em",
-              lineHeight: 1.15,
-              color,
-              WebkitTextStroke: isCurrentlyActive ? `4px ${strokeColor}` : `3px ${strokeColor}`,
-              paintOrder: "stroke fill",
-              textShadow: isCurrentlyActive
-                ? `0 5px 0 #000000, 0 8px 16px rgba(0, 0, 0, 0.8), 0 0 20px ${activeColor}88`
-                : "0 3px 0 #000000, 0 5px 10px rgba(0, 0, 0, 0.7)",
-              transform: `scale(${wordScale})`,
-              transition: "transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.05s ease",
-            }}
-          >
-            {w.text}
-          </span>
+          <React.Fragment key={w.i ?? idx}>
+            <span
+              style={{
+                display: "inline-block",
+                margin: "4px 8px",
+                fontFamily: fonts.sans,
+                fontSize: `${baseSize}px`,
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                lineHeight: 1.15,
+                color,
+                WebkitTextStroke: isCurrentlyActive ? `4px ${strokeColor}` : `3px ${strokeColor}`,
+                paintOrder: "stroke fill",
+                textShadow: isCurrentlyActive
+                  ? `0 5px 0 #000000, 0 8px 16px rgba(0, 0, 0, 0.8), 0 0 20px ${activeColor}88`
+                  : "0 3px 0 #000000, 0 5px 10px rgba(0, 0, 0, 0.7)",
+                transform: `scale(${wordScale})`,
+                transition: "transform 0.08s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.05s ease",
+              }}
+            >
+              {w.text}
+            </span>
+            {idx < phraseWords.length - 1 && " "}
+          </React.Fragment>
         );
       })}
     </div>

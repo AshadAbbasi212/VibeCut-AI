@@ -56,28 +56,31 @@ export const BeastImpact: React.FC<BeastImpactProps> = ({
         const color = isCurrentlyActive ? "#FACC15" : isSpoken ? activeColor : "#FFFFFF";
 
         return (
-          <span
-            key={w.i ?? idx}
-            style={{
-              display: "inline-block",
-              fontFamily: fonts.sans,
-              fontSize: `${baseSize}px`,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-              lineHeight: 1.1,
-              color,
-              WebkitTextStroke: isCurrentlyActive ? "5px #000000" : "3.5px #000000",
-              paintOrder: "stroke fill",
-              textShadow: isCurrentlyActive
-                ? `0 7px 0 #000000, 0 12px 24px rgba(0,0,0,0.9), 0 0 30px ${activeColor}`
-                : "0 4px 0 #000000, 0 6px 12px rgba(0,0,0,0.8)",
-              transform: `scale(${wordScale})`,
-              transition: "transform 0.06s cubic-bezier(0.34, 1.56, 0.64, 1)",
-            }}
-          >
-            {w.text}
-          </span>
+          <React.Fragment key={w.i ?? idx}>
+            <span
+              style={{
+                display: "inline-block",
+                margin: "4px 8px",
+                fontFamily: fonts.sans,
+                fontSize: `${baseSize}px`,
+                fontWeight: 900,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                lineHeight: 1.1,
+                color,
+                WebkitTextStroke: isCurrentlyActive ? "5px #000000" : "3.5px #000000",
+                paintOrder: "stroke fill",
+                textShadow: isCurrentlyActive
+                  ? `0 7px 0 #000000, 0 12px 24px rgba(0,0,0,0.9), 0 0 30px ${activeColor}`
+                  : "0 4px 0 #000000, 0 6px 12px rgba(0,0,0,0.8)",
+                transform: `scale(${wordScale})`,
+                transition: "transform 0.06s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
+              {w.text}
+            </span>
+            {idx < phraseWords.length - 1 && " "}
+          </React.Fragment>
         );
       })}
     </div>
