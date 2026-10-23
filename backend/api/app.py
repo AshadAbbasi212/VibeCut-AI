@@ -83,6 +83,7 @@ async def create_job(
     watermark_text: Optional[str] = Form(None),
     ai_enhance: bool = Form(False),
     api_key: Optional[str] = Form(None),
+    multi_style_variety: bool = Form(True),
 ):
     """Submit a video for captioned rendering."""
     if not file.filename:
@@ -129,6 +130,7 @@ async def create_job(
             watermark_text=watermark_text.strip() if watermark_text and watermark_text.strip() else None,
             ai_enhance=ai_enhance,
             api_key=api_key.strip() if api_key and api_key.strip() else None,
+            multi_style_variety=multi_style_variety,
         )
         return job
     finally:
@@ -363,10 +365,12 @@ def batch_render_clips_endpoint(
         raise HTTPException(status_code=400, detail="No viral clips found or provided to batch render")
 
     try:
+        multi_style_variety = payload.get("multi_style_variety", True) if payload else True
         zip_path = batch_render_viral_clips(
             job_id=job_id,
             clips=clips_data,
             draft=getattr(job, "draft", False),
+            multi_style_variety=multi_style_variety,
         )
         return {
             "status": "completed",
@@ -415,6 +419,7 @@ class RenderClipPayload(BaseModel):
     draft: Optional[bool] = False
     concurrency: Optional[int] = None
     highlight_color: Optional[str] = "#38BDF8"
+    multi_style_variety: Optional[bool] = True
 
 
 @app.post("/api/jobs/{job_id}/render-clip", response_model=JobInfo, status_code=status.HTTP_201_CREATED)
@@ -452,6 +457,7 @@ def render_single_clip_endpoint(
             draft=payload.draft or False,
             concurrency=payload.concurrency,
             highlight_color=payload.highlight_color,
+            multi_style_variety=payload.multi_style_variety,
         )
         return clip_job
     except Exception as e:

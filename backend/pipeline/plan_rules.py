@@ -3,6 +3,7 @@ import re
 from typing import Optional
 from backend.pipeline.chunk import Phrase
 from backend.pipeline.transcribe import Word
+from backend.pipeline.layout import assign_layout
 from backend.schemas.timeline import TimelineEvent, Highlight, Graphic, AnimationConfig
 
 
@@ -227,6 +228,8 @@ class RulePlanner:
         selected_styles: Optional[list[str]] = None,
         subtitle_y: Optional[float] = None,
         auto_emojis: bool = True,
+        multi_style_variety: bool = True,
+        **kwargs,
     ) -> list[TimelineEvent]:
         from backend.schemas.timeline import VALID_STYLES
 
@@ -237,9 +240,9 @@ class RulePlanner:
             else []
         )
 
-        # 1. Custom Single Style Selection (1 style picked)
-        if len(custom_styles) == 1:
-            chosen_style = custom_styles[0]
+        # 1. Custom Single Style Selection (1 style picked or multi_style_variety=False)
+        if not multi_style_variety or len(custom_styles) == 1:
+            chosen_style = custom_styles[0] if custom_styles else "pill_word"
             events: list[TimelineEvent] = []
             for p in phrases:
                 if not p.word_indices:
@@ -269,10 +272,11 @@ class RulePlanner:
                         captionSize=caption_size,
                         backgroundStyle=background_style,
                         highlightColor=highlight_color,
+                        subtitleY=subtitle_y,
                         animation=AnimationConfig(in_="pop", out="fade", wordStagger=0.04),
                     )
                 )
-            return events
+            return assign_layout(events, video_duration=video_duration)
 
         # 2. Custom Multi-Style Selection (2+ styles picked)
         if len(custom_styles) > 1:

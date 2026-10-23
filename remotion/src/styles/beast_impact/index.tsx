@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
-import { getCaptionFontSize } from "../registry";
+import { getCaptionFontSize, getActivePhraseWords } from "../registry";
 
 interface BeastImpactProps {
   event: TimelineEvent;
@@ -24,12 +24,7 @@ export const BeastImpact: React.FC<BeastImpactProps> = ({
   const scale = popIn(frame, fps, 0, 8, 0.4, 220);
   const opacity = fadeOut(frame, durationInFrames, 4);
 
-  const [firstIdx, lastIdx] =
-    event.wordRange && event.wordRange.length >= 2
-      ? [event.wordRange[0], event.wordRange[1]]
-      : [0, words.length - 1];
-
-  const phraseWords = words.slice(firstIdx, lastIdx + 1);
+  const phraseWords = getActivePhraseWords(words, event.wordRange, currentTime, 4);
   const baseSize = getCaptionFontSize(event.captionSize, 58);
   const activeColor = event.highlightColor || "#22C55E"; // Electric Lime for MrBeast Impact
 

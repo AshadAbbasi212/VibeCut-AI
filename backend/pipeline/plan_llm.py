@@ -22,9 +22,9 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from backend.pipeline.chunk import Phrase
-from backend.pipeline.plan_rules import RulePlanner as RuleBasedPlannerCore
+from backend.pipeline.plan_rules import RulePlanner as RuleBasedPlannerCore, group_phrases_into_sentences
 from backend.pipeline.layout import assign_layout
-from backend.schemas.timeline import TimelineEvent, Highlight, Graphic, AnimationConfig
+from backend.schemas.timeline import TimelineEvent, Highlight, Graphic, AnimationConfig, VALID_STYLES
 
 logger = logging.getLogger("captions_planner")
 
@@ -266,17 +266,47 @@ def _validate_and_parse_llm_json(
 
         # Check wordRange validity and enforce verbatim spoken dialogue
         wr = item.get("wordRange")
+        sub_items: list[dict] = []
         if wr and len(wr) == 2 and wr[0] in word_map and wr[1] in word_map:
-            w_start = word_map[wr[0]].start
-            w_end = word_map[wr[1]].end
-            # Allow tolerance if LLM's start/end drift
-            item["start"] = max(0.0, min(float(item.get("start", w_start)), w_start + 0.15))
-            item["end"] = min(video_duration, max(float(item.get("end", w_end)), w_end - 0.15))
-            # MANDATORY VERBATIM ENFORCEMENT:
-            # Overwrite text with the EXACT spoken words. Never render synthetic AI chapter summaries.
-            actual_words = [word_map[i].text for i in range(wr[0], wr[1] + 1) if i in word_map]
-            if actual_words:
-                item["text"] = " ".join(actual_words)
+            word_span_len = wr[1] - wr[0] + 1
+            if word_span_len > 6:
+                # SUBDIVIDE long multi-phrase takes into synchronized 3-5 word chunks
+                matching_phrases = [
+                    p for p in phrases
+                    if p.word_indices and max(p.word_indices[0], wr[0]) <= min(p.word_indices[-1], wr[1])
+                ]
+                if matching_phrases:
+                    for s_idx, sp in enumerate(matching_phrases):
+                        sub = dict(item)
+                        sub["id"] = f"{item.get('id', 'feat')}_{sp.id}"
+                        sub["start"] = sp.start
+                        sub["end"] = sp.end
+                        sub["wordRange"] = [sp.word_indices[0], sp.word_indices[-1]]
+                        sub["text"] = sp.text
+                        if s_idx > 0:
+                            sub.pop("graphic", None)
+                        sub_items.append(sub)
+                else:
+                    for c_start in range(wr[0], wr[1] + 1, 5):
+                        c_end = min(wr[1], c_start + 4)
+                        sub = dict(item)
+                        sub["id"] = f"{item.get('id', 'feat')}_{c_start}"
+                        sub["start"] = word_map[c_start].start
+                        sub["end"] = word_map[c_end].end
+                        sub["wordRange"] = [c_start, c_end]
+                        sub["text"] = " ".join([word_map[i].text for i in range(c_start, c_end + 1) if i in word_map])
+                        if c_start > wr[0]:
+                            sub.pop("graphic", None)
+                        sub_items.append(sub)
+            else:
+                w_start = word_map[wr[0]].start
+                w_end = word_map[wr[1]].end
+                item["start"] = max(0.0, min(float(item.get("start", w_start)), w_start + 0.15))
+                item["end"] = min(video_duration, max(float(item.get("end", w_end)), w_end - 0.15))
+                actual_words = [word_map[i].text for i in range(wr[0], wr[1] + 1) if i in word_map]
+                if actual_words:
+                    item["text"] = " ".join(actual_words)
+                sub_items.append(item)
         else:
             # If wordRange is missing or invalid, verify that text was actually spoken
             ev_text = str(item.get("text", "")).strip()
@@ -284,62 +314,64 @@ def _validate_and_parse_llm_json(
             if not ev_text or ev_text.lower() not in full_transcript_text:
                 logger.info(f"Dropping non-spoken / hallucinated event: '{ev_text}'")
                 continue
+            sub_items.append(item)
 
-        # Prevent oversized card styles from dominating screen if paragraph-length text
-        st = item.get("style", "")
-        words_count = len(item.get("text", "").split())
-        if st in ("blob_card", "numbered_point") and words_count > 10:
-            item["style"] = "highlighter_marker"
+        for sub_ev in sub_items:
+            # Prevent oversized card styles from dominating screen if paragraph-length text
+            st = sub_ev.get("style", "")
+            words_count = len(sub_ev.get("text", "").split())
+            if st in ("blob_card", "numbered_point") and words_count > 10:
+                sub_ev["style"] = "highlighter_marker"
 
-        # Sanitize graphic field
-        g = item.get("graphic")
-        if isinstance(g, dict):
-            valid_kinds = {"emoji", "icon", "image", "sticker3d"}
-            if g.get("kind") not in valid_kinds:
-                val = str(g.get("value", ""))
-                # If value contains an emoji, normalize kind to emoji
-                if any(ord(c) > 1000 for c in val):
-                    g["kind"] = "emoji"
-                else:
-                    item.pop("graphic", None)
-            if "graphic" in item and isinstance(item["graphic"], dict):
-                valid_positions = {"above", "below", "left", "right"}
-                if item["graphic"].get("position") not in valid_positions:
-                    item["graphic"]["position"] = "above"
+            # Sanitize graphic field
+            g = sub_ev.get("graphic")
+            if isinstance(g, dict):
+                valid_kinds = {"emoji", "icon", "image", "sticker3d"}
+                if g.get("kind") not in valid_kinds:
+                    val = str(g.get("value", ""))
+                    # If value contains an emoji, normalize kind to emoji
+                    if any(ord(c) > 1000 for c in val):
+                        g["kind"] = "emoji"
+                    else:
+                        sub_ev.pop("graphic", None)
+                if "graphic" in sub_ev and isinstance(sub_ev["graphic"], dict):
+                    valid_positions = {"above", "below", "left", "right"}
+                    if sub_ev["graphic"].get("position") not in valid_positions:
+                        sub_ev["graphic"]["position"] = "above"
 
-        # Sanitize highlights field
-        hl_list = item.get("highlights")
-        if isinstance(hl_list, list):
-            valid_hl_kinds = {"color", "italic", "pill", "underline", "scale"}
-            for hl in hl_list:
-                if isinstance(hl, dict) and hl.get("kind") not in valid_hl_kinds:
-                    hl["kind"] = "color"
+            # Sanitize highlights field
+            hl_list = sub_ev.get("highlights")
+            if isinstance(hl_list, list):
+                valid_hl_kinds = {"color", "italic", "pill", "underline", "scale"}
+                for hl in hl_list:
+                    if isinstance(hl, dict) and hl.get("kind") not in valid_hl_kinds:
+                        hl["kind"] = "color"
 
-        ev_start = round(float(item.get("start", 0.0)), 2)
-        ev_end = max(round(float(item.get("end", 0.0)), 2), round(ev_start + 0.35, 2))
-        if video_duration > 0 and ev_end > video_duration:
-            ev_end = round(video_duration, 2)
-            ev_start = max(0.0, round(ev_end - 0.35, 2))
-        item["start"] = ev_start
-        # Zone sanitization: prevent hiding behind headmarker ("upper") or blocking speaker face ("center")
-        z = item.get("zone", "lower")
-        if z in ("upper", "center", "callout_stack"):
-            item["zone"] = "free"
-            item["x"] = 0.5
-            item["y"] = 0.68
-        elif z == "left":
-            item["zone"] = "free"
-            item["x"] = 0.26
-            item["y"] = 0.70
-        elif z == "right":
-            item["zone"] = "free"
-            item["x"] = 0.74
-            item["y"] = 0.70
-        elif z not in ("lower", "upper", "center", "free"):
-            item["zone"] = "lower"
+            ev_start = round(float(sub_ev.get("start", 0.0)), 2)
+            ev_end = max(round(float(sub_ev.get("end", 0.0)), 2), round(ev_start + 0.35, 2))
+            if video_duration > 0 and ev_end > video_duration:
+                ev_end = round(video_duration, 2)
+                ev_start = max(0.0, round(ev_end - 0.35, 2))
+            sub_ev["start"] = ev_start
+            # Zone sanitization: prevent hiding behind headmarker ("upper") or blocking speaker face ("center")
+            z = sub_ev.get("zone", "lower")
+            if z in ("upper", "center", "callout_stack"):
+                sub_ev["zone"] = "free"
+                sub_ev["x"] = 0.5
+                sub_ev["y"] = 0.68
+            elif z == "left":
+                sub_ev["zone"] = "free"
+                sub_ev["x"] = 0.26
+                sub_ev["y"] = 0.70
+            elif z == "right":
+                sub_ev["zone"] = "free"
+                sub_ev["x"] = 0.74
+                sub_ev["y"] = 0.70
+            elif z not in ("lower", "upper", "center", "free"):
+                sub_ev["zone"] = "lower"
 
-        ev = TimelineEvent(**item)
-        parsed_events.append(ev)
+            ev = TimelineEvent(**sub_ev)
+            parsed_events.append(ev)
 
     return parsed_events
 
@@ -427,8 +459,26 @@ def _build_basic_prompt(phrases: list[Phrase], preset: str) -> str:
     )
 
 
-def _build_base_events(phrases: list[Phrase], scene_analysis: Optional[dict] = None) -> list[TimelineEvent]:
-    """Build base pill_word events for all phrases, skipping confirmed burned-in dialogue ranges."""
+CREATOR_VARIETY_STYLES = [
+    "highlighter_marker",
+    "cinematic_minimal",
+    "neon_glow",
+    "typewriter_terminal",
+    "pill_word",
+    "karaoke_bounce",
+    "gradient_outline",
+    "hormozi_bold",
+]
+
+
+def _build_base_events(
+    phrases: list[Phrase],
+    scene_analysis: Optional[dict] = None,
+    multi_style_variety: bool = True,
+    selected_styles: Optional[list[str]] = None,
+    style_pacing: str = "sentence",
+) -> list[TimelineEvent]:
+    """Build base dialogue events with optional sentence-by-sentence dynamic style variety."""
     skip_ranges = []
     if scene_analysis and scene_analysis.get("has_burned_in_captions"):
         for ec in scene_analysis.get("existing_captions", []):
@@ -439,32 +489,48 @@ def _build_base_events(phrases: list[Phrase], scene_analysis: Optional[dict] = N
                 continue
             skip_ranges.append((start, end))
 
-    base_events = []
-    for p in phrases:
-        if not p.word_indices:
-            continue
+    # Resolve style pool from user selection or curated high-retention creator pool
+    custom_pool = [s for s in selected_styles if s in VALID_STYLES] if selected_styles else []
+    if not custom_pool:
+        custom_pool = CREATOR_VARIETY_STYLES
 
-        # Check if this phrase overlaps with any confirmed burned-in dialogue
-        if skip_ranges:
-            should_skip = any(
-                p.start < ec_end and p.end > ec_start
-                for ec_start, ec_end in skip_ranges
-            )
-            if should_skip:
+    sentence_groups = group_phrases_into_sentences(phrases) if style_pacing == "sentence" else [[p] for p in phrases]
+    base_events = []
+    last_style = None
+
+    for g_idx, group in enumerate(sentence_groups):
+        if multi_style_variety and len(custom_pool) > 1:
+            candidates = [s for s in custom_pool if s != last_style]
+            group_style = candidates[g_idx % len(candidates)] if candidates else custom_pool[0]
+            last_style = group_style
+        else:
+            group_style = custom_pool[0] if custom_pool else "pill_word"
+
+        for p in group:
+            if not p.word_indices:
                 continue
 
-        base_events.append(
-            TimelineEvent(
-                id=f"base_{p.id}",
-                style="pill_word",
-                start=p.start,
-                end=p.end,
-                zone="lower",
-                layer=1,
-                wordRange=[p.word_indices[0], p.word_indices[-1]],
-                text=p.text,
+            # Check if this phrase overlaps with any confirmed burned-in dialogue
+            if skip_ranges:
+                should_skip = any(
+                    p.start < ec_end and p.end > ec_start
+                    for ec_start, ec_end in skip_ranges
+                )
+                if should_skip:
+                    continue
+
+            base_events.append(
+                TimelineEvent(
+                    id=f"base_{p.id}",
+                    style=group_style,
+                    start=p.start,
+                    end=p.end,
+                    zone="lower",
+                    layer=1,
+                    wordRange=[p.word_indices[0], p.word_indices[-1]],
+                    text=p.text,
+                )
             )
-        )
 
     return base_events
 
@@ -507,7 +573,17 @@ class MistralPlanner(BasePlanner):
                 logger.warning("mistralai SDK not installed. Falling back to RulePlanner.")
                 return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
-        base_events = _build_base_events(phrases, scene_analysis)
+        multi_style_variety = kwargs.get("multi_style_variety", True)
+        selected_styles = kwargs.get("selected_styles")
+        style_pacing = kwargs.get("style_pacing", "sentence")
+
+        base_events = _build_base_events(
+            phrases,
+            scene_analysis,
+            multi_style_variety=multi_style_variety,
+            selected_styles=selected_styles,
+            style_pacing=style_pacing,
+        )
 
         # Choose prompt: scene-aware if analysis available, else basic
         scene_prompt = _build_scene_aware_prompt(phrases, preset, scene_analysis)
@@ -582,7 +658,17 @@ class GeminiPlanner(BasePlanner):
             logger.warning("google-genai SDK not installed. Falling back to RulePlanner.")
             return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
-        base_events = _build_base_events(phrases, scene_analysis)
+        multi_style_variety = kwargs.get("multi_style_variety", True)
+        selected_styles = kwargs.get("selected_styles")
+        style_pacing = kwargs.get("style_pacing", "sentence")
+
+        base_events = _build_base_events(
+            phrases,
+            scene_analysis,
+            multi_style_variety=multi_style_variety,
+            selected_styles=selected_styles,
+            style_pacing=style_pacing,
+        )
 
         # Choose prompt: scene-aware if analysis available, else basic
         scene_prompt = _build_scene_aware_prompt(phrases, preset, scene_analysis)
@@ -659,7 +745,17 @@ class AnthropicPlanner(BasePlanner):
             logger.warning("anthropic SDK not installed. Falling back to RulePlanner.")
             return self.rule_fallback.plan(phrases, video_duration, preset=preset, language=language, **kwargs)
 
-        base_events = _build_base_events(phrases, scene_analysis)
+        multi_style_variety = kwargs.get("multi_style_variety", True)
+        selected_styles = kwargs.get("selected_styles")
+        style_pacing = kwargs.get("style_pacing", "sentence")
+
+        base_events = _build_base_events(
+            phrases,
+            scene_analysis,
+            multi_style_variety=multi_style_variety,
+            selected_styles=selected_styles,
+            style_pacing=style_pacing,
+        )
 
         # Choose prompt: scene-aware if analysis available, else basic
         scene_prompt = _build_scene_aware_prompt(phrases, preset, scene_analysis)

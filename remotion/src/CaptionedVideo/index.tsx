@@ -27,6 +27,28 @@ export type CaptionedVideoProps = {
 };
 
 export const resolveTimeline = (props: CaptionedVideoProps): Timeline => {
+  if (props.video && props.video.src && props.video.src !== "sample.mp4") {
+    return {
+      version: props.version ?? 1,
+      video: props.video,
+      language: props.language ?? "en",
+      words: props.words ?? [],
+      events: props.events ?? [],
+      headlineHook: (props as any).headlineHook,
+      headlineStyle: (props as any).headlineStyle,
+      headlineDuration: (props as any).headlineDuration,
+      headlineY: (props as any).headlineY,
+      kineticZoom: (props as any).kineticZoom,
+      autoEmojis: (props as any).autoEmojis,
+      soundEffects: (props as any).soundEffects,
+      bgMusic: (props as any).bgMusic,
+      watermarkText: (props as any).watermarkText,
+      progressBar: (props as any).progressBar,
+      progressBarPosition: (props as any).progressBarPosition,
+      highlightColor: (props as any).highlightColor,
+      faceTracking: (props as any).faceTracking,
+    };
+  }
   if (props.timeline && props.timeline.video) {
     return props.timeline;
   }

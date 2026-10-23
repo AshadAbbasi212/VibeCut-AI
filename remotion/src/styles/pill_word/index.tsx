@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
-import { getCaptionFontSize } from "../registry";
+import { getCaptionFontSize, getActivePhraseWords } from "../registry";
 
 interface PillWordProps {
   event: TimelineEvent;
@@ -24,13 +24,8 @@ export const PillWord: React.FC<PillWordProps> = ({
   const scale = popIn(frame, fps, 0, 14, 0.6, 180);
   const opacity = fadeOut(frame, durationInFrames, 5);
 
-  // Extract words for this event
-  const [firstIdx, lastIdx] =
-    event.wordRange && event.wordRange.length >= 2
-      ? [event.wordRange[0], event.wordRange[1]]
-      : [0, words.length - 1];
-
-  const phraseWords = words.slice(firstIdx, lastIdx + 1);
+  // Extract words for this event (clamped to max 5 words per screen)
+  const phraseWords = getActivePhraseWords(words, event.wordRange, currentTime, 5);
 
   // Caption size calculation (Default medium = 52px sweet spot)
   const baseSize = getCaptionFontSize(event.captionSize, 52);

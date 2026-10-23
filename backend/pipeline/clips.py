@@ -741,6 +741,7 @@ def slice_timeline_for_clip(
     progress_bar: Optional[bool] = None,
     auto_emojis: Optional[bool] = None,
     highlight_color: Optional[str] = None,
+    multi_style_variety: Optional[bool] = True,
 ) -> Timeline:
     """Slice a Timeline to a specific clip window [clip_start, clip_end].
     
@@ -765,7 +766,11 @@ def slice_timeline_for_clip(
     # Determine styles to apply (Ali Abdaal multi-style editorial director)
     custom_styles = None
     is_ai_director = False
-    if selected_styles and selected_styles.strip() and selected_styles != "ai_auto":
+    if multi_style_variety is False:
+        # Lock to single consistent style
+        first_st = selected_styles.split(",")[0].strip() if selected_styles and selected_styles != "ai_auto" else "pill_word"
+        custom_styles = [first_st]
+    elif selected_styles and selected_styles.strip() and selected_styles != "ai_auto":
         custom_styles = [s.strip() for s in selected_styles.split(",") if s.strip()]
     elif selected_styles == "ai_auto" or not selected_styles:
         is_ai_director = True
@@ -956,6 +961,7 @@ def batch_render_viral_clips(
     clips: List[ViralClip | dict],
     concurrency: Optional[int] = None,
     draft: bool = False,
+    multi_style_variety: Optional[bool] = True,
 ) -> Path:
     """Batch render a list of viral clips into individual MP4s and bundle into a ZIP archive."""
     import zipfile
@@ -1010,6 +1016,7 @@ def batch_render_viral_clips(
             clip_end=clip.end,
             clip_headline=clip.headline,
             trimmed_video_src=rel_src,
+            multi_style_variety=multi_style_variety,
         )
 
         # Render with Remotion

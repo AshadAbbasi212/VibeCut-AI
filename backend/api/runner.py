@@ -57,6 +57,7 @@ class JobInfo(BaseModel):
     bg_music: Optional[str] = None
     watermark_text: Optional[str] = None
     ai_enhance: bool = False
+    multi_style_variety: bool = True
     api_key: Optional[str] = Field(default=None, exclude=True)
     created_at: float = Field(default_factory=time.time)
     updated_at: float = Field(default_factory=time.time)
@@ -214,6 +215,7 @@ class JobManager:
         bg_music: Optional[str] = None,
         watermark_text: Optional[str] = None,
         ai_enhance: bool = False,
+        multi_style_variety: bool = True,
         api_key: Optional[str] = None,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
@@ -257,6 +259,7 @@ class JobManager:
             bg_music=bg_music,
             watermark_text=watermark_text,
             ai_enhance=ai_enhance,
+            multi_style_variety=multi_style_variety,
             api_key=api_key,
             input_file=str(target_input),
         )
@@ -362,6 +365,7 @@ class JobManager:
         draft: bool = False,
         concurrency: Optional[int] = None,
         highlight_color: Optional[str] = None,
+        multi_style_variety: Optional[bool] = True,
     ) -> JobInfo:
         """Create and queue a lightning-fast render for an edited viral clip from an existing job."""
         parent_job = self.get_job(parent_job_id)
@@ -457,6 +461,7 @@ class JobManager:
             progress_bar=progress_bar,
             auto_emojis=auto_emojis,
             highlight_color=effective_hl,
+            multi_style_variety=multi_style_variety,
         )
 
         timeline_json = clip_dir / "timeline.json"
@@ -480,6 +485,7 @@ class JobManager:
             headline_duration=headline_duration,
             headline_y=headline_y,
             watermark_text=watermark_text,
+            multi_style_variety=multi_style_variety if multi_style_variety is not None else True,
             video_layout=video_layout or "split_podcast",
             ai_enhance=bool(ai_enhance),
             kinetic_zoom=kinetic_zoom,
@@ -680,6 +686,7 @@ class JobManager:
                 subtitle_y=job.subtitle_y,
                 auto_emojis=getattr(job, "auto_emojis", True),
                 scene_analysis=scene_analysis_data,
+                multi_style_variety=getattr(job, "multi_style_variety", True),
             )
 
             # Copy input asset to remotion public dir

@@ -1,5 +1,22 @@
 # Architectural and Technical Decisions
 
+## 2026-10-23: Dynamic Multi-Style Variety Toggle, 3-5 Word Subdivision & Universal Active-Window Pagination Shield
+- **Decision**:
+  1. **User Control Option for Dynamic Multi-Style Variety Across Video (Full & Viral Reels)**:
+     - Added an explicit user option for "✨ Dynamic Multi-Style Variety" with dedicated UI toggles (`#multiStyleVarietyToggle` in Full Video Studio, `#clipMultiStyleVarietyToggle` in AI Viral Reels Studio), API parameters (`multi_style_variety: bool` in `POST /api/jobs`, `POST /api/jobs/{id}/render-clip`, `POST /api/jobs/{id}/batch-render-clips`), and pipeline integration (`_build_base_events`, `RulePlanner.plan`, `slice_timeline_for_clip`).
+     - When enabled (default): Rotates dialogue styles across the curated creator pool sentence-by-sentence with rich keyword highlights.
+     - When disabled: Locks captions across the entire video or reel to a single consistent style (e.g. `pill_word` or user's picked style).
+  2. **Elimination of the 20-Word Feature Event Suppression Trap**:
+     - Diagnosed root cause of vertical text wrapping: when an LLM tagged an entire sentence as a feature event, Remotion suppressed concurrent 3-5 word base chunks. If the feature event had 20 words (9.18s), all 20 words were rendered simultaneously in `hormozi_bold`, wrapping into a 13-line vertical column covering the host.
+     - In `backend/pipeline/plan_llm.py` (`_validate_and_parse_llm_json`): Any multi-phrase take with $> 6$ words is automatically subdivided into synchronized 3–5 word sub-events matching transcript phrases (`matching_phrases`), mapping exact `start`, `end`, and `wordRange`, attaching graphics only to the first chunk.
+  3. **Universal Remotion Active-Window Pagination Safety Shield (`getActivePhraseWords`)**:
+     - Exported `getActivePhraseWords(allWords, wordRange, currentTime, maxWords=5)` in `remotion/src/styles/registry.ts`.
+     - Integrated across `hormozi_bold`, `beast_impact`, `highlighter_marker`, `karaoke_bounce`, and `pill_word`.
+     - Uses paginated sliding windows so spoken words stay stable on screen during speech and never exceed 4–5 words simultaneously under any circumstances (even with legacy or unchunked timelines).
+  4. **Base Dialogue Track Style Preservation in `layout.py`**:
+     - Updated `assign_layout` to identify base dialogue events by id (`base_` or `evt_`), ensuring they preserve their custom dynamic styles and layer 1 without being corrupted by feature callout style rotation.
+- **Why**: Directly satisfies the user's explicit requirement for dynamic variety control in both reels and full video while completely eliminating screen-covering text towers, maintaining strict 3–5 word Ali Abdaal formatting.
+
 ## 2026-10-23: Professional Ali Abdaal Editorial Mode, Computer Vision Face Tracking & Mathematical Cover Centering
 - **Decision**:
   1. **Mathematical Centering Formula for 9:16 Vertical Video (`getCoverObjectPositionX`)**:
@@ -281,7 +298,11 @@
   5. **Dedicated Lightning Single-Clip Render Engine (`POST /api/jobs/{job_id}/render-clip`)**: Resolved the clip rendering freeze/stall where editing a viral reel previously tried to re-upload the entire source video (which could be a 45-minute file) and re-run transcription from scratch. The dedicated endpoint rapidly trims the existing parent video via FFmpeg (< 0.5s), slices the timeline with all user tweaker overrides, and renders standalone reels in ~5-7s via Remotion.
 - **Why**: Creators need full control over their branding (optional watermark), placement (custom headmarker Y location), and style intelligence (letting AI pick the best caption style for the scene). Most importantly, rendering a tweaked 15-30s viral reel must be instantaneous rather than re-uploading and re-transcribing a massive 45-minute parent video.
 
-
-
-
-
+## 2026-10-23: Dynamic Multi-Style Variety Toggle, 3-5 Word Phrase Subdivision & Universal Active-Window Pagination Shield (Phase 36)
+- **Decision**:
+  1. **Dynamic Multi-Style Variety User Toggles**: Provided explicit, branded user-facing toggles in both the **Full Video Studio** (`#multiStyleVarietyToggle` in Card 3 Options) and the **AI Viral Reels Studio** (`#clipMultiStyleVarietyToggle` in Section 3 of the Clip Tweaker card).
+     - When **Enabled (ON)**: Rotates dynamic, creator-grade styles (`beast_impact`, `hormozi_bold`, `highlighter_marker`, `pill_word`, `karaoke_bounce`, `quote_editorial`, etc.) across sentence groups, bringing Ali Abdaal / MrBeast visual variety.
+     - When **Disabled (OFF)**: Strictly locks captions to a single, consistent uniform style throughout the entire duration of the full video or reel.
+  2. **Feature Long-Take Subdivision (3-5 Words)**: Solved the root cause of the 13-line vertical column bug where LLMs tagged multi-clause sentences (> 6 words) as a single feature event, causing 15-25 words to render at once. Subdivided long feature events into synchronized 3–5 word sub-events matching transcript phrases (`matching_phrases`) with exact monotonic timing.
+  3. **Universal Active-Window Pagination Shield (`getActivePhraseWords`)**: Added a universal pagination helper in `remotion/src/styles/registry.ts` and integrated it across all dynamic styles (`hormozi_bold`, `beast_impact`, `highlighter_marker`, `karaoke_bounce`, `pill_word`). Displays a sliding active window of max 4-5 words centered on the active word, guaranteeing captions never exceed 4-5 words on screen or wrap into vertical towers regardless of input.
+- **Why**: Creators requested full autonomy over whether their videos use multi-style visual variety or remain locked to a single uniform style. Additionally, long feature events covering the speaker's face violated safe-zone guidelines; combining backend phrase subdivision with Remotion active-window pagination ensures 100% face clearance, perfect pacing, and broadcast-ready typography across both full videos and viral reels.

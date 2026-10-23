@@ -34,8 +34,29 @@
 - [x] Phase 33 End-to-End Deep Video Verification, Layout-Aware Split Safe Zones, & WebKit Stroke Word Separation
 - [x] Phase 34 10-Minute Long Video Pipeline Validation, Concurrency Loop Pruning, Split Headline Safe Zones, & Universal Word Separation
 - [x] Phase 35 Professional Ali Abdaal Editorial Mode, Computer Vision Face Tracking, Mathematical Cover Centering, & Verbatim Spoken Word Enforcement
+- [x] Phase 36 Dynamic Multi-Style Variety Across Video Option (Full Video & Viral Reels Studio), 3-5 Word Phrase Subdivision, & Universal Active-Window Pagination Shield
 
 ## Notes / known issues
+- Phase 36 (Dynamic Multi-Style Variety Across Video Option, 3-5 Word Subdivision, & Pagination Shield):
+  1. **User Request & Option Control**:
+     - User requested: "give user option for Unlock Dynamic Multi-Style Variety Across the Video wether he wants to use it or not also i want you to implement it in both reel and full video"
+     - Implemented `#multiStyleVarietyToggle` in Full Video Studio (Card 3 Options) and `#clipMultiStyleVarietyToggle` in AI Viral Reels Studio (`clipTweakerCard`).
+     - When ON (default): Rotates dialogue styles across the curated creator pool sentence-by-sentence (`_build_base_events`, `RulePlanner`, `slice_timeline_for_clip`).
+     - When OFF: Locks dialogue captions across the entire video or reel to a single consistent style (e.g. `pill_word` or selected style).
+  2. **Elimination of the 13-Line Vertical Caption Wrap**:
+     - Forensic analysis revealed that when long sentences (e.g. 20 words spanning 9.18s) were tagged as feature events, concurrent base chunks were suppressed and all 20 words were rendered simultaneously in `hormozi_bold`, wrapping into a 13-line vertical column.
+     - In `_validate_and_parse_llm_json`: Multi-phrase takes with $> 6$ words are automatically subdivided into synchronized 3–5 word sub-events matching transcript phrases (`matching_phrases`), mapping exact `start`, `end`, and `wordRange`.
+  3. **Universal Remotion Active-Window Pagination Safety Shield (`getActivePhraseWords`)**:
+     - Exported `getActivePhraseWords(words, wordRange, currentTime, maxWords=5)` in `remotion/src/styles/registry.ts`.
+     - Integrated across `hormozi_bold`, `beast_impact`, `highlighter_marker`, `karaoke_bounce`, and `pill_word`.
+     - Automatically clamps displayed text to 3–5 words in stable paginated chunks matching spoken words. Even with legacy unchunked timelines, no style can ever wrap into a screen-covering column.
+  4. **Base Dialogue Track Style Preservation in `layout.py`**:
+     - Updated `assign_layout` so base dialogue events (`base_` or `evt_`) retain their dynamic styles and layer 1 without being rewritten by `STYLE_ALTERNATIVES`.
+  5. **Verification**:
+     - Rendered still frame at 0:54 (`test_frame_54s.png`) verified frame-by-frame: 13-line column completely vanished, replaced by clean 4-word `⚡ TRIED TO IDENTIFY AND` caption in safe zone with centered framing.
+     - All 72 automated pytest tests passing (`test_multi_style_variety.py`, `test_planner.py`, `test_viral_features.py`, etc.).
+     - Production Remotion bundle rebuilt with 0 errors.
+
 - Phase 35 (Professional Ali Abdaal Editorial Mode, Face Tracking & Cover Centering):
   1. **Forensic Video Quality Diagnosis (Job 8cbae880ec)**:
      - Wide Shots: Centered at `focusX = 0.50`, zooming into an empty table with neither speaker visible.

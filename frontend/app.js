@@ -95,6 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const soundEffectsToggle = document.getElementById("soundEffectsToggle");
   const bgMusicToggle = document.getElementById("bgMusicToggle");
   const watermarkInput = document.getElementById("watermarkInput");
+  const multiStyleVarietyToggle = document.getElementById("multiStyleVarietyToggle");
 
   const canvasHeadlineHook = document.getElementById("canvasHeadlineHook");
   const canvasHeadlineHookInner = document.getElementById("canvasHeadlineHookInner");
@@ -147,6 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const clipPopSfxToggle = document.getElementById("clipPopSfxToggle");
   const clipBgMusicToggle = document.getElementById("clipBgMusicToggle");
   const clipAutoEmojisToggle = document.getElementById("clipAutoEmojisToggle");
+  const clipMultiStyleVarietyToggle = document.getElementById("clipMultiStyleVarietyToggle");
   const btnRenderSingleClip = document.getElementById("btnRenderSingleClip");
   const clipBtnProgressFill = document.getElementById("clipBtnProgressFill");
   const clipBtnTextLabel = document.getElementById("clipBtnTextLabel");
@@ -1774,10 +1776,14 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("📦 Batch rendering all clips into MP4s and building ZIP...");
 
       try {
+        const useClipVariety = clipMultiStyleVarietyToggle ? clipMultiStyleVarietyToggle.checked : true;
         const res = await fetch(`/api/jobs/${currentJobId}/batch-render-clips`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ clips: activeViralClips || [] }),
+          body: JSON.stringify({
+            clips: activeViralClips || [],
+            multi_style_variety: useClipVariety,
+          }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
@@ -2606,6 +2612,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  if (multiStyleVarietyToggle) {
+    multiStyleVarietyToggle.addEventListener("change", (e) => {
+      showToast(e.target.checked
+        ? "✨ Dynamic Multi-Style Variety: Enabled (rotates styles across sentences)"
+        : "🔒 Single Style: Locked (consistent styling across entire video)");
+    });
+  }
+
+  if (clipMultiStyleVarietyToggle) {
+    clipMultiStyleVarietyToggle.addEventListener("change", (e) => {
+      showToast(e.target.checked
+        ? "✨ Reel Multi-Style Variety: Enabled (rotates styles across sentences)"
+        : "🔒 Reel Single Style: Locked (consistent styling across clip)");
+    });
+  }
+
   function updateWatermarkPreview() {
     if (!canvasWatermark) return;
     const isClipsMode = tabClipsStudio && tabClipsStudio.classList.contains("active");
@@ -2680,6 +2702,10 @@ document.addEventListener("DOMContentLoaded", () => {
     formData.append("style_pacing", selectedStylePacing);
     formData.append("highlight_color", overrides.highlight_color || selectedHighlightColor);
     formData.append("selected_styles", overrides.selected_styles !== undefined ? overrides.selected_styles : selectedStyles.join(","));
+    const useMultiStyleVariety = overrides.multi_style_variety !== undefined
+      ? overrides.multi_style_variety
+      : (multiStyleVarietyToggle ? multiStyleVarietyToggle.checked : true);
+    formData.append("multi_style_variety", useMultiStyleVariety ? "true" : "false");
     formData.append("subtitle_y", overrides.subtitle_y !== undefined ? overrides.subtitle_y : currentSubtitleY.toFixed(2));
     formData.append("video_layout", overrides.video_layout || selectedVideoLayout);
     formData.append("progress_bar", (overrides.progress_bar !== undefined ? overrides.progress_bar : selectedProgressBar) ? "true" : "false");
@@ -2865,6 +2891,7 @@ document.addEventListener("DOMContentLoaded", () => {
             aspect_ratio: "9:16",
             draft: draftToggle ? draftToggle.checked : false,
             highlight_color: selectedHighlightColor || "#38BDF8",
+            multi_style_variety: clipMultiStyleVarietyToggle ? clipMultiStyleVarietyToggle.checked : true,
           };
 
           const res = await fetch(`/api/jobs/${currentJobId}/render-clip`, {
@@ -2904,6 +2931,7 @@ document.addEventListener("DOMContentLoaded", () => {
         caption_size: selectedCaptionSize,
         subtitle_y: currentSubtitleY.toFixed(2),
         selected_styles: selectedStyles.length > 0 ? (selectedStyles.includes("ai_auto") ? "ai_auto" : selectedStyles.join(",")) : "ai_auto",
+        multi_style_variety: clipMultiStyleVarietyToggle ? clipMultiStyleVarietyToggle.checked : true,
         highlight_color: selectedHighlightColor || "#38BDF8",
         watermark_text: watermarkVal || "",
         video_layout: selectedClipLayout || "split_podcast",

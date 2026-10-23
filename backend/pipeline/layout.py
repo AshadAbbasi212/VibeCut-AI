@@ -95,15 +95,16 @@ def assign_layout(
         ev_copy = ev.model_copy(update={"start": s, "end": e})
         bounded_events.append(ev_copy)
 
-    # 2. Separate base track (pill_word in lower) from feature events
-    base_events = [e for e in bounded_events if e.style == "pill_word" and e.id.startswith("base_")]
-    feature_events = [e for e in bounded_events if not (e.style == "pill_word" and e.id.startswith("base_"))]
+    # 2. Separate base dialogue track from feature callout events
+    base_events = [e for e in bounded_events if e.id.startswith("base_") or e.id.startswith("evt_")]
+    feature_events = [e for e in bounded_events if not (e.id.startswith("base_") or e.id.startswith("evt_"))]
 
-    # Clean base events: ensure zone is 'lower' and layer is 1, and no overlapping base events
+    # Clean base events: ensure zone is 'lower' or 'free', layer is 1, and no overlapping base events
     base_events.sort(key=lambda x: (x.start, x.end))
     cleaned_base: list[TimelineEvent] = []
     for b in base_events:
-        b_up = b.model_copy(update={"zone": "lower", "layer": 1})
+        target_zone = b.zone if b.zone in ("lower", "free") else "lower"
+        b_up = b.model_copy(update={"zone": target_zone, "layer": 1})
         if cleaned_base:
             prev = cleaned_base[-1]
             if b_up.start < prev.end:
@@ -264,7 +265,7 @@ def assign_layout(
     pacing_checked_events: list[TimelineEvent] = []
 
     for ev in final_events:
-        if ev.style == "pill_word" and ev.id.startswith("base_"):
+        if ev.id.startswith("base_") or ev.id.startswith("evt_"):
             pacing_checked_events.append(ev)
             continue
         st = ev.style
@@ -289,7 +290,7 @@ def assign_layout(
     layered_events: list[TimelineEvent] = []
 
     for ev in final_events:
-        if ev.style == "pill_word" and ev.id.startswith("base_"):
+        if ev.id.startswith("base_") or ev.id.startswith("evt_"):
             layered_events.append(ev.model_copy(update={"layer": 1}))
         else:
             # Check what layers are occupied at ev.start

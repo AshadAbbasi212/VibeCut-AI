@@ -3,7 +3,7 @@ import { useCurrentFrame, useVideoConfig } from "remotion";
 import { TimelineEvent, TimelineWord } from "../../types/timeline";
 import { popIn, fadeOut } from "../../anim";
 import { getFontFamilies } from "../../load-font";
-import { getCaptionFontSize } from "../registry";
+import { getCaptionFontSize, getActivePhraseWords } from "../registry";
 
 interface HighlighterMarkerProps {
   event: TimelineEvent;
@@ -24,12 +24,7 @@ export const HighlighterMarker: React.FC<HighlighterMarkerProps> = ({
   const scale = popIn(frame, fps, 0, 14, 0.5, 160);
   const opacity = fadeOut(frame, durationInFrames, 6);
 
-  const [firstIdx, lastIdx] =
-    event.wordRange && event.wordRange.length >= 2
-      ? [event.wordRange[0], event.wordRange[1]]
-      : [0, words.length - 1];
-
-  const phraseWords = words.slice(firstIdx, lastIdx + 1);
+  const phraseWords = getActivePhraseWords(words, event.wordRange, currentTime, 5);
   const baseSize = getCaptionFontSize(event.captionSize, 48);
   const markerColor = event.highlightColor || "#FEF08A"; // Soft pastel highlighter yellow
 

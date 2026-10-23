@@ -49,6 +49,55 @@ export const getCaptionFontSize = (
   return base;
 };
 
+/**
+ * Universal active-window safety shield:
+ * Ensures no caption style ever renders more than maxWords (default: 5) words simultaneously.
+ * Paginates longer events cleanly so spoken words stay stable and never wrap into screen-covering towers.
+ */
+export const getActivePhraseWords = (
+  allWords: TimelineWord[],
+  wordRange: [number, number] | undefined,
+  currentTime: number,
+  maxWords: number = 5
+): TimelineWord[] => {
+  if (!allWords || allWords.length === 0) return [];
+
+  const [firstIdx, lastIdx] =
+    wordRange && wordRange.length >= 2
+      ? [wordRange[0], wordRange[1]]
+      : [0, allWords.length - 1];
+
+  const phraseWords = allWords.slice(
+    Math.max(0, firstIdx),
+    Math.min(allWords.length, lastIdx + 1)
+  );
+
+  if (phraseWords.length <= maxWords) {
+    return phraseWords;
+  }
+
+  // Find index of currently spoken word within phraseWords
+  let activeIdx = phraseWords.findIndex(
+    (w) => currentTime >= w.start && currentTime <= w.end
+  );
+  if (activeIdx === -1) {
+    activeIdx = phraseWords.findIndex((w) => currentTime < w.start);
+    if (activeIdx === -1) {
+      activeIdx = phraseWords.length - 1;
+    } else {
+      activeIdx = Math.max(0, activeIdx - 1);
+    }
+  }
+
+  // Paginated window: keep chunks stable on screen (e.g. 4-5 words per page)
+  const pageSize = Math.max(2, maxWords);
+  const pageIndex = Math.floor(activeIdx / pageSize);
+  const start = pageIndex * pageSize;
+  const end = Math.min(phraseWords.length, start + pageSize);
+
+  return phraseWords.slice(start, end);
+};
+
 export const STYLE_REGISTRY: Record<string, React.FC<StyleComponentProps>> = {
   pill_word: PillWord,
   title3d: Title3d,
