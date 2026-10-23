@@ -1,5 +1,22 @@
 # Architectural and Technical Decisions
 
+## 2026-10-23: Professional Ali Abdaal Editorial Mode, Computer Vision Face Tracking & Mathematical Cover Centering
+- **Decision**:
+  1. **Mathematical Centering Formula for 9:16 Vertical Video (`getCoverObjectPositionX`)**:
+     - Identified that CSS `objectPosition: X%` is relative to container overflow, not normalized image coordinates. When cropping a 16:9 source to 9:16 portrait with `objectFit: "cover"`, only 31.64% of width is visible. Setting `objectPosition: 85%` aligns the 85% mark of the video with the 85% mark of the viewport, pushing the speaker against the right border.
+     - Implemented the exact centering transformation:
+       $$P = \frac{X_{\text{face}} - \frac{\text{visible}}{2}}{\text{overflow}} = \frac{X_{\text{face}} - 0.1582}{0.6836}$$
+       Host (`focusX = 0.206`) maps to `7.0%`, Guest (`0.853`) maps to `100%`, and Close-ups (`0.56`) map to `58.7%`, perfectly centering every active speaker.
+  2. **OpenCV Deep Learning Face Tracking (`face_detection_yunet.onnx`)**:
+     - Embedded YuNet face detector (232 KB) into `backend/pipeline/reframe.py`.
+     - Automatically scans video frames to detect 2D face coordinates, distinguishes solo close-ups from wide multi-speaker shots, tracks speaker positions across time, and links speaker dialogue intervals to actual detected face coordinates.
+  3. **Headroom Protection & Kinetic Zoom Eye-Line Anchor**:
+     - Anchored kinetic zoom `transformOrigin` to `"center 28%"` (the upper-third eye line) and softened scale to `1.05x`, permanently eliminating forehead decapitation in vertical video renders.
+  4. **Strict Verbatim Dialogue Enforcement & Hallucination Elimination**:
+     - In `backend/pipeline/plan_llm.py`, updated system prompt instructions and implemented deterministic Python post-processing that matches word ranges to the Whisper transcript and overwrites `item["text"]` with exact spoken words. Any non-spoken phrase or invented heading card is dropped.
+     - Remapped wide cards with $> 10$ words to sleek Ali Abdaal `highlighter_marker`. Clamped font sizes to `[32px, 60px]`.
+- **Why**: Eliminates clipped speakers, decapitated heads, and screen-covering synthetic cards, achieving broadcast-quality Ali Abdaal editorial standards ready for production deployment.
+
 ## 2026-10-23: 10-Minute Video Deep Analysis: Concurrency Loop Pruning, Safe Zone Fallback & Universal Word Separation
 - **Decision**:
   1. **Concurrency While-Loop Pruning in `layout.py`**:

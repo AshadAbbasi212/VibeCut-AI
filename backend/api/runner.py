@@ -734,6 +734,7 @@ class JobManager:
                     video_duration=probe.duration,
                     num_speakers=num_spk,
                     scene_analysis=scene_analysis_data,
+                    video_path=str(input_path),
                 )
 
             # Multi-Speaker Diarization Auto Color Coding (Feature #5)

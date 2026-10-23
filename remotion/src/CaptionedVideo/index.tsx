@@ -428,6 +428,19 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     );
   };
 
+  const getCoverObjectPositionX = (
+    focusX: number,
+    sourceAspect: number = 16 / 9,
+    targetAspect: number = 9 / 16
+  ): string => {
+    const ratio = sourceAspect / targetAspect;
+    if (ratio <= 1.0) return `${Math.round(focusX * 1000) / 10}%`;
+    const visible = 1.0 / ratio;
+    const overflow = 1.0 - visible;
+    const p = Math.max(0.0, Math.min(1.0, (focusX - visible / 2.0) / overflow));
+    return `${Math.round(p * 1000) / 10}%`;
+  };
+
   const renderVideoLayer = () => {
     // 0. Active Speaker Auto-Tracking (Dynamic Speaker Cuts with Cross-Talk Fallback)
     if (layout === "active_speaker" && isVerticalComp && isSourceLandscape) {
@@ -440,13 +453,15 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
 
       // If cross-talk or interruption, cut to Split Stack
       if (currentCutLayout === "split_duo") {
+        const topPos = getCoverObjectPositionX(0.20, 16 / 9, 1080 / 960);
+        const botPos = getCoverObjectPositionX(0.85, 16 / 9, 1080 / 960);
         return (
           <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "20% center" }} />
+              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${topPos} center` }} />
             </div>
             <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "82% center" }} />
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${botPos} center` }} />
             </div>
             <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "4px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 16px rgba(56, 189, 248, 0.65), 0 2px 10px rgba(0, 0, 0, 0.8)", zIndex: 3 }} />
           </AbsoluteFill>
@@ -457,13 +472,13 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
         return (
           <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
             <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "15% center" }} />
+              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "6% center" }} />
             </div>
             <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "33.34%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center center" }} />
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% center" }} />
             </div>
             <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "85% center" }} />
+              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "94% center" }} />
             </div>
             <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
             <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
@@ -471,7 +486,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
         );
       }
 
-      // Solo Active Speaker Broadcast Shot
+      // Solo Active Speaker Broadcast Shot with mathematically centered face framing
+      const objPosX = getCoverObjectPositionX(currentFocusX, 16 / 9, 9 / 16);
       return (
         <AbsoluteFill style={{ backgroundColor: "#000" }}>
           <OffthreadVideo
@@ -480,7 +496,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: `${currentFocusX * 100}% center`,
+              objectPosition: `${objPosX} center`,
             }}
           />
         </AbsoluteFill>
@@ -488,6 +504,8 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
     }
     // 1. Podcast Split-Screen (Stacked Dual-Cam: Top Host / Bottom Guest)
     if (layout === "split_podcast" && isVerticalComp && isSourceLandscape) {
+      const topPos = getCoverObjectPositionX(0.20, 16 / 9, 1080 / 960);
+      const botPos = getCoverObjectPositionX(0.85, 16 / 9, 1080 / 960);
       return (
         <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
           {/* Top Speaker: Left side of 16:9 frame */}
@@ -508,7 +526,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                objectPosition: "15% center",
+                objectPosition: `${topPos} center`,
               }}
             />
           </div>
@@ -532,7 +550,7 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                objectPosition: "85% center",
+                objectPosition: `${botPos} center`,
               }}
             />
           </div>
@@ -775,35 +793,36 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
   };
 
   // Kinetic punch-in zoom calculation (resets audience attention every ~5 seconds)
+  // Anchored at upper-third face line (center 28%) with subtle 1.05x scale (Ali Abdaal standard)
   let videoScale = 1.0;
   if (timeline.kineticZoom) {
     const cycle = frame % 150; // every 5 seconds (150 frames @ 30fps)
     if (cycle >= 0 && cycle <= 36) {
       if (cycle < 6) {
-        videoScale = interpolate(cycle, [0, 6], [1.0, 1.13], {
+        videoScale = interpolate(cycle, [0, 6], [1.0, 1.05], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
       } else if (cycle > 30) {
-        videoScale = interpolate(cycle, [30, 36], [1.13, 1.0], {
+        videoScale = interpolate(cycle, [30, 36], [1.05, 1.0], {
           extrapolateLeft: "clamp",
           extrapolateRight: "clamp",
         });
       } else {
-        videoScale = 1.13;
+        videoScale = 1.05;
       }
     }
   }
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#000" }}>
-      {/* Background Video Layer with optional Kinetic Punch-In Zoom */}
+      {/* Background Video Layer with subtle Kinetic Punch-In Zoom */}
       <div
         style={{
           width: "100%",
           height: "100%",
           transform: `scale(${videoScale})`,
-          transformOrigin: "center center",
+          transformOrigin: "center 28%",
         }}
       >
         {renderVideoLayer()}

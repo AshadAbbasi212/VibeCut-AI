@@ -1,11 +1,59 @@
-"""
-Active Speaker Tracking & Auto-Reframe Engine
-Computes camera cut timelines with broadcast pacing rules, spatial speaker mapping,
-minimum shot duration hysteresis, and cross-talk / split-screen fallback.
-"""
+import os
+import logging
 from typing import Optional
 from backend.pipeline.chunk import Phrase
 from backend.schemas.timeline import CameraCut
+
+logger = logging.getLogger("reframe_engine")
+
+
+def detect_faces_timeline(
+    video_path: str,
+    model_path: str = "models/face_detection_yunet.onnx",
+    step_sec: float = 1.5,
+) -> list[dict]:
+    """Sample video frames at step_sec intervals and detect face bounding boxes."""
+    if not video_path or not os.path.exists(video_path) or not os.path.exists(model_path):
+        return []
+    try:
+        import cv2
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS) or 24.0
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        ret, sample = cap.read()
+        if not ret:
+            cap.release()
+            return []
+        h, w = sample.shape[:2]
+        detector = cv2.FaceDetectorYN.create(model_path, "", (w, h), score_threshold=0.7)
+        step_frames = max(1, int(fps * step_sec))
+        timeline_faces = []
+
+        for f_idx in range(0, total_frames, step_frames):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, f_idx)
+            ret, frame = cap.read()
+            if not ret:
+                break
+            t = f_idx / fps
+            detector.setInputSize((w, h))
+            _, faces = detector.detect(frame)
+            detected = []
+            if faces is not None:
+                for f in faces:
+                    x, y, fw, fh = f[:4]
+                    detected.append({
+                        "cx": round(float((x + fw / 2) / w), 3),
+                        "cy": round(float((y + fh / 2) / h), 3),
+                        "fw": round(float(fw / w), 3),
+                        "fh": round(float(fh / h), 3),
+                    })
+            detected.sort(key=lambda d: d["cx"])
+            timeline_faces.append({"t": round(t, 2), "faces": detected})
+        cap.release()
+        return timeline_faces
+    except Exception as e:
+        logger.warning(f"Face tracking failed or cv2 not available: {e}")
+        return []
 
 
 def _get_scene_for_time(scenes: list[dict], t: float) -> Optional[dict]:
@@ -21,6 +69,22 @@ def _get_scene_for_time(scenes: list[dict], t: float) -> Optional[dict]:
     return matched
 
 
+def _get_nearest_faces(face_samples: list[dict], t: float) -> list[dict]:
+    """Find the nearest face detection sample for timestamp t."""
+    if not face_samples:
+        return []
+    best = face_samples[0]
+    best_diff = abs(face_samples[0]["t"] - t)
+    for s in face_samples:
+        diff = abs(s["t"] - t)
+        if diff < best_diff:
+            best_diff = diff
+            best = s
+        elif s["t"] > t and diff > best_diff:
+            break
+    return best.get("faces", [])
+
+
 def build_active_speaker_cuts(
     phrases: list[Phrase],
     video_duration: float,
@@ -28,6 +92,7 @@ def build_active_speaker_cuts(
     min_shot_duration: float = 1.8,
     hold_buffer: float = 0.6,
     scene_analysis: Optional[dict] = None,
+    video_path: Optional[str] = None,
 ) -> list[CameraCut]:
     """
     Generate broadcast-quality dynamic camera cuts tracking the active speaker.
@@ -39,6 +104,7 @@ def build_active_speaker_cuts(
         min_shot_duration: Minimum duration (seconds) before switching cameras (hysteresis)
         hold_buffer: Extra time (seconds) to hold camera on speaker after phrase ends
         scene_analysis: Optional AI scene analysis with keyframe speaker positions
+        video_path: Optional path to source video for real-time face tracking
     
     Returns:
         List of non-overlapping CameraCut objects covering [0.0, video_duration]
@@ -54,6 +120,9 @@ def build_active_speaker_cuts(
                 layout="split_duo" if num_speakers == 2 else "solo",
             )
         ]
+
+    # Run computer vision face tracking if video_path is provided
+    face_samples = detect_faces_timeline(video_path) if video_path else []
 
     scenes = (scene_analysis or {}).get("scenes", [])
 
@@ -88,35 +157,57 @@ def build_active_speaker_cuts(
         if has_pause or prev_question:
             current_speaker = (current_speaker + 1) % max(1, num_speakers)
 
-        # Determine camera focus and layout using scene analysis if available
-        matched_scene = _get_scene_for_time(scenes, p_start) if scenes else None
-        if matched_scene:
-            spk_list = matched_scene.get("speakers", [])
-            positions = [
-                sp.get("position") if isinstance(sp, dict) else str(sp)
-                for sp in spk_list
-                if sp
-            ]
-            if not positions or all(pos == "center" for pos in positions) or (len(positions) == 1 and positions[0] == "center"):
-                # Solo close-up camera angle centered on the speaker
-                focus_x = 0.50
+        # Determine camera focus and layout: prioritize real-time computer vision face tracking
+        matched_faces = _get_nearest_faces(face_samples, p_start) if face_samples else []
+        if matched_faces:
+            if len(matched_faces) == 1:
+                # Solo close-up camera angle: lock directly on speaker's face horizontal center
+                focus_x = matched_faces[0]["cx"]
                 layout = "solo"
-            elif "left" in positions and "right" in positions:
-                # Wide 2-shot table view
+            else:
+                # Wide angle / interview with 2+ speakers in frame
+                left_face = matched_faces[0]
+                right_face = matched_faces[-1]
                 if is_cross_talk:
                     focus_x = 0.50
                     layout = "split_duo" if num_speakers == 2 else "split_trio"
-                else:
-                    focus_x = 0.20 if current_speaker == 0 else 0.82
+                elif current_speaker == 0:
+                    focus_x = left_face["cx"]
                     layout = "solo"
-            elif "left" in positions and "right" not in positions:
-                focus_x = 0.20
-                layout = "solo"
-            elif "right" in positions and "left" not in positions:
-                focus_x = 0.82
-                layout = "solo"
+                else:
+                    focus_x = right_face["cx"]
+                    layout = "solo"
+        elif scenes:
+            # Fallback to AI scene analysis keyframes
+            matched_scene = _get_scene_for_time(scenes, p_start)
+            if matched_scene:
+                spk_list = matched_scene.get("speakers", [])
+                positions = [
+                    sp.get("position") if isinstance(sp, dict) else str(sp)
+                    for sp in spk_list
+                    if sp
+                ]
+                if not positions or all(pos == "center" for pos in positions) or (len(positions) == 1 and positions[0] == "center"):
+                    focus_x = 0.50
+                    layout = "solo"
+                elif "left" in positions and "right" in positions:
+                    if is_cross_talk:
+                        focus_x = 0.50
+                        layout = "split_duo" if num_speakers == 2 else "split_trio"
+                    else:
+                        focus_x = 0.20 if current_speaker == 0 else 0.82
+                        layout = "solo"
+                elif "left" in positions and "right" not in positions:
+                    focus_x = 0.20
+                    layout = "solo"
+                elif "right" in positions and "left" not in positions:
+                    focus_x = 0.82
+                    layout = "solo"
+                else:
+                    focus_x = 0.50
+                    layout = "solo"
             else:
-                focus_x = 0.50
+                focus_x = seat_positions.get(current_speaker, 0.50)
                 layout = "solo"
         else:
             if is_cross_talk:

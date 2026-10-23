@@ -75,13 +75,19 @@ You receive a transcript (timed phrases) and a scene analysis of the video. Your
 ## Your Responsibilities:
 
 ### 1. MAIN POINTS & KEY TAKEAWAYS (Ali Abdaal Editorial Technique)
-Identify 3-5 pivotal moments in the video: key claims, counter-intuitive rules, core takeaways, numbered steps, or mind-blowing insights.
-For these moments, elevate them into FEATURE HIGHLIGHTS:
-- Educational / Explanations / Core Rules → "highlighter_marker" (marker stroke over key words), "blob_card" (clean floating card), "numbered_point" (clean [01] badge).
+Identify pivotal moments in the video: key claims, counter-intuitive rules, core takeaways, or mind-blowing insights.
+For these moments, elevate the SPOKEN WORDS into FEATURE HIGHLIGHTS:
+- Educational / Explanations / Core Rules → "highlighter_marker" (marker stroke over key words), "minimal_underline", "pill_word".
 - High Impact / Viral Hooks / Punchlines → "beast_impact" (explosive text pop), "hormozi_bold" (high-contrast active word glow), "fire_burn".
-- Deep Insights / Reflections → "cinematic_minimal" (clean tracking), "serif_title", "quote_editorial".
+- Deep Insights / Reflections → "cinematic_minimal" (clean tracking), "neon_glow", "karaoke_bounce".
 - Tech / Data / Numbers → "typewriter_terminal", "cyber_hud".
 Use word-level highlights on the punch words (e.g. highlights: [{{"wordIndex": 2, "kind": "color", "value": "#F59E0B"}}]) and contextual graphics/emojis.
+
+CRITICAL RULE — 100% VERBATIM SPOKEN WORDS ONLY (ABSOLUTELY NO HALLUCINATIONS):
+- You MUST ONLY use the EXACT words spoken by the speaker in the transcript.
+- NEVER invent, summarize, or generate text that the speaker did not speak (e.g. NEVER generate fake textbook titles like "Collaborative AI development...", "[01] Chapter 1", "Why World Models Matter").
+- The "text" field MUST be the EXACT verbatim words from the phrase within "wordRange".
+- In Ali Abdaal's editing style, captions are 100% authentic spoken speech, never artificial summary cards.
 
 ### 2. STRICT PLACEMENT & ANTI-COLLISION RULES (MANDATORY)
 - Continuous Speech Subtitles: always in the lower third safe zone ("lower", y: 0.79).
@@ -258,7 +264,7 @@ def _validate_and_parse_llm_json(
         if not isinstance(item, dict):
             continue
 
-        # Check wordRange validity
+        # Check wordRange validity and enforce verbatim spoken dialogue
         wr = item.get("wordRange")
         if wr and len(wr) == 2 and wr[0] in word_map and wr[1] in word_map:
             w_start = word_map[wr[0]].start
@@ -266,6 +272,24 @@ def _validate_and_parse_llm_json(
             # Allow tolerance if LLM's start/end drift
             item["start"] = max(0.0, min(float(item.get("start", w_start)), w_start + 0.15))
             item["end"] = min(video_duration, max(float(item.get("end", w_end)), w_end - 0.15))
+            # MANDATORY VERBATIM ENFORCEMENT:
+            # Overwrite text with the EXACT spoken words. Never render synthetic AI chapter summaries.
+            actual_words = [word_map[i].text for i in range(wr[0], wr[1] + 1) if i in word_map]
+            if actual_words:
+                item["text"] = " ".join(actual_words)
+        else:
+            # If wordRange is missing or invalid, verify that text was actually spoken
+            ev_text = str(item.get("text", "")).strip()
+            full_transcript_text = " ".join([w.text for w in word_map.values()]).lower()
+            if not ev_text or ev_text.lower() not in full_transcript_text:
+                logger.info(f"Dropping non-spoken / hallucinated event: '{ev_text}'")
+                continue
+
+        # Prevent oversized card styles from dominating screen if paragraph-length text
+        st = item.get("style", "")
+        words_count = len(item.get("text", "").split())
+        if st in ("blob_card", "numbered_point") and words_count > 10:
+            item["style"] = "highlighter_marker"
 
         # Sanitize graphic field
         g = item.get("graphic")

@@ -36,13 +36,15 @@ export const getCaptionFontSize = (
   base: number = 52
 ): number => {
   if (!size) return base;
-  if (size === "small") return Math.round(base * 0.74);
-  if (size === "large") return Math.round(base * 1.30);
-  if (size === "medium") return base;
+  if (size === "small") return Math.round(base * 0.75);
+  if (size === "large") return Math.min(60, Math.round(base * 1.15));
+  if (size === "medium") return Math.min(54, base);
   const num = parseFloat(size);
   if (!isNaN(num) && num >= 16 && num <= 160) {
     const scale = num / 52;
-    return Math.round(base * scale);
+    const calculated = Math.round(base * scale);
+    // Clamp to professional Ali Abdaal readable range [32px, 60px]
+    return Math.max(32, Math.min(60, calculated));
   }
   return base;
 };

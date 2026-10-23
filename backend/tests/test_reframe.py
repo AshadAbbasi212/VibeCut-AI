@@ -132,3 +132,23 @@ def test_active_speaker_scene_awareness():
     # Second cut during wide shot with right speaker must have focusX near 0.82
     assert cuts[1].focusX == 0.82
 
+
+def test_face_tracking_integration():
+    from backend.pipeline.reframe import detect_faces_timeline, _get_nearest_faces
+    # Test fallback on non-existent video
+    res = detect_faces_timeline("non_existent_video.mp4")
+    assert res == []
+
+    # Test nearest face matching
+    mock_samples = [
+        {"t": 1.0, "faces": [{"cx": 0.20, "cy": 0.35}]},
+        {"t": 5.0, "faces": [{"cx": 0.85, "cy": 0.35}, {"cx": 0.20, "cy": 0.35}]},
+    ]
+    f1 = _get_nearest_faces(mock_samples, 1.2)
+    assert len(f1) == 1
+    assert f1[0]["cx"] == 0.20
+
+    f2 = _get_nearest_faces(mock_samples, 4.8)
+    assert len(f2) == 2
+
+

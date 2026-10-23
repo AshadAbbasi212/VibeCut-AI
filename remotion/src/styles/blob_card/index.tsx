@@ -50,7 +50,7 @@ export const BlobCard: React.FC<BlobCardProps> = ({
         justifyContent: "center",
         transform: `scale(${scale * breatheScale})`,
         opacity,
-        padding: "16px 36px",
+        padding: "10px 26px",
         borderRadius: "58% 42% 52% 48% / 44% 56% 44% 56%",
         background: isFrosted
           ? "radial-gradient(ellipse at center, rgba(255, 255, 255, 0.42) 0%, rgba(240, 243, 246, 0.28) 100%)"
@@ -63,7 +63,7 @@ export const BlobCard: React.FC<BlobCardProps> = ({
         border: isFrosted
           ? "1.5px solid rgba(255, 255, 255, 0.5)"
           : "1.5px solid rgba(165, 180, 252, 0.25)",
-        maxWidth: "80%",
+        maxWidth: "68%",
         textAlign: "center",
       }}
     >

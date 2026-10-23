@@ -33,8 +33,29 @@
 - [x] Phase 32 Anti-Collision Guard, Granular Headmarker Vanish Timer, Ali Abdaal Multi-Style Director & Complete Studio Parity
 - [x] Phase 33 End-to-End Deep Video Verification, Layout-Aware Split Safe Zones, & WebKit Stroke Word Separation
 - [x] Phase 34 10-Minute Long Video Pipeline Validation, Concurrency Loop Pruning, Split Headline Safe Zones, & Universal Word Separation
+- [x] Phase 35 Professional Ali Abdaal Editorial Mode, Computer Vision Face Tracking, Mathematical Cover Centering, & Verbatim Spoken Word Enforcement
 
 ## Notes / known issues
+- Phase 35 (Professional Ali Abdaal Editorial Mode, Face Tracking & Cover Centering):
+  1. **Forensic Video Quality Diagnosis (Job 8cbae880ec)**:
+     - Wide Shots: Centered at `focusX = 0.50`, zooming into an empty table with neither speaker visible.
+     - Close-Ups: Kinetic punch-in zoom (`1.13x`) centered at `center center`, slicing off the speaker's forehead and hair.
+     - 2-Shot Guest: Positioned at `85%`, shoved against the right border with half his body clipped off.
+     - Text Hallucination: LLM injected synthetic chapter cards (e.g. "Collaborative AI model development with researchers") covering the screen with words never spoken.
+  2. **Mathematical CSS Cover Centering Engine**:
+     - Solved the CSS `objectPosition` overflow misconception. For 16:9 source in 9:16 portrait (`objectFit: "cover"`), visible width is 31.64% and overflow is 68.36%.
+     - Implemented `getCoverObjectPositionX(focusX, sourceAspect, targetAspect) = (focusX - visible/2) / overflow`.
+     - Host (`focusX = 0.206`) maps to `7.0%`, Guest (`0.853`) maps to `100%`, and Close-ups (`0.56`) map to `58.7%`, mathematically centering every speaker dead in the middle of the 9:16 frame.
+  3. **Computer Vision Deep Learning Face Tracking**:
+     - Embedded OpenCV YuNet (`face_detection_yunet.onnx`, 232 KB) in `backend/pipeline/reframe.py`.
+     - Analyzes video frames to detect 2D face coordinates, cluster speakers, and pair active Whisper transcript intervals with actual detected speaker positions.
+  4. **Headroom Protection & Kinetic Zoom Upper-Third Anchor**:
+     - Anchored kinetic zoom `transformOrigin` to `"center 28%"` (the upper-third eye line) and softened scale to `1.05x`, preserving full hairline, forehead, and natural ceiling headroom.
+  5. **100% Verbatim Dialogue Enforcement (Zero Hallucinated Cards)**:
+     - In `plan_llm.py`, enforced strict prompt constraints and programmed Python post-processing to overwrite `item["text"]` with exact slices from `word_map`. Any non-spoken phrase or invented heading is dropped.
+     - Remapped multi-word cards to sleek Ali Abdaal `highlighter_marker`. Clamped font sizes to `[32px, 60px]`.
+  6. **Verification**: 101/101 tests passing, Remotion production build clean, and re-rendered 30s broadcast video verified frame-by-frame with centered framing and clean Ali Abdaal typography.
+
 - Phase 34 (10-Minute Long-Form Video Deep Forensic Analysis & Defect Corrections):
   1. **10-Minute Real Video Pipeline Execution**:
      - Extracted 600.16s (10:00.07) from long-form landscape podcast video (`scratch/ten_minute_test.mp4`, 27.76 MB).
