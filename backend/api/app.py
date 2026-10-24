@@ -609,6 +609,39 @@ def get_sample_video():
     )
 
 
+@app.get("/api/storage/status")
+def storage_status():
+    """Return disk storage usage metrics for jobs and public assets."""
+    from backend.pipeline.render import get_remotion_dir
+    rem_dir = get_remotion_dir()
+    manager = get_job_manager()
+
+    def get_dir_size(path: Path) -> int:
+        if not path.exists():
+            return 0
+        return sum(f.stat().st_size for f in path.rglob('*') if f.is_file())
+
+    jobs_size = get_dir_size(manager.jobs_dir)
+    pub_size = get_dir_size(rem_dir / "public" / "jobs")
+    build_pub_size = get_dir_size(rem_dir / "build" / "public" / "jobs")
+
+    total_bytes = jobs_size + pub_size + build_pub_size
+    return {
+        "total_mb": round(total_bytes / (1024 * 1024), 2),
+        "jobs_dir_mb": round(jobs_size / (1024 * 1024), 2),
+        "remotion_public_mb": round(pub_size / (1024 * 1024), 2),
+        "remotion_build_mb": round(build_pub_size / (1024 * 1024), 2),
+        "total_jobs": len(manager.jobs),
+    }
+
+
+@app.post("/api/storage/cleanup")
+def cleanup_storage(max_kept_jobs: int = 15):
+    """Prune historical jobs and orphaned public assets to reclaim disk space."""
+    manager = get_job_manager()
+    return manager.cleanup_storage(max_kept_jobs=max_kept_jobs)
+
+
 # Mount frontend single page application
 frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"
 if frontend_dir.exists():

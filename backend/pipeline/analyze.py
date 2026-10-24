@@ -324,18 +324,21 @@ def _analyze_with_mistral(
                     if topic_text:
                         break
                 except Exception as model_err:
+                    err_msg = str(model_err).lower()
                     logger.warning(f"Mistral topic model {topic_model} failed: {model_err}")
+                    if "401" in err_msg or "unauthorized" in err_msg or "invalid" in err_msg:
+                        # Auth failure; don't retry subsequent models
+                        break
 
-            topic_text = response.choices[0].message.content or ""
-            topic_data = _parse_json_response(topic_text)
-
-            if topic_data:
-                analysis.dominant_mood = topic_data.get("dominant_mood", "neutral")
-                for seg in topic_data.get("topic_segments", []):
-                    analysis.topic_segments.append(TopicSegment(**{
-                        k: v for k, v in seg.items()
-                        if k in TopicSegment.model_fields
-                    }))
+            if topic_text:
+                topic_data = _parse_json_response(topic_text)
+                if topic_data:
+                    analysis.dominant_mood = topic_data.get("dominant_mood", "neutral")
+                    for seg in topic_data.get("topic_segments", []):
+                        analysis.topic_segments.append(TopicSegment(**{
+                            k: v for k, v in seg.items()
+                            if k in TopicSegment.model_fields
+                        }))
 
             logger.info(f"Topic analysis: {len(analysis.topic_segments)} segments, "
                         f"mood={analysis.dominant_mood}")

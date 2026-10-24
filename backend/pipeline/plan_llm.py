@@ -625,7 +625,11 @@ class MistralPlanner(BasePlanner):
                 break
             except Exception as e:
                 last_error = str(e)
+                err_lower = last_error.lower()
                 logger.warning(f"MistralPlanner model {target_model} attempt {attempt + 1} failed: {e}")
+                if "401" in err_lower or "unauthorized" in err_lower or "invalid_api_key" in err_lower or "invalid api key" in err_lower:
+                    logger.warning("Mistral API authentication failed (401/invalid key). Aborting model retries immediately.")
+                    break
 
         if not feature_events:
             logger.warning("MistralPlanner failed after retries. Falling back to RulePlanner.")
@@ -707,7 +711,11 @@ class GeminiPlanner(BasePlanner):
                 break
             except Exception as e:
                 last_error = str(e)
+                err_lower = last_error.lower()
                 logger.warning(f"GeminiPlanner attempt {attempt + 1} failed: {e}")
+                if "401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "permission_denied" in err_lower or "api_key_invalid" in err_lower:
+                    logger.warning("Gemini API authentication failed (invalid key or permissions). Aborting retries immediately.")
+                    break
 
         if not feature_events:
             logger.warning("GeminiPlanner failed after retries. Falling back to RulePlanner.")
@@ -790,7 +798,11 @@ class AnthropicPlanner(BasePlanner):
                 break
             except Exception as e:
                 last_error = str(e)
+                err_lower = last_error.lower()
                 logger.warning(f"AnthropicPlanner attempt {attempt + 1} failed: {e}")
+                if "401" in err_lower or "403" in err_lower or "unauthorized" in err_lower or "authentication" in err_lower or "invalid_api_key" in err_lower:
+                    logger.warning("Anthropic API authentication failed (401/invalid key). Aborting retries immediately.")
+                    break
 
         if not feature_events:
             logger.warning("AnthropicPlanner failed after retries. Falling back to RulePlanner.")

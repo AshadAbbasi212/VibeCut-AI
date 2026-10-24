@@ -82,3 +82,27 @@ def test_out_words_json_monotonic():
         assert w.start >= last_start
         last_start = w.start
 
+
+def test_compute_fast_file_hash_consistency(tmp_path):
+    from backend.pipeline.transcribe import compute_fast_file_hash, compute_file_sha256
+    # Test small file
+    small_file = tmp_path / "small.mp4"
+    small_file.write_bytes(b"hello world test content 12345")
+    assert compute_fast_file_hash(small_file) == compute_file_sha256(small_file)
+
+    # Test large file (> 4MB) sampling
+    large_file = tmp_path / "large.mp4"
+    large_file.write_bytes(b"A" * (5 * 1024 * 1024))
+    h1 = compute_fast_file_hash(large_file)
+    h2 = compute_fast_file_hash(large_file)
+    assert h1 == h2
+    assert isinstance(h1, str)
+    assert len(h1) == 64
+
+
+def test_extract_audio_wav_fallback(tmp_path):
+    from backend.pipeline.transcribe import extract_audio_wav
+    fake_file = tmp_path / "non_existent.mp4"
+    out_wav = tmp_path / "out.wav"
+    assert extract_audio_wav(fake_file, out_wav) is False
+

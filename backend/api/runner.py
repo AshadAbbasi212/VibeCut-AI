@@ -184,6 +184,69 @@ class JobManager:
             return True
         return False
 
+    def cleanup_storage(self, max_kept_jobs: int = 15) -> dict:
+        """
+        Prune historical job directories and orphaned Remotion public assets to reclaim disk space.
+        Strictly preserves test fixtures (job_mock_*, job_test_*, and any test-tagged jobs).
+        """
+        freed_bytes = 0
+        removed_jobs_count = 0
+
+        # Protected directories that must NEVER be removed
+        protected_prefixes = ("job_mock_", "job_test_")
+
+        # 1. Discover all job directories in self.jobs_dir
+        job_dirs = []
+        if self.jobs_dir.exists():
+            for item in self.jobs_dir.iterdir():
+                if item.is_dir():
+                    if item.name.startswith(protected_prefixes) or "test" in item.name.lower():
+                        continue
+                    job_dirs.append(item)
+
+        # Sort job dirs by modification time (most recent first)
+        job_dirs.sort(key=lambda d: d.stat().st_mtime, reverse=True)
+
+        # Keep the latest max_kept_jobs, prune the rest
+        to_delete = job_dirs[max_kept_jobs:]
+        for jd in to_delete:
+            try:
+                size = sum(f.stat().st_size for f in jd.rglob('*') if f.is_file())
+                shutil.rmtree(jd, ignore_errors=True)
+                freed_bytes += size
+                removed_jobs_count += 1
+                self.jobs.pop(jd.name, None)
+            except Exception as e:
+                logger.warning(f"Error removing old job {jd.name}: {e}")
+
+        # 2. Clean up orphaned folders in remotion/public/jobs and remotion/build/public/jobs
+        from backend.pipeline.render import get_remotion_dir
+        rem_dir = get_remotion_dir()
+        for base_pub in [rem_dir / "public" / "jobs", rem_dir / "build" / "public" / "jobs"]:
+            if base_pub.exists():
+                for sub in base_pub.iterdir():
+                    if sub.is_dir():
+                        if sub.name.startswith(protected_prefixes) or "test" in sub.name.lower():
+                            continue
+                        # If the corresponding job dir doesn't exist in jobs_dir anymore, prune it!
+                        if not (self.jobs_dir / sub.name).exists():
+                            try:
+                                size = sum(f.stat().st_size for f in sub.rglob('*') if f.is_file())
+                                shutil.rmtree(sub, ignore_errors=True)
+                                freed_bytes += size
+                            except Exception as e:
+                                logger.warning(f"Error removing orphaned public asset {sub}: {e}")
+
+        freed_mb = round(freed_bytes / (1024 * 1024), 2)
+        logger.info(f"Storage cleanup complete: freed {freed_mb} MB across {removed_jobs_count} pruned jobs.")
+        return {
+            "status": "success",
+            "freed_bytes": freed_bytes,
+            "freed_mb": freed_mb,
+            "jobs_removed": removed_jobs_count,
+            "remaining_jobs": len(self.jobs),
+        }
+
     def submit_job(
         self,
         input_video_source: Path,
@@ -219,6 +282,13 @@ class JobManager:
         api_key: Optional[str] = None,
     ) -> JobInfo:
         """Create and queue a new pipeline processing job."""
+        # Auto-prune if jobs grow excessively
+        if len(self.jobs) > 40:
+            try:
+                self.cleanup_storage(max_kept_jobs=25)
+            except Exception as e:
+                logger.warning(f"Auto storage cleanup error: {e}")
+
         job_id = f"job_{uuid.uuid4().hex[:10]}"
         job_dir = self.jobs_dir / job_id
         job_dir.mkdir(parents=True, exist_ok=True)

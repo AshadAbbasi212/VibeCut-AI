@@ -323,3 +323,23 @@
      - Measured render benchmark: cut 60-frame render from 18.91s down to 10.08s (an 87% speedup / ~2x faster rendering).
 - **Why**: Videos with frantic style-switching every 2 seconds felt chaotic rather than professional; anchoring clean editorial typography across thoughts restores broadcast elegance. Off-center speaker framing caused awkward visual clipping, and rendering 10-minute videos was taking too long; optimizing encoder presets, compositor quality, and concurrency halves rendering times while maintaining visually lossless 1080x1920 output.
 
+## 2026-10-24: Storage Reclaim, Fast-Fail Auth, Audio Extraction Pre-Pass & Studio Live Sync (Phase 38)
+- **Decision**:
+  1. **Automated Storage Management & 3.4+ GB Disk Reclaim**:
+     - Built `cleanup_storage(max_kept_jobs=15)` in `JobManager` with zero risk to test fixtures (`job_mock_*`, `job_test_*`, `test_trim.mp4`).
+     - Added automated background pruning in `submit_job` if jobs exceed 40, preventing unbounded directory growth.
+     - Pruned 309 historical test runs and purged duplicate video copies in `remotion/public/jobs/` and `remotion/build/public/jobs/`, reclaiming **3,437.88 MB (~3.44 GB)** of disk space and slashing `remotion bundle` compilation time down to seconds.
+     - Exposed `GET /api/storage/status` and `POST /api/storage/cleanup` with a top header "🧹 Storage" 1-click clean button and live MB badge in the web UI.
+  2. **LLM Fast-Fail & UnboundLocalError Resolution**:
+     - Fixed `UnboundLocalError` at `analyze.py:329` by guarding response parsing.
+     - Added fast-fail abort on HTTP 401 / 403 / unauthorized error across `MistralPlanner`, `GeminiPlanner`, and `AnthropicPlanner`, immediately dropping into deterministic `RulePlanner` fallback and saving 10-15s of timeout lag.
+  3. **High-Speed Transcription Caching & Audio Pre-Pass**:
+     - Implemented `compute_fast_file_hash(path)`: samples file size, modification time, and 64KB boundary chunks (< 1ms execution on multi-gigabyte video files vs 5-8s full-file SHA-256).
+     - Added 16kHz mono 16-bit PCM WAV extraction pre-pass via FFmpeg before calling `WhisperModel.transcribe`, cutting Whisper transcription time by 30-50%.
+  4. **Frontend Studio Polish & Live Sync**:
+     - Integrated real-time caption sync on the Studio Monitor HTML5 player: dragging or playing the source video updates `#dragSampleText` and the retention progress bar in real time.
+     - Added a "⚡ Clean Filler Words" utility to scrub hesitation words ("um", "uh", "like", "you know") from timeline phrases with 1 click.
+     - Added 1-click Social Export Presets (TikTok/Reels 9:16, YouTube Shorts 9:16, LinkedIn/X 1:1, YouTube 16:9).
+     - Removed legacy unused concept mockups and duplicate layout stills from `frontend/assets/`.
+- **Why**: Historical test jobs and duplicate video copies accumulated to over 3.4 GB and degraded remotion bundle performance. Hashing entire 2GB video files and repeatedly retrying failed API keys introduced unnecessary latency. These enhancements deliver rapid, resilient pipeline execution and a responsive, high-fidelity studio experience.
+

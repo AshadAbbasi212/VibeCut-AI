@@ -1901,6 +1901,11 @@
           <span class="status-dot"></span>
           <span id="engineStatus">Ready</span>
         </div>
+        <button type="button" class="btn-ghost" id="btnStorageClean" title="Clean historical job storage & redundant renders" style="display: flex; align-items: center; gap: 6px;">
+          <span>🧹</span>
+          <span id="storageCleanText">Storage</span>
+          <span class="badge" id="storageBadge" style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">-- MB</span>
+        </button>
         <button type="button" class="btn-ghost" id="quickSampleBtn">Load Sample Reel</button>
       </div>
     </header>
@@ -2171,6 +2176,25 @@
                 <span class="ar-icon">🖼️</span>
                 <span class="ar-ratio">4:5</span>
                 <span class="ar-sub">Portrait Post</span>
+              </button>
+            </div>
+            <!-- Quick Platform Target Presets -->
+            <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;" id="platformPresetsRow">
+              <button type="button" class="btn-custom-chip" data-preset-platform="tiktok" style="padding: 6px 4px; text-align: center;">
+                <span class="chip-label" style="font-size: 10px;">🎵 TikTok/Reels</span>
+                <span class="chip-sub" style="font-size: 8px;">9:16 • Lower 79%</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-preset-platform="shorts" style="padding: 6px 4px; text-align: center;">
+                <span class="chip-label" style="font-size: 10px;">🔴 Shorts</span>
+                <span class="chip-sub" style="font-size: 8px;">9:16 • Top Bar</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-preset-platform="square" style="padding: 6px 4px; text-align: center;">
+                <span class="chip-label" style="font-size: 10px;">💼 LinkedIn/X</span>
+                <span class="chip-sub" style="font-size: 8px;">1:1 • Center 50%</span>
+              </button>
+              <button type="button" class="btn-custom-chip" data-preset-platform="landscape" style="padding: 6px 4px; text-align: center;">
+                <span class="chip-label" style="font-size: 10px;">🖥️ YouTube 16:9</span>
+                <span class="chip-sub" style="font-size: 8px;">16:9 • Classic Sub</span>
               </button>
             </div>
           </div>
@@ -3219,7 +3243,8 @@
         <div class="editor-card hidden" id="editorCard">
           <div class="editor-header">
             <div><h3>Captions Timeline (<span id="eventCount">0</span> phrases)</h3></div>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button type="button" class="btn-sub" id="btnCleanFillerWords" title="Remove filler words like 'um', 'uh', 'you know' from captions" style="font-size: 11px; padding: 4px 10px; border-color: rgba(245, 158, 11, 0.4); color: #f59e0b; display: flex; align-items: center; gap: 4px;"><span style="font-size: 12px;">⚡</span> Clean Filler Words</button>
               <button type="button" class="btn-save-edits hidden" id="saveEditsBtn">💾 Save Changes</button>
               <button type="button" class="btn-save-edits hidden" id="rerenderBtn" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); border-color: rgba(99,102,241,0.5);">⚡ Re-render</button>
             </div>

@@ -3318,6 +3318,183 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // =========================================================================
+  // 9. Storage Management & 1-Click Disk Cleanup
+  // =========================================================================
+  const btnStorageClean = document.getElementById("btnStorageClean");
+  const storageBadge = document.getElementById("storageBadge");
+  const storageCleanText = document.getElementById("storageCleanText");
+
+  async function updateStorageBadge() {
+    if (!storageBadge) return;
+    try {
+      const res = await fetch("/api/storage/status");
+      if (res.ok) {
+        const data = await res.json();
+        storageBadge.textContent = `${data.total_mb} MB`;
+        if (data.total_mb > 500) {
+          storageBadge.style.color = "#f59e0b";
+          storageBadge.style.background = "rgba(245, 158, 11, 0.15)";
+        } else {
+          storageBadge.style.color = "#38bdf8";
+          storageBadge.style.background = "rgba(56, 189, 248, 0.15)";
+        }
+      }
+    } catch (e) {
+      // Background check error ignored
+    }
+  }
+
+  if (btnStorageClean) {
+    btnStorageClean.addEventListener("click", async () => {
+      btnStorageClean.disabled = true;
+      if (storageCleanText) storageCleanText.textContent = "Cleaning...";
+      try {
+        const res = await fetch("/api/storage/cleanup", { method: "POST" });
+        if (res.ok) {
+          const report = await res.json();
+          showToast(`🧹 Freed ${report.freed_mb} MB across ${report.jobs_removed} historical jobs!`);
+          await updateStorageBadge();
+        } else {
+          showToast("Storage cleanup request returned non-200");
+        }
+      } catch (err) {
+        showToast(`Storage cleanup failed: ${err.message}`);
+      } finally {
+        btnStorageClean.disabled = false;
+        if (storageCleanText) storageCleanText.textContent = "Storage";
+      }
+    });
+  }
+
+  updateStorageBadge();
+
+  // =========================================================================
+  // 10. Social Export Presets (TikTok, Reels, Shorts, LinkedIn, YouTube)
+  // =========================================================================
+  const platformPresetsRow = document.getElementById("platformPresetsRow");
+  if (platformPresetsRow) {
+    const presetBtns = platformPresetsRow.querySelectorAll("button[data-preset-platform]");
+    presetBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const platform = btn.dataset.presetPlatform;
+        presetBtns.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        if (platform === "tiktok") {
+          // TikTok/Reels: 9:16, Lower Safe 79%, Bottom Progress Bar
+          const arBtn = document.querySelector(`.btn-ar-opt[data-ar="9:16"]`);
+          if (arBtn) arBtn.click();
+          setSubtitlePosition(0.79, "preset");
+          if (progressBarToggle) progressBarToggle.checked = true;
+          if (progBarBottomBtn) progBarBottomBtn.click();
+          showToast("🎵 TikTok/Reels Preset: 9:16 Vertical, Lower 79%, Bottom Bar");
+        } else if (platform === "shorts") {
+          // YouTube Shorts: 9:16, Top Progress Bar (avoids YouTube's bottom overlay)
+          const arBtn = document.querySelector(`.btn-ar-opt[data-ar="9:16"]`);
+          if (arBtn) arBtn.click();
+          setSubtitlePosition(0.74, "preset");
+          if (progressBarToggle) progressBarToggle.checked = true;
+          const progBarTopBtn = document.getElementById("progBarTopBtn");
+          if (progBarTopBtn) progBarTopBtn.click();
+          showToast("🔴 YouTube Shorts Preset: 9:16 Vertical, Safe 74%, Top Bar");
+        } else if (platform === "square") {
+          // LinkedIn / X Feed: 1:1 Square, Center 50%
+          const arBtn = document.querySelector(`.btn-ar-opt[data-ar="1:1"]`);
+          if (arBtn) arBtn.click();
+          setSubtitlePosition(0.50, "preset");
+          showToast("💼 LinkedIn/X Preset: 1:1 Square, Center 50%");
+        } else if (platform === "landscape") {
+          // YouTube Longform: 16:9, Lower 82%
+          const arBtn = document.querySelector(`.btn-ar-opt[data-ar="16:9"]`);
+          if (arBtn) arBtn.click();
+          setSubtitlePosition(0.82, "preset");
+          showToast("🖥️ YouTube 16:9 Preset: 16:9 Landscape, Lower 82%");
+        }
+      });
+    });
+  }
+
+  // =========================================================================
+  // 11. 1-Click Filler Word Cleaner
+  // =========================================================================
+  const btnCleanFillerWords = document.getElementById("btnCleanFillerWords");
+  if (btnCleanFillerWords) {
+    btnCleanFillerWords.addEventListener("click", () => {
+      if (!currentTimeline || !currentTimeline.events || currentTimeline.events.length === 0) {
+        showToast("No active timeline to clean.");
+        return;
+      }
+
+      const fillerPattern = /\b(um|uh|erm|like|you know|sort of|kind of|actually|basically)\b/gi;
+      let cleanedCount = 0;
+
+      currentTimeline.events.forEach(ev => {
+        if (ev.text) {
+          const original = ev.text;
+          const scrubbed = original
+            .replace(fillerPattern, "")
+            .replace(/\s{2,}/g, " ")
+            .trim();
+          if (scrubbed !== original && scrubbed.length > 0) {
+            ev.text = scrubbed;
+            cleanedCount++;
+          }
+        }
+      });
+
+      renderTimeline(currentTimeline);
+      if (saveEditsBtn) saveEditsBtn.classList.remove("hidden");
+      if (rerenderBtn) rerenderBtn.classList.remove("hidden");
+      showToast(`⚡ Cleaned filler words from ${cleanedCount} phrases! Click Save Changes.`);
+    });
+  }
+
+  // =========================================================================
+  // 12. Real-Time In-Browser Caption Playback on Studio Monitor
+  // =========================================================================
+  function syncLiveCaptionAtTime(timeSec) {
+    if (!dragSampleText) return;
+    if (!currentTimeline || !currentTimeline.events || currentTimeline.events.length === 0) {
+      return;
+    }
+
+    const activeEv = currentTimeline.events.find(ev => timeSec >= ev.start && timeSec <= ev.end);
+    if (activeEv) {
+      let renderedText = activeEv.text;
+      if (activeEv.highlights && activeEv.highlights.length > 0) {
+        const words = activeEv.text.split(" ");
+        const hlIndices = new Set(activeEv.highlights.map(h => h.wordIndex));
+        renderedText = words.map((w, idx) => {
+          const absIdx = (activeEv.wordRange ? activeEv.wordRange[0] : 0) + idx;
+          if (hlIndices.has(absIdx) || hlIndices.has(idx)) {
+            return `<span class="highlight" style="color: ${selectedHighlightColor}; font-weight: 900;">${w}</span>`;
+          }
+          return w;
+        }).join(" ");
+      }
+      dragSampleText.innerHTML = renderedText;
+      if (draggableCaptionBox) draggableCaptionBox.style.opacity = "1";
+    } else {
+      if (draggableCaptionBox) draggableCaptionBox.style.opacity = "0.7";
+    }
+
+    // Sync retention progress bar fill during preview playback
+    if (sourceVideoPlayer && sourceVideoPlayer.duration && canvasProgressBarFill) {
+      const pct = (sourceVideoPlayer.currentTime / sourceVideoPlayer.duration) * 100;
+      canvasProgressBarFill.style.width = `${Math.min(100, Math.max(0, pct))}%`;
+    }
+  }
+
+  if (sourceVideoPlayer) {
+    sourceVideoPlayer.addEventListener("timeupdate", () => {
+      syncLiveCaptionAtTime(sourceVideoPlayer.currentTime);
+    });
+    sourceVideoPlayer.addEventListener("seeked", () => {
+      syncLiveCaptionAtTime(sourceVideoPlayer.currentTime);
+    });
+  }
+
   // Toast Helper
   function showToast(msg) {
     toast.textContent = msg;
@@ -3327,3 +3504,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 3000);
   }
 });
+

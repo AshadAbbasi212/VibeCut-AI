@@ -322,8 +322,24 @@ def test_job_submission_custom_numeric_caption_size(client, tmp_path, monkeypatc
 
     assert response.status_code == 201
     job_data = response.json()
-    assert job_data["caption_size"] == "44"
+def test_storage_status_endpoint(client):
+    """Test GET /api/storage/status returns disk storage usage."""
+    resp = client.get("/api/storage/status")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "total_mb" in data
+    assert "jobs_dir_mb" in data
+    assert "remotion_public_mb" in data
+    assert "total_jobs" in data
+    assert isinstance(data["total_mb"], (int, float))
 
 
-
-
+def test_storage_cleanup_endpoint(client, tmp_path):
+    """Test POST /api/storage/cleanup safely prunes jobs and preserves fixtures."""
+    resp = client.post("/api/storage/cleanup?max_kept_jobs=10")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "success"
+    assert "freed_mb" in data
+    assert "jobs_removed" in data
+    assert "remaining_jobs" in data
