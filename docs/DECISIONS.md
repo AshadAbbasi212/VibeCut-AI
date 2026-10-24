@@ -1,6 +1,29 @@
 # Architectural and Technical Decisions
 
-## 2026-10-24: Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking & Guaranteed Clip Captions
+## 2026-10-24: Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
+- **Decision**:
+  1. **Content-Aware Topic & Headline Synthesis in Rule-Based Finder (`backend/pipeline/clips.py`)**:
+     - Diagnosed why the AI Viral Reels Studio extracted only a single generic card (`🔥 WATCH THIS HIGHLIGHT`, 00:00 - 01:00, "Key moment from the video"):
+       - The rule-based finder had hardcoded fallbacks that fired whenever candidate window durations did not meet strict min duration requirements or when an invalid/expired LLM API key returned 401.
+       - The previous headline generator blindly took the raw first 4 words of dialogue with colloquial filler prefixes (`"AND IF IT IS..."`, `"SO IN MY OPINION..."`).
+     - Replaced with an intelligent, content-aware headline and topic synthesis engine:
+       - **Filler Stripping**: Automatically strips conversational fluff (`"so"`, `"and"`, `"in my opinion"`, `"basically"`, `"the thing is"`, `"you know"`).
+       - **Thematic Categories & Emoji Mapping**: Categorizes dialogue into tech (`🤖`), money/business (`💰`), insight/strategy (`💡`), warning/mistakes (`🚨`), growth/future (`🚀`), or curiosity/hooks (`🔥`).
+       - **Compelling Question & Thought Detection**: Scans transcript windows for direct questions (`?`) and high-impact key phrases, formulating snappy all-caps headlines (e.g. `🔥 THE TECH ISN'T THE BOTTLENECK ANYMORE`, `🔥 FIRST PIPE CAP AI VOICE AGENT`, `🔥 ITS CLOSEST COMPETITOR IS LIVEKIT`).
+       - **Dangling Tail Cleaner**: Strips dangling prepositions and conjunctions (`WITH`, `THEIR`, `THE`, `OF`, `AND`, `OR`, `TO`, `IN`, `FOR`, `ON`, `AT`, `IS`, `ARE`).
+       - **2-Sentence Contextual Summaries & Targeted Hashtags**: Generates clean, readable summaries reflecting the real spoken discussion.
+  2. **Adaptive Duration Scaling for Short or Trimmed Inputs**:
+     - When available speech duration is shorter than target `min_sec` (e.g. 60s discussion requested on a 30s clip or short preview), dynamically scales `effective_min_sec = max(3.0, available_span * 0.35)` and `effective_target_sec = min(available_span, target_sec)` instead of returning 0 candidates.
+  3. **Mutual Overlap Ratio & Duplicate Headline Elimination**:
+     - Upgraded candidate window deduplication: checks overlap against the smaller of two windows (`ov_dur > min(cand.dur, s.dur) * 0.45`) and strictly rejects duplicate headlines, ensuring 10-50+ distinct, non-overlapping clips spanning the entire video.
+  4. **Master Full-Video Transcript Caching (`backend/api/app.py` `find_job_clips`)**:
+     - Diagnosed why scanning from a child job or previously trimmed 5s job returned 0 candidates: `job_dir / "phrases.json"` only contained the 5 seconds of the trimmed render.
+     - Added ancestor traversal to `root_job`. If the root job's `phrases.json` covers only a trimmed fragment while the master source file is longer, the backend automatically transcribes the full master video once, caches `phrases_master.json`, and extracts viral moments across the complete video duration.
+  5. **Frontend State Isolation & Target Job Resolution (`frontend/app.js`)**:
+     - Updated `handleFile(file)` to reset `rootJobId = null; currentJobId = null; activeViralClips = [];` and clear stale tweaker UI whenever a new video file is selected.
+     - Updated `fetchViralClips` to target `rootJobId || currentJobId`, ensuring that discovery always operates against the full master video.
+- **Why**: Eliminates the single generic dummy clip fallback, guarantees multiple high-retention clips across 15s, 30s, and 60s targets with punchy topic-specific headlines, and ensures seamless discovery across long podcasts and short clips alike.
+
 - **Decision**:
   1. **Enforce Solo Dynamic Framing in Active Speaker Mode (`reframe.py` & Remotion `CaptionedVideo/index.tsx`)**:
      - Diagnosed why clips rendered as split-screen when "Active Speaker" was selected: `reframe.py` (`build_active_speaker_cuts`) defaulted to `layout="split_duo"` when phrases were empty or during cross-talk, and Remotion intercepted `currentCutLayout === "split_duo"` to render the podcast split screen.

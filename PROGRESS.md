@@ -39,8 +39,15 @@
 - [x] Phase 38 Storage Reclaim (3.4+ GB Freed), Fast-Fail LLM Auth, Audio Extraction Pre-Pass, & Studio Monitor Live Sync
 - [x] Phase 39 Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking, Guaranteed Clip Captions, & Non-Destructive Studio Dismissal
 - [x] Phase 40 Comprehensive Test Suite, Layout Alias Normalization, & Source Aspect Ratio Probing
+- [x] Phase 41 Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
 
 ## Notes / known issues
+- Phase 41 (Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication):
+  1. **Smart Headline & Topic Synthesis**: Implemented conversational filler stripping, thematic category mapping, direct question detection, and dangling preposition cleanup in `generate_smart_headline`, generating real, punchy all-caps viral headlines (e.g. `🔥 THE TECH ISN'T THE BOTTLENECK ANYMORE`, `🔥 FIRST PIPE CAP AI VOICE AGENT`, `🔥 ITS CLOSEST COMPETITOR IS LIVEKIT`) and 2-sentence contextual summaries directly from speech.
+  2. **Eliminated Generic Fallback**: Replaced hardcoded dummy fallback (`"🔥 WATCH THIS HIGHLIGHT"`, 00:00 - 01:00) with adaptive duration scaling (`effective_min_sec = max(3.0, available_span * 0.35)`) and mutual overlap thresholding (`ov_dur > min(cand.dur, s.dur) * 0.45`), discovering 10 to 49 distinct, high-impact viral clips across 15s, 30s, and 60s targets on the real 5-minute video sample.
+  3. **Master Transcript Caching in `find_job_clips`**: Added automatic ancestor resolution and full-duration master video transcription whenever phrases cover only a trimmed segment (e.g. 5s preview from full studio), caching `phrases_master.json` for lightning-fast subsequent scans.
+  4. **Frontend State Isolation**: In `frontend/app.js`, reset `rootJobId = null; currentJobId = null; activeViralClips = [];` on new video uploads and routed `fetchViralClips` to `rootJobId || currentJobId`.
+  5. **Full Regression Validation**: Verified with 108 passing tests and verified end-to-end clip extraction across 15s, 30s, and 60s targets on real audio.
 - Phase 40 (Comprehensive Verification, Layout Alias Normalization & Aspect Ratio Probing):
   1. **Comprehensive Test Suite**: Executed full unit/integration regression suite (108 passed, 2 skipped) plus end-to-end multi-clip test exercising API endpoints, `active_speaker` solo framing, `split_podcast` dual-camera framing, `ambient_blur` background frosted blur, and chained multi-reel ancestor traversal.
   2. **Layout Alias Normalization**: Added `LAYOUT_ALIASES` pre-validators across `backend/schemas/timeline.py`, `backend/pipeline/clips.py`, and `backend/api/runner.py`, allowing UI parameters like `"ambient_blur"`, `"split"`, or `"speaker"` to normalize transparently to valid schema literals (`"blur_fit"`, `"split_podcast"`, `"active_speaker"`).

@@ -833,10 +833,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (editorCard) editorCard.classList.add("hidden");
     if (pipelineProgressCard) pipelineProgressCard.classList.add("hidden");
     if (startJobBtn) startJobBtn.disabled = false;
-    if (btnProgressFill) btnProgressFill.style.width = "0%";
-    if (btnTextLabel) btnTextLabel.textContent = "Generate Captioned Video ⚡";
     currentJobId = null;
+    rootJobId = null;
     currentTimeline = null;
+    activeViralClips = [];
+    if (viralClipsList) viralClipsList.innerHTML = "";
+    if (clipsCountBadge) clipsCountBadge.textContent = "0 Found";
+    if (viralClipsActions) viralClipsActions.classList.add("hidden");
+    if (clipTweakerCard) clipTweakerCard.classList.add("hidden");
 
     selectedFile = file;
     fileName.textContent = file.name;
@@ -1679,8 +1683,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       let data;
-      if (currentJobId) {
-        const res = await fetch(`/api/jobs/${currentJobId}/find-clips?target_length=${encodeURIComponent(len)}`, {
+      const targetJob = rootJobId || currentJobId;
+      if (targetJob) {
+        const res = await fetch(`/api/jobs/${targetJob}/find-clips?target_length=${encodeURIComponent(len)}`, {
           method: "POST",
         });
         if (!res.ok) {

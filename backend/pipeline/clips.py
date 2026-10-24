@@ -76,20 +76,137 @@ def _snap_to_phrases(start_sec: float, end_sec: float, phrases: list) -> tuple[f
     return round(best_start, 2), round(best_end, 2)
 
 
+HIGH_IMPACT_CATEGORIES = {
+    "tech": ({"ai", "tech", "model", "system", "code", "livekit", "pipecap", "software", "api", "data", "compute", "algorithm", "python", "javascript", "developer", "automation"}, "🤖"),
+    "money": ({"money", "million", "billion", "market", "scale", "cost", "revenue", "dollar", "price", "business", "profit", "sales", "client", "invest", "crypto"}, "💰"),
+    "insight": ({"secret", "rule", "key", "lesson", "strategy", "truth", "problem", "solution", "hack", "skills", "mindset", "principle", "advice", "remember", "formula"}, "💡"),
+    "warning": ({"mistake", "never", "stop", "danger", "fail", "failure", "wrong", "bottleneck", "risk", "warning", "trap", "avoid", "terrible"}, "🚨"),
+    "growth": ({"future", "power", "growth", "success", "scale", "build", "expand", "opportunity", "win", "breakthrough", "transform", "achieve", "elevate"}, "🚀"),
+    "curiosity": ({"why", "how", "what", "if", "insane", "crazy", "shocking", "nobody", "everyone", "unbelievable", "secret", "weird"}, "🔥"),
+}
+
+FILLER_PREFIXES = [
+    r"^(so\s*,?\s*)+",
+    r"^(and\s*,?\s*)+",
+    r"^(but\s*,?\s*)+",
+    r"^(well\s*,?\s*)+",
+    r"^(you know\s*,?\s*)+",
+    r"^(in my opinion\s*,?\s*)+",
+    r"^(basically\s*,?\s*)+",
+    r"^(i mean\s*,?\s*)+",
+    r"^(actually\s*,?\s*)+",
+    r"^(like\s*,?\s*)+",
+    r"^(the thing is\s*,?\s*)+",
+    r"^(right\s*,?\s*)+",
+    r"^(yeah\s*,?\s*)+",
+    r"^(now\s*,?\s*)+",
+    r"^(look\s*,?\s*)+",
+]
+
+
+def _clean_hook_text(text: str) -> str:
+    """Strip colloquial fillers, stuttering, and conversational fluff from hook candidate."""
+    cleaned = text.strip()
+    for pattern in FILLER_PREFIXES:
+        cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE).strip()
+    return cleaned
+
+
+def generate_smart_headline(window_phrases: list[dict], full_text: str) -> tuple[str, str, list[str]]:
+    """Synthesize a high-retention viral headline, contextual 2-sentence summary, and tags."""
+    if not window_phrases:
+        return "🔥 WATCH THIS HIGHLIGHT", "Key moment from the video", ["#viral", "#reels"]
+
+    words_lower = set(re.findall(r"\b\w+\b", full_text.lower()))
+
+    # Determine matched categories and hashtags
+    hashtags = ["#podcast", "#viral", "#reels", "#shorts"]
+    for cat, (cat_words, _) in HIGH_IMPACT_CATEGORIES.items():
+        if words_lower.intersection(cat_words):
+            hashtags.append(f"#{cat}")
+
+    # 1. Search for a direct compelling question in the dialogue
+    candidate_hooks = []
+    q_matches = re.findall(r"([^.!?\n]+\?)", full_text)
+    for q in q_matches:
+        q_clean = _clean_hook_text(q).strip(" ?.,!")
+        if len(q_clean.split()) >= 3 and len(q_clean) >= 12:
+            candidate_hooks.append((q_clean + "?", 3.5))
+
+    # 2. Extract best phrases across the window
+    for idx, p in enumerate(window_phrases[:8]):
+        raw_t = p["text"].strip()
+        cleaned_t = _clean_hook_text(raw_t).strip(" .,!?:;")
+        words = cleaned_t.split()
+        if len(words) >= 3 and len(cleaned_t) >= 10:
+            # Earlier phrases get a slight position advantage
+            score = max(0.5, 2.5 - (idx * 0.25))
+            # Bonus for high impact keywords in this phrase
+            matching_impact = 0
+            for _, (cat_words, _) in HIGH_IMPACT_CATEGORIES.items():
+                matching_impact += len(set(w.lower() for w in words).intersection(cat_words))
+            score += min(matching_impact * 0.8, 2.4)
+            candidate_hooks.append((cleaned_t, score))
+
+    # Pick the highest scoring hook or fall back to the first phrase
+    if candidate_hooks:
+        candidate_hooks.sort(key=lambda x: x[1], reverse=True)
+        hook_raw = candidate_hooks[0][0]
+    else:
+        hook_raw = _clean_hook_text(window_phrases[0]["text"]).strip(" .,!?:;")
+
+    # Strip dangling trailing prepositions, articles, and auxiliary words
+    DANGLING_TAILS = r"\s+(WITH|THEIR|THE|A|AN|OF|AND|OR|TO|IN|FOR|ON|AT|IS|ARE|WAS|BE|BY|THAT|THIS|IT|SO)\s*$"
+    for _ in range(2):
+        hook_raw = re.sub(DANGLING_TAILS, "", hook_raw, flags=re.IGNORECASE).strip()
+
+    # Format headline: ALL CAPS, snappy length <= 42 chars
+    hook_upper = hook_raw.strip().upper()
+    if len(hook_upper) > 40:
+        truncated = hook_upper[:38].rsplit(" ", 1)[0]
+        truncated = re.sub(DANGLING_TAILS, "", truncated, flags=re.IGNORECASE).strip()
+        hook_upper = (truncated if len(truncated) >= 8 else hook_upper[:37]) + "..."
+
+    headline = f"🔥 {hook_upper}" if not hook_upper.startswith("🔥") else hook_upper
+
+    # 3. Contextual 2-sentence summary
+    raw_sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", full_text) if len(s.strip()) > 12]
+    if len(raw_sentences) >= 2:
+        summary = f"{raw_sentences[0]} {raw_sentences[1]}"
+    elif raw_sentences:
+        summary = raw_sentences[0]
+    else:
+        summary = full_text[:140]
+
+    if len(summary) > 165:
+        summary = summary[:162].rsplit(" ", 1)[0] + "..."
+
+    return headline, summary, hashtags[:7]
+
+
 def _rule_based_clip_finder(
     phrases: list,
     video_duration: float,
     target_length: str = "30s",
 ) -> list[ViralClip]:
-    """Fallback rule-based finder using speech energy, question marks, and cadence."""
+    """Content-aware rule-based finder discovering high-impact, standalone viral clips."""
     config = TARGET_DURATIONS.get(target_length, TARGET_DURATIONS["30s"])
     target_sec = config["target"]
     min_sec = config["min"]
     max_sec = config["max"]
 
-    if not phrases:
-        # Generate at least one clip spanning the video
-        dur = min(video_duration, target_sec)
+    # Convert phrases to standard dicts
+    clean_phrases = []
+    for p in phrases:
+        clean_phrases.append({
+            "start": round(p["start"] if isinstance(p, dict) else p.start, 2),
+            "end": round(p["end"] if isinstance(p, dict) else p.end, 2),
+            "text": (p["text"] if isinstance(p, dict) else p.text).strip(),
+        })
+
+    # If no phrases provided, return one clip spanning available duration
+    if not clean_phrases:
+        dur = round(min(video_duration, target_sec), 2)
         return [
             ViralClip(
                 id="clip_1",
@@ -104,20 +221,23 @@ def _rule_based_clip_finder(
             )
         ]
 
-    # Convert phrases to standard dicts
-    clean_phrases = []
-    for p in phrases:
-        clean_phrases.append({
-            "start": p["start"] if isinstance(p, dict) else p.start,
-            "end": p["end"] if isinstance(p, dict) else p.end,
-            "text": (p["text"] if isinstance(p, dict) else p.text).strip(),
-        })
+    # Adaptive duration scaling: if the available speech span is shorter than min_sec,
+    # scale thresholds dynamically so clips are ALWAYS discovered on trimmed clips or short videos!
+    available_span = max(clean_phrases[-1]["end"] - clean_phrases[0]["start"], 1.0)
+    effective_min_sec = min_sec
+    effective_target_sec = target_sec
+    effective_max_sec = max_sec
 
-    # Hook / impact word triggers
+    if available_span < min_sec:
+        effective_min_sec = max(3.0, available_span * 0.35)
+        effective_target_sec = min(available_span, target_sec)
+        effective_max_sec = available_span + 1.0
+
     HIGH_IMPACT_WORDS = {
         "secret", "never", "always", "stop", "mistake", "why", "how", "insane",
         "crazy", "money", "million", "success", "fail", "future", "truth",
-        "power", "rule", "key", "first", "nobody", "everyone", "shocking"
+        "power", "rule", "key", "first", "nobody", "everyone", "shocking",
+        "ai", "agent", "system", "code", "tech", "growth", "build", "strategy"
     }
 
     candidates = []
@@ -132,82 +252,95 @@ def _rule_based_clip_finder(
             end_time = p_j["end"]
             dur = end_time - start_time
 
-            if dur < min_sec:
+            if dur < effective_min_sec:
                 continue
-            if dur > max_sec:
+            if dur > effective_max_sec:
                 break
 
-            # Evaluate this window
+            # Evaluate this speech window
             window_phrases = clean_phrases[i:j + 1]
             full_text = " ".join(p["text"] for p in window_phrases)
             words = full_text.lower().split()
 
-            score = 6.0
+            # Base score
+            score = 6.2
 
-            # Bonus for starting near ideal target duration
-            diff_from_target = abs(dur - target_sec)
-            score += max(0.0, (5.0 - (diff_from_target * 0.3)))
+            # Closeness to ideal target duration
+            diff_from_target = abs(dur - effective_target_sec)
+            score += max(0.0, (4.5 - (diff_from_target * 0.25)))
 
-            # Bonus for questions or exclamation marks
+            # Speech density & cadence: reward full, rich sentences over silence
+            wps = len(words) / max(dur, 1.0)
+            if 1.8 <= wps <= 3.8:
+                score += 1.0
+
+            # Bonus for questions (curiosity gap) or exclamations
             if "?" in full_text:
-                score += 1.2
+                score += 1.4
             if "!" in full_text:
                 score += 0.8
 
             # Bonus for high-impact keywords
             matching_keywords = [w.strip(".,!?") for w in words if w.strip(".,!?") in HIGH_IMPACT_WORDS]
-            score += min(len(matching_keywords) * 0.4, 2.0)
+            score += min(len(matching_keywords) * 0.4, 2.2)
 
-            # Bonus if starting with a strong hook
+            # Bonus if opening phrase has a strong hook trigger
             first_words = [w.lower() for w in window_phrases[0]["text"].split()[:4]]
-            if any(w in {"why", "how", "what", "if", "you", "so", "the", "this"} for w in first_words):
-                score += 0.7
+            if any(w in {"why", "how", "what", "if", "you", "so", "the", "this", "here"} for w in first_words):
+                score += 0.6
 
-            # Generate headline
-            headline = "🔥 " + window_phrases[0]["text"].upper()
-            if len(headline) > 42:
-                headline = headline[:39] + "..."
+            # Synthesize smart headline, summary, and hashtags from speech content
+            headline, summary, hashtags = generate_smart_headline(window_phrases, full_text)
 
             candidates.append({
                 "start": start_time,
                 "end": end_time,
                 "duration": round(dur, 2),
                 "headline": headline,
-                "summary": f"Discussion covering: {full_text[:80]}...",
+                "summary": summary,
                 "score": round(min(score, 9.8), 1),
                 "keywords": list(set(matching_keywords))[:5],
+                "hashtags": hashtags,
             })
 
     # Sort candidates by score descending
     candidates.sort(key=lambda c: c["score"], reverse=True)
 
-    # Filter out heavily overlapping candidates (must be at least 50% non-overlapping)
+    # Filter out heavily overlapping candidates (>45% mutual overlap or duplicate headlines)
     selected = []
+    seen_headlines = set()
     for cand in candidates:
+        # Avoid redundant duplicate titles
+        if cand["headline"] in seen_headlines:
+            continue
         overlap = False
         for s in selected:
-            # Overlap duration
             ov_start = max(cand["start"], s["start"])
             ov_end = min(cand["end"], s["end"])
             if ov_end > ov_start:
                 ov_dur = ov_end - ov_start
-                if ov_dur > (cand["duration"] * 0.5):
+                # Check overlap against the smaller clip so one does not engulf another
+                if ov_dur > (min(cand["duration"], s["duration"]) * 0.45):
                     overlap = True
                     break
         if not overlap:
             selected.append(cand)
+            seen_headlines.add(cand["headline"])
 
-    # If no candidates met the strict length, take a sliding slice
+    # If no candidates met criteria, synthesize a clip directly from available phrases
     if not selected:
-        dur = min(video_duration, target_sec)
+        dur = round(min(video_duration, target_sec), 2)
+        full_text = " ".join(p["text"] for p in clean_phrases)
+        headline, summary, hashtags = generate_smart_headline(clean_phrases, full_text)
         selected.append({
-            "start": 0.0,
-            "end": dur,
+            "start": clean_phrases[0]["start"],
+            "end": clean_phrases[-1]["end"] if (clean_phrases[-1]["end"] - clean_phrases[0]["start"]) <= effective_max_sec else round(clean_phrases[0]["start"] + dur, 2),
             "duration": dur,
-            "headline": "🔥 WATCH THIS HIGHLIGHT",
-            "summary": "Key excerpt from the video",
+            "headline": headline,
+            "summary": summary,
             "score": 8.0,
             "keywords": ["highlight"],
+            "hashtags": hashtags,
         })
 
     result = []
@@ -216,7 +349,7 @@ def _rule_based_clip_finder(
         social_post = SocialPost(
             hook=f"Wait till you hear this... {clean_headline} 🤯",
             caption=f"Key takeaway from this moment: \"{c.get('summary', '')}\"... Watch till the end and drop your thoughts below! 👇",
-            hashtags=["#podcast", "#viral", "#reels", "#shorts", "#mindset", "#success", "#growth"]
+            hashtags=c.get("hashtags", ["#podcast", "#viral", "#reels", "#shorts", "#mindset", "#success", "#growth"])
         )
         result.append(
             ViralClip(
@@ -353,8 +486,30 @@ def _assemble_and_deduplicate_clips(
         if dur < (min_sec * 0.7) or dur > (max_sec * 1.5):
             continue
 
-        headline = rc.get("headline", "").strip() or "🔥 VIRAL HIGHLIGHT"
+        headline = rc.get("headline", "").strip()
         summary = rc.get("summary", "").strip()
+
+        # If headline or summary is generic or missing, synthesize from speech in window
+        if not headline or headline in {"🔥 VIRAL HIGHLIGHT", "🔥 WATCH THIS HIGHLIGHT"} or not summary:
+            win_phrases = [
+                {"start": p["start"] if isinstance(p, dict) else p.start, "end": p["end"] if isinstance(p, dict) else p.end, "text": (p["text"] if isinstance(p, dict) else p.text).strip()}
+                for p in phrases
+                if (p["start"] if isinstance(p, dict) else p.start) >= (snapped_start - 0.5)
+                and (p["end"] if isinstance(p, dict) else p.end) <= (snapped_end + 0.5)
+            ]
+            if win_phrases:
+                full_t = " ".join(p["text"] for p in win_phrases)
+                smart_h, smart_s, _ = generate_smart_headline(win_phrases, full_t)
+                if not headline or headline in {"🔥 VIRAL HIGHLIGHT", "🔥 WATCH THIS HIGHLIGHT"}:
+                    headline = smart_h
+                if not summary:
+                    summary = smart_s
+
+        if not headline:
+            headline = "🔥 VIRAL HIGHLIGHT"
+        if not summary:
+            summary = "Key discussion highlight"
+
         try:
             score = float(rc.get("virality_score", 8.5))
         except (ValueError, TypeError):

@@ -258,15 +258,31 @@ def find_job_clips(
     if not job:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
 
-    job_dir = Path("jobs").resolve() / job_id
-    phrases_file = job_dir / "phrases.json"
-    timeline_file = job_dir / "timeline.json"
-    analysis_file = job_dir / "analysis.json"
+    # Traverse to root ancestor job so we scan the master video and transcript
+    curr = job
+    while getattr(curr, "parent_job_id", None):
+        parent = manager.get_job(curr.parent_job_id)
+        if parent:
+            curr = parent
+        else:
+            break
+    root_job = curr
+    root_job_id = root_job.id
+    root_job_dir = Path("jobs").resolve() / root_job_id
+
+    master_phrases_file = root_job_dir / "phrases_master.json"
+    phrases_file = root_job_dir / "phrases.json"
+    timeline_file = root_job_dir / "timeline.json"
+    analysis_file = root_job_dir / "analysis.json"
 
     phrases = []
     duration = 30.0
 
-    if phrases_file.exists():
+    if master_phrases_file.exists():
+        data = json.loads(master_phrases_file.read_text(encoding="utf-8"))
+        phrases = data.get("phrases", [])
+        duration = float(data.get("duration", 30.0))
+    elif phrases_file.exists():
         data = json.loads(phrases_file.read_text(encoding="utf-8"))
         phrases = data.get("phrases", [])
         duration = float(data.get("duration", 30.0))
@@ -278,6 +294,30 @@ def find_job_clips(
     else:
         raise HTTPException(status_code=400, detail="Transcript or phrases not yet generated for this job")
 
+    # If the root phrases cover only a short trimmed fragment but the input file is longer,
+    # transcribe the full master file so clips are found across the entire source video!
+    input_file_path = None
+    if getattr(root_job, "input_file", None) and Path(root_job.input_file).exists():
+        input_file_path = Path(root_job.input_file)
+    elif (root_job_dir / "input.mp4").exists():
+        input_file_path = root_job_dir / "input.mp4"
+
+    if input_file_path and not master_phrases_file.exists():
+        from backend.pipeline.probe import probe_video
+        try:
+            probe = probe_video(input_file_path)
+            if (duration < 15.0 or duration < 45.0) and probe.duration > (duration + 5.0):
+                from backend.pipeline.transcribe import transcribe
+                from backend.pipeline.chunk import chunk_words
+                logger.info(f"Master file is {probe.duration:.1f}s while phrases cover {duration:.1f}s. Transcribing full video...")
+                full_transcript = transcribe(path=input_file_path)
+                full_chunked = chunk_words(words=full_transcript.words, duration=probe.duration)
+                phrases = [c.model_dump() for c in full_chunked]
+                duration = probe.duration
+                master_phrases_file.write_text(json.dumps({"phrases": phrases, "duration": duration}, indent=2), encoding="utf-8")
+        except Exception as e:
+            logger.warning(f"Could not probe/transcribe full master video ({e}); using existing phrases.")
+
     topic_segments = None
     if analysis_file.exists():
         try:
@@ -286,18 +326,19 @@ def find_job_clips(
         except Exception:
             pass
 
-    provider = job.llm_provider if job.llm_provider != "none" else os.getenv("LLM_PROVIDER", "none")
+    provider = root_job.llm_provider if root_job.llm_provider != "none" else os.getenv("LLM_PROVIDER", "none")
     clips = find_viral_clips(
         phrases=phrases,
         video_duration=duration,
         target_length=target_length,
         provider=provider,
-        api_key=getattr(job, "api_key", None),
+        api_key=getattr(root_job, "api_key", None),
         topic_segments=topic_segments,
     )
 
     return {
         "job_id": job_id,
+        "root_job_id": root_job_id,
         "target_length": target_length,
         "video_duration": duration,
         "clips": [c.model_dump() for c in clips],
