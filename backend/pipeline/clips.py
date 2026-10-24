@@ -752,7 +752,9 @@ def slice_timeline_for_clip(
     clip_duration = round(clip_end - clip_start, 2)
 
     # 1. Determine layout
+    from backend.schemas.timeline import LAYOUT_ALIASES
     chosen_layout = video_layout or timeline.video.layout or "split_podcast"
+    chosen_layout = LAYOUT_ALIASES.get(chosen_layout, chosen_layout)
 
     # Slice video metadata
     new_video = timeline.video.model_copy(

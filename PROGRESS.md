@@ -38,8 +38,14 @@
 - [x] Phase 37 Speaker Face Centering Calibration, Professional Editorial Restraint (Ali Abdaal Palette & 3-Sentence Anchoring), & 2x Remotion Render Speedup
 - [x] Phase 38 Storage Reclaim (3.4+ GB Freed), Fast-Fail LLM Auth, Audio Extraction Pre-Pass, & Studio Monitor Live Sync
 - [x] Phase 39 Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking, Guaranteed Clip Captions, & Non-Destructive Studio Dismissal
+- [x] Phase 40 Comprehensive Test Suite, Layout Alias Normalization, & Source Aspect Ratio Probing
 
 ## Notes / known issues
+- Phase 40 (Comprehensive Verification, Layout Alias Normalization & Aspect Ratio Probing):
+  1. **Comprehensive Test Suite**: Executed full unit/integration regression suite (108 passed, 2 skipped) plus end-to-end multi-clip test exercising API endpoints, `active_speaker` solo framing, `split_podcast` dual-camera framing, `ambient_blur` background frosted blur, and chained multi-reel ancestor traversal.
+  2. **Layout Alias Normalization**: Added `LAYOUT_ALIASES` pre-validators across `backend/schemas/timeline.py`, `backend/pipeline/clips.py`, and `backend/api/runner.py`, allowing UI parameters like `"ambient_blur"`, `"split"`, or `"speaker"` to normalize transparently to valid schema literals (`"blur_fit"`, `"split_podcast"`, `"active_speaker"`).
+  3. **Automatic Clip Aspect Ratio Probing**: Integrated `probe_video(trimmed_mp4)` on trimmed video segments in `submit_clip_job` to guarantee that `originalWidth` and `originalHeight` accurately reflect the true aspect ratio (e.g. landscape 854x480 / 1920x1080 vs vertical 1080x1920) for Remotion composition decisions.
+  4. **Visual Frame Verification**: Extracted and visually inspected rendered MP4 frames across active speaker solo, split podcast, and ambient blur layouts, verifying 100% broadcast framing accuracy, non-overlapping safe zones, animated captions, and hook cards.
 - Phase 39 (Active Speaker Solo Framing, Multi-Reel Root Job Tracking & Guaranteed Clip Captions):
   1. **Active Speaker Solo Dynamic Auto-Cut Framing**: Fixed `reframe.py` and Remotion `CaptionedVideo` so selecting "Active Speaker" always generates solo framed shots tracking the speaking face, eliminating unintended split-screen rendering.
   2. **Guaranteed Captions on Trimmed Clips**: Added automatic fallback in `submit_clip_job` to transcribe `input.mp4` directly whenever parent timeline slicing returns 0 events or words.

@@ -16,8 +16,10 @@
      - Diagnosed why canceling/closing the player forced the user to re-upload: the "✕" button on the video player was calling `resetStudioForNewVideo()`, which wiped `selectedFile`, `currentJobId`, and `activeViralClips`.
      - Replaced with `dismissResultView()`, which pauses the rendered player and returns to `showStage("source")` while keeping the uploaded video, scanned reels list, and clip tweaker intact.
      - Added a dedicated "🎬 Render Another Reel" button in the download actions bar next to "Download Captioned MP4".
-  5. **Synchronized Video Layout Selection**:
+  5. **Synchronized Video Layout Selection & Layout Alias Normalization**:
      - Synchronized `setVideoLayout` in `frontend/app.js` so clicking any visual layout card (`Active Speaker`, `Podcast Split`, `Ambient Blur`, etc.) simultaneously updates `selectedVideoLayout`, `selectedClipLayout`, and all UI badges, preventing state desynchronization.
+     - Added `LAYOUT_ALIASES` normalization in `backend/schemas/timeline.py`, `backend/pipeline/clips.py`, and `backend/api/runner.py` (mapping `"ambient_blur"` -> `"blur_fit"`, `"split"` -> `"split_podcast"`, `"speaker"` -> `"active_speaker"`, `"center_zoom"` -> `"fill"`) so external inputs and UI parameters validate seamlessly against Pydantic schemas.
+     - Integrated automatic `probe_video(trimmed_mp4)` on newly trimmed clip files in `submit_clip_job` to guarantee that `originalWidth` and `originalHeight` always match the real source aspect ratio for Remotion's layout switcher.
 - **Why**: Solves the user's reported bugs: eliminates unintended split screen on active speaker, guarantees captions on all reels, allows rendering multiple reels sequentially without re-uploading or re-scanning, and makes the video frame layout options intuitive and responsive.
 
 ## 2026-10-23: Dynamic Multi-Style Variety Toggle, 3-5 Word Subdivision & Universal Active-Window Pagination Shield

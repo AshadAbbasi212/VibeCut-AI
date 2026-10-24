@@ -46,6 +46,19 @@ class CameraCut(BaseModel):
     )
 
 
+LAYOUT_ALIASES = {
+    "ambient_blur": "blur_fit",
+    "blur": "blur_fit",
+    "split": "split_podcast",
+    "podcast": "split_podcast",
+    "triple": "split_triple",
+    "zoom": "fill",
+    "center_zoom": "fill",
+    "active": "active_speaker",
+    "speaker": "active_speaker",
+}
+
+
 class TimelineVideo(BaseModel):
     src: str = Field(..., description="Path or relative URL to the video source")
     width: int = Field(default=1080, description="Video width in pixels")
@@ -57,6 +70,15 @@ class TimelineVideo(BaseModel):
     )
     originalWidth: Optional[int] = Field(default=None, description="Original source video width")
     originalHeight: Optional[int] = Field(default=None, description="Original source video height")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_layout(cls, data):
+        if isinstance(data, dict) and "layout" in data:
+            val = data["layout"]
+            if isinstance(val, str) and val in LAYOUT_ALIASES:
+                data["layout"] = LAYOUT_ALIASES[val]
+        return data
 
 
 class TimelineWord(BaseModel):
@@ -197,6 +219,20 @@ class Timeline(BaseModel):
     watermarkText: Optional[str] = Field(
         default=None, description="Creator handle watermark e.g. @yourhandle"
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_timeline_layouts(cls, data):
+        if isinstance(data, dict):
+            if "videoLayout" in data:
+                val = data["videoLayout"]
+                if isinstance(val, str) and val in LAYOUT_ALIASES:
+                    data["videoLayout"] = LAYOUT_ALIASES[val]
+            if "video" in data and isinstance(data["video"], dict) and "layout" in data["video"]:
+                val = data["video"]["layout"]
+                if isinstance(val, str) and val in LAYOUT_ALIASES:
+                    data["video"]["layout"] = LAYOUT_ALIASES[val]
+        return data
 
     @model_validator(mode="after")
     def validate_timeline_invariants(self) -> "Timeline":

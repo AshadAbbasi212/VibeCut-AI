@@ -443,6 +443,10 @@ class JobManager:
         if not parent_job:
             raise ValueError(f"Parent job {parent_job_id} not found")
 
+        from backend.schemas.timeline import LAYOUT_ALIASES
+        if video_layout:
+            video_layout = LAYOUT_ALIASES.get(video_layout, video_layout)
+
         # Resolve to root job containing the full master video if parent_job is a child clip
         root_job = parent_job
         curr = parent_job
@@ -477,6 +481,14 @@ class JobManager:
             str(trimmed_mp4)
         ]
         subprocess.run(trim_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        # Probe trimmed clip video to ensure exact resolution metadata
+        probe_res = None
+        try:
+            from backend.pipeline.probe import probe_video
+            probe_res = probe_video(trimmed_mp4)
+        except Exception as e:
+            logger.warning(f"Could not probe trimmed mp4: {e}")
 
         # Check for scene analysis (from parent job or freshly run if ai_enhance is enabled)
         clip_scene_analysis = None
@@ -557,6 +569,10 @@ class JobManager:
             multi_style_variety=multi_style_variety,
         )
 
+        if probe_res:
+            sub_timeline.video.originalWidth = probe_res.width
+            sub_timeline.video.originalHeight = probe_res.height
+
         # CRITICAL SAFETY CHECK: If the sliced timeline has 0 events or 0 words
         # (e.g. parent job timeline was already trimmed or did not cover [start, end]),
         # automatically transcribe the trimmed clip video directly so captions are NEVER empty!
@@ -618,6 +634,8 @@ class JobManager:
                         layout=video_layout,
                         width=1080,
                         height=1920,
+                        originalWidth=probe_res.width if probe_res else None,
+                        originalHeight=probe_res.height if probe_res else None,
                     ),
                     language=clip_transcript.language or "en",
                     words=timeline_words,

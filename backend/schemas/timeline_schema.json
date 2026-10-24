@@ -417,6 +417,19 @@
           "default": null,
           "description": "Grouping identifier for sentence-level style consistency",
           "title": "Sentenceid"
+        },
+        "speakerId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Active speaker ID e.g. speaker_0, speaker_1",
+          "title": "Speakerid"
         }
       },
       "required": [
@@ -733,6 +746,32 @@
       "description": "Visual treatment for top hook headline card",
       "title": "Headlinestyle"
     },
+    "headlineDuration": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional duration in seconds before headline fades out (None = stays full video)",
+      "title": "Headlineduration"
+    },
+    "headlineY": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": 0.08,
+      "description": "Vertical position ratio of headline hook card (0.0 to 1.0, default 0.08 for top safe zone)",
+      "title": "Headliney"
+    },
     "autoEmojis": {
       "anyOf": [
         {
@@ -745,6 +784,71 @@
       "default": true,
       "description": "Enable keyword-driven auto-emojis and animated stickers",
       "title": "Autoemojis"
+    },
+    "kineticZoom": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": false,
+      "description": "Auto kinetic punch-in zoom on emphasis moments",
+      "title": "Kineticzoom"
+    },
+    "soundEffects": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": false,
+      "description": "Enable pop SFX on graphic and hook entrances",
+      "title": "Soundeffects"
+    },
+    "bgMusic": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Background music track: 'lofi' or None",
+      "title": "Bgmusic"
+    },
+    "bgMusicVolume": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": 0.12,
+      "description": "Background music volume",
+      "title": "Bgmusicvolume"
+    },
+    "watermarkText": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Creator handle watermark e.g. @yourhandle",
+      "title": "Watermarktext"
     }
   },
   "required": [
