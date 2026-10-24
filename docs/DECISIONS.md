@@ -1,5 +1,25 @@
 # Architectural and Technical Decisions
 
+## 2026-10-24: Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking & Guaranteed Clip Captions
+- **Decision**:
+  1. **Enforce Solo Dynamic Framing in Active Speaker Mode (`reframe.py` & Remotion `CaptionedVideo/index.tsx`)**:
+     - Diagnosed why clips rendered as split-screen when "Active Speaker" was selected: `reframe.py` (`build_active_speaker_cuts`) defaulted to `layout="split_duo"` when phrases were empty or during cross-talk, and Remotion intercepted `currentCutLayout === "split_duo"` to render the podcast split screen.
+     - Updated `build_active_speaker_cuts` and Remotion so that selecting `active_speaker` strictly frames the active speaker in a 9:16 vertical broadcast solo shot (`layout: "solo"`, centering face tracking coordinates via `objectPosition: ${objPosX} center`), never splitting the screen. Split screen remains exclusively reserved for the dedicated "Podcast Split" (`split_podcast`) layout option.
+  2. **Guaranteed Captions via Fallback Transcription on Trimmed Clips (`runner.py`)**:
+     - Diagnosed why rendered clips had 0 captions: when rendering a clip from a parent job that had already been trimmed (or whose timeline did not cover the clip's timestamp window), `slice_timeline_for_clip` matched 0 events, resulting in an empty `events: []` and `words: []` timeline.
+     - Added an automatic fallback in `submit_clip_job`: if the sliced timeline has 0 events or 0 words, the backend immediately transcribes `trimmed_mp4` using `transcribe()`, chunks the phrases, and calls `get_planner().plan()` with the user's chosen styles, ensuring that every generated reel is 100% guaranteed to have synchronized captions.
+  3. **Multi-Reel Root Job Reference Preservation (`app.js` & `runner.py`)**:
+     - Diagnosed why rendering a second clip failed: `frontend/app.js` was overwriting `currentJobId` with `clipJob.id` (a 43-second child clip). Slicing subsequent clips from a child clip job failed because the child clip did not contain the rest of the podcast.
+     - Introduced `rootJobId` in `frontend/app.js` to preserve the parent job ID containing the original full video. All subsequent clip render requests now target `rootJobId`.
+     - In `backend/api/runner.py`, added ancestor job traversal: if `parent_job` is a child clip, the backend automatically climbs ancestor links (`curr.parent_job_id`) to find the root master video file for ffmpeg trimming.
+  4. **Non-Destructive Result Dismissal & Seamless Multi-Reel Workflow (`app.js` & `index.html`)**:
+     - Diagnosed why canceling/closing the player forced the user to re-upload: the "✕" button on the video player was calling `resetStudioForNewVideo()`, which wiped `selectedFile`, `currentJobId`, and `activeViralClips`.
+     - Replaced with `dismissResultView()`, which pauses the rendered player and returns to `showStage("source")` while keeping the uploaded video, scanned reels list, and clip tweaker intact.
+     - Added a dedicated "🎬 Render Another Reel" button in the download actions bar next to "Download Captioned MP4".
+  5. **Synchronized Video Layout Selection**:
+     - Synchronized `setVideoLayout` in `frontend/app.js` so clicking any visual layout card (`Active Speaker`, `Podcast Split`, `Ambient Blur`, etc.) simultaneously updates `selectedVideoLayout`, `selectedClipLayout`, and all UI badges, preventing state desynchronization.
+- **Why**: Solves the user's reported bugs: eliminates unintended split screen on active speaker, guarantees captions on all reels, allows rendering multiple reels sequentially without re-uploading or re-scanning, and makes the video frame layout options intuitive and responsive.
+
 ## 2026-10-23: Dynamic Multi-Style Variety Toggle, 3-5 Word Subdivision & Universal Active-Window Pagination Shield
 - **Decision**:
   1. **User Control Option for Dynamic Multi-Style Variety Across Video (Full & Viral Reels)**:

@@ -93,6 +93,7 @@ def build_active_speaker_cuts(
     hold_buffer: float = 0.6,
     scene_analysis: Optional[dict] = None,
     video_path: Optional[str] = None,
+    allow_split: bool = True,
 ) -> list[CameraCut]:
     """
     Generate broadcast-quality dynamic camera cuts tracking the active speaker.
@@ -105,6 +106,7 @@ def build_active_speaker_cuts(
         hold_buffer: Extra time (seconds) to hold camera on speaker after phrase ends
         scene_analysis: Optional AI scene analysis with keyframe speaker positions
         video_path: Optional path to source video for real-time face tracking
+        allow_split: Whether to allow split stack cuts on cross-talk/fallback
     
     Returns:
         List of non-overlapping CameraCut objects covering [0.0, video_duration]
@@ -117,7 +119,7 @@ def build_active_speaker_cuts(
                 end=max(0.1, video_duration),
                 focusX=0.5,
                 speakerId="speaker_0",
-                layout="split_duo" if num_speakers == 2 else "solo",
+                layout="split_duo" if (num_speakers == 2 and allow_split) else "solo",
             )
         ]
 
@@ -172,9 +174,12 @@ def build_active_speaker_cuts(
                 # Wide angle / interview with 2+ speakers in frame
                 left_face = valid_faces[0]
                 right_face = valid_faces[-1]
-                if is_cross_talk:
+                if is_cross_talk and allow_split:
                     focus_x = 0.50
                     layout = "split_duo" if num_speakers == 2 else "split_trio"
+                elif is_cross_talk:
+                    focus_x = 0.50
+                    layout = "solo"
                 elif current_speaker == 0:
                     focus_x = left_face["cx"]
                     layout = "solo"
@@ -195,9 +200,12 @@ def build_active_speaker_cuts(
                     focus_x = 0.50
                     layout = "solo"
                 elif "left" in positions and "right" in positions:
-                    if is_cross_talk:
+                    if is_cross_talk and allow_split:
                         focus_x = 0.50
                         layout = "split_duo" if num_speakers == 2 else "split_trio"
+                    elif is_cross_talk:
+                        focus_x = 0.50
+                        layout = "solo"
                     else:
                         focus_x = 0.20 if current_speaker == 0 else 0.82
                         layout = "solo"
@@ -214,9 +222,12 @@ def build_active_speaker_cuts(
                 focus_x = seat_positions.get(current_speaker, 0.50)
                 layout = "solo"
         else:
-            if is_cross_talk:
+            if is_cross_talk and allow_split:
                 focus_x = 0.50
                 layout = "split_duo" if num_speakers == 2 else "split_trio"
+            elif is_cross_talk:
+                focus_x = 0.50
+                layout = "solo"
             else:
                 focus_x = seat_positions.get(current_speaker, 0.50)
                 layout = "solo"
@@ -236,7 +247,7 @@ def build_active_speaker_cuts(
                 end=video_duration,
                 focusX=0.50,
                 speakerId="speaker_0",
-                layout="split_duo" if num_speakers == 2 else "solo",
+                layout="split_duo" if (num_speakers == 2 and allow_split) else "solo",
             )
         ]
 

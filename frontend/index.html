@@ -3228,9 +3228,14 @@
 
           <!-- Result Downloads -->
           <div class="result-actions-strip hidden" id="resultActions">
-            <a href="#" class="btn-download-main" id="downloadMp4Btn" download>
-              ⬇️ Download Captioned MP4
-            </a>
+            <div style="display: flex; gap: 10px; width: 100%;">
+              <a href="#" class="btn-download-main" id="downloadMp4Btn" download style="flex: 1;">
+                ⬇️ Download Captioned MP4
+              </a>
+              <button type="button" class="btn-download-main" id="btnRenderAnotherClip" style="flex: 1; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(129, 140, 248, 0.25)); border: 1.5px solid rgba(56, 189, 248, 0.6); color: #38bdf8; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2); cursor: pointer;">
+                🎬 Render Another Reel
+              </button>
+            </div>
             <div class="sub-actions">
               <a href="#" class="btn-sub" id="downloadSrtBtn" download>Download .SRT</a>
               <a href="#" class="btn-sub" id="downloadVttBtn" download>Download .VTT</a>

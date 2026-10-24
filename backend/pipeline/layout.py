@@ -58,6 +58,17 @@ def _overlaps(s1: float, e1: float, s2: float, e2: float) -> bool:
     return max(s1, s2) < min(e1, e2)
 
 
+def _is_text_duplicate(ev1: TimelineEvent, ev2: TimelineEvent) -> bool:
+    """Check if two events overlap in time and share >= 40% of words."""
+    if not _overlaps(ev1.start, ev1.end, ev2.start, ev2.end):
+        return False
+    w1 = set(ev1.text.lower().split())
+    w2 = set(ev2.text.lower().split())
+    if not w1 or not w2:
+        return False
+    return (len(w1 & w2) / min(len(w1), len(w2))) >= 0.40
+
+
 def assign_layout(
     events: list[TimelineEvent],
     video_duration: float,
@@ -168,6 +179,10 @@ def assign_layout(
         if not lines and style in {"title3d", "serif_title", "blob_card", "numbered_point"}:
             lines = split_lines_balanced(feat.text)
 
+        # Prevent duplicate simultaneous feature events covering the same spoken words
+        if any(_is_text_duplicate(feat, placed) for placed in resolved_features):
+            continue
+
         # Zone assignment: feature events must NOT be 'lower'
         # Prevent covering speaker's face: map 'center' to safe callout stack ('free' at y=0.68)
         target_zone = feat.zone
@@ -180,7 +195,10 @@ def assign_layout(
             target_y = 0.68
         elif target_zone == "upper":
             target_zone = "upper"
-        elif target_zone not in ("upper", "free"):
+            target_x = target_x or 0.50
+            target_y = target_y or 0.18
+        elif target_zone != "free":
+            # Feature events must NEVER be 'lower' (reserved for base dialogue); route to callout stack 'free'
             target_zone = "free"
             target_x = target_x or 0.50
             target_y = target_y or 0.68
@@ -192,32 +210,37 @@ def assign_layout(
         ]
 
         if colliding:
-            # Try alternate safe zone or flank callout
-            if target_zone == "upper":
-                alt_zone = "free"
-                alt_x = 0.50
-                alt_y = 0.68
-            else:
-                alt_zone = "upper"
-                alt_x = 0.50
-                alt_y = 0.18
-
+            # Try alternate flank safe zone (side margin callout)
+            alt_zone = "free"
+            alt_x = 0.26  # left flank callout
+            alt_y = 0.70
             alt_colliding = [
                 placed for placed in resolved_features
-                if placed.zone == alt_zone and _overlaps(placed.start, placed.end, feat.start, feat.end)
+                if placed.zone == alt_zone and placed.x == alt_x and _overlaps(placed.start, placed.end, feat.start, feat.end)
             ]
             if not alt_colliding:
                 target_zone = alt_zone
                 target_x = alt_x
                 target_y = alt_y
             else:
-                # If overlap can be resolved by shifting start or end, try that:
-                latest_end = max(c.end for c in colliding)
-                if feat.end - latest_end >= min_event_duration:
-                    feat = feat.model_copy(update={"start": latest_end})
+                # Try right flank callout
+                alt_x = 0.74
+                alt_colliding = [
+                    placed for placed in resolved_features
+                    if placed.zone == alt_zone and placed.x == alt_x and _overlaps(placed.start, placed.end, feat.start, feat.end)
+                ]
+                if not alt_colliding:
+                    target_zone = alt_zone
+                    target_x = alt_x
+                    target_y = alt_y
                 else:
-                    # Cannot fit without collision; drop this feature event
-                    continue
+                    # If overlap can be resolved by shifting start or end, try that:
+                    latest_end = max(c.end for c in colliding)
+                    if feat.end - latest_end >= min_event_duration:
+                        feat = feat.model_copy(update={"start": latest_end})
+                    else:
+                        # Cannot fit without collision; drop this redundant feature event
+                        continue
 
         # Add resolved feature
         updated_feat = feat.model_copy(

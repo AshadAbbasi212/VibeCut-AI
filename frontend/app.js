@@ -231,6 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State Management
   let selectedFile = null;
   let currentJobId = null;
+  let rootJobId = null;
   let pollInterval = null;
   let jobStartTime = null;
   let currentTimeline = null;
@@ -317,8 +318,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setVideoLayout(layout) {
     selectedVideoLayout = layout;
+    selectedClipLayout = layout;
 
-    // Toggle active state on 4 visual photo cards
+    // Toggle active state on visual photo cards
     allLayoutCards.forEach((card) => {
       card.classList.toggle("active", card.dataset.layout === layout);
     });
@@ -328,8 +330,18 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.toggle("active", btn.dataset.layout === layout);
     });
 
+    // Synchronize clip layout chips in tweaker if present
+    if (clipLayoutChips) {
+      clipLayoutChips.forEach((b) => {
+        b.classList.toggle("active", b.dataset.layout === layout);
+      });
+    }
+
     if (layoutSelectedLabel) {
       layoutSelectedLabel.textContent = layoutLabels[layout] || layout;
+    }
+    if (clipLayoutLabel) {
+      clipLayoutLabel.textContent = layoutLabels[layout] || layout;
     }
 
     updateSourcePreviewFraming();
@@ -1638,6 +1650,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (findClipsBtnText) findClipsBtnText.textContent = "Scanning...";
     showToast(`🤖 AI scanning video for ${len} viral moments...`);
 
+    // Show live scanning card in Discovered Viral Moments container
+    let scanInterval = null;
+    if (viralClipsList) {
+      viralClipsList.classList.remove("hidden");
+      viralClipsList.innerHTML = `
+        <div style="padding: 32px 16px; text-align: center; border: 1px dashed rgba(168, 85, 247, 0.35); border-radius: 12px; background: rgba(168, 85, 247, 0.04);">
+          <div style="font-size: 32px; margin-bottom: 10px; animation: pulse 1.5s infinite;">🎙️</div>
+          <div id="scanningStatusHeader" style="font-size: 14px; font-weight: 700; color: #c084fc;">Transcribing Speech Dynamics...</div>
+          <div id="scanningStatusSub" style="font-size: 11px; color: var(--text-dim); margin-top: 6px;">Whisper is generating word-level timestamps. For longer podcasts, this can take a few minutes.</div>
+        </div>
+      `;
+      const statusSteps = [
+        { h: "🎙️ Transcribing Dialogue...", s: "Generating word timestamps with faster-whisper..." },
+        { h: "⚡ Analyzing Speech Energy & Pauses...", s: "Detecting punchy insights, questions, and heated debates..." },
+        { h: "🧠 AI Extracting Viral Hooks...", s: "Mistral AI evaluating retention scores and viral hook angles..." },
+        { h: "🔥 Polishing Clip Headlines...", s: "Snapping exact sentence boundaries and generating hashtags..." },
+      ];
+      let stepIdx = 0;
+      scanInterval = setInterval(() => {
+        stepIdx = (stepIdx + 1) % statusSteps.length;
+        const hEl = document.getElementById("scanningStatusHeader");
+        const sEl = document.getElementById("scanningStatusSub");
+        if (hEl) hEl.textContent = statusSteps[stepIdx].h;
+        if (sEl) sEl.textContent = statusSteps[stepIdx].s;
+      }, 7000);
+    }
+
     try {
       let data;
       if (currentJobId) {
@@ -1681,6 +1720,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("AI Clip Extraction Error:", err);
       showToast(`AI Clip Finder: ${err.message}`);
     } finally {
+      if (scanInterval) clearInterval(scanInterval);
       if (btnFindViralClips) btnFindViralClips.disabled = false;
       if (findClipsBtnIcon) findClipsBtnIcon.textContent = "✨";
       if (findClipsBtnText) findClipsBtnText.textContent = "Find Clips";
@@ -2804,6 +2844,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const job = JSON.parse(xhr.responseText);
           currentJobId = job.id;
+          if (!rootJobId) rootJobId = job.id;
           procTitle.textContent = "Processing Video...";
           procStep.textContent = "Aligning speech with faster-whisper timestamps...";
           procFill.style.width = "25%";
@@ -2851,8 +2892,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const isWatermarkOn = clipWatermarkToggle ? clipWatermarkToggle.checked : false;
       const watermarkVal = isWatermarkOn && clipWatermarkInput ? clipWatermarkInput.value.trim() : null;
 
-      // FAST PATH: If currentJobId is present, call dedicated lightning-fast /render-clip endpoint!
-      if (currentJobId) {
+      // FAST PATH: If rootJobId or currentJobId is present, call dedicated lightning-fast /render-clip endpoint!
+      const targetParentJobId = rootJobId || currentJobId;
+      if (targetParentJobId) {
         btnRenderSingleClip.disabled = true;
         startJobBtn.disabled = true;
         showStage("processing");
@@ -2894,7 +2936,7 @@ document.addEventListener("DOMContentLoaded", () => {
             multi_style_variety: clipMultiStyleVarietyToggle ? clipMultiStyleVarietyToggle.checked : true,
           };
 
-          const res = await fetch(`/api/jobs/${currentJobId}/render-clip`, {
+          const res = await fetch(`/api/jobs/${targetParentJobId}/render-clip`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -2906,6 +2948,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           const clipJob = await res.json();
+          if (!rootJobId) rootJobId = targetParentJobId;
           currentJobId = clipJob.id;
           startPolling(clipJob.id);
           return;
@@ -3248,6 +3291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 4. Reset file state & file inputs
     selectedFile = null;
     currentJobId = null;
+    rootJobId = null;
     currentTimeline = null;
     if (videoFileInput) videoFileInput.value = "";
     if (dropPrompt) dropPrompt.classList.remove("hidden");
@@ -3287,8 +3331,36 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast("Ready for new video! 🎬");
   }
 
+  const btnRenderAnotherClip = document.getElementById("btnRenderAnotherClip");
+
+  function dismissResultView() {
+    if (resultVideo) {
+      try {
+        resultVideo.pause();
+        resultVideo.currentTime = 0;
+      } catch {}
+    }
+    // If the user has a video file, root job, or discovered viral clips, return to the studio!
+    if (selectedFile || rootJobId || (activeViralClips && activeViralClips.length > 0)) {
+      showStage("source");
+      if (resultActions) resultActions.classList.add("hidden");
+      if (clipTweakerCard) clipTweakerCard.classList.remove("hidden");
+      if (clipsStudioSection) clipsStudioSection.classList.remove("hidden");
+      if (viralClipsActions && activeViralClips && activeViralClips.length > 0) {
+        viralClipsActions.classList.remove("hidden");
+      }
+      showToast("🎬 Back to Viral Reels Studio. Select any reel to customize and render!");
+    } else {
+      resetStudioForNewVideo();
+    }
+  }
+
   if (closeResultBtn) {
-    closeResultBtn.addEventListener("click", resetStudioForNewVideo);
+    closeResultBtn.addEventListener("click", dismissResultView);
+  }
+
+  if (btnRenderAnotherClip) {
+    btnRenderAnotherClip.addEventListener("click", dismissResultView);
   }
 
   if (resetBtn) {

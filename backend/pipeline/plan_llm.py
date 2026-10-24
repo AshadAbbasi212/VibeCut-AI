@@ -51,11 +51,12 @@ CRITICAL PLACEMENT & ANTI-COLLISION RULES:
 1. NEVER cover the speaker's face: in vertical video, the face is at y: 0.30 to 0.55. NEVER use center y: 0.50!
 2. NEVER place text behind the top headline hook / headmarker: NEVER use "upper" (y < 0.28).
 3. Place main points in "callout_stack" (y: 0.68, right above the lower subtitle line) or on margins ("left" x: 0.26, "right" x: 0.74).
-4. Continuous speech captions belong in "lower" (y: 0.79).
+4. DO NOT return continuous subtitles or subtitles for every phrase! Base dialogue subtitles are ALREADY automatically generated for all speech in the lower third.
 
 Guidelines:
-- A readable pill_word base caption is added automatically for every phrase in the lower zone, so ONLY return feature impact events.
-- Add feature events to roughly 30% of phrases; prefer moments that are claims, hooks, takeaways, numbered points, or emotionally strong.
+- Return ONLY 3 to 6 high-impact feature events across the entire video (roughly 20-25% of phrases).
+- Prefer moments that are claims, hooks, takeaways, punchlines, or key statistics.
+- DO NOT duplicate phrases or generate continuous subtitles.
 - Vary styles; never repeat the same feature style more than twice in a row.
 - Choose 0-2 emphasis words per feature event (highlights).
 - Attach an emoji/icon graphic only when a concrete, recognizable object or concept is mentioned.
@@ -85,12 +86,17 @@ Use word-level highlights on the punch words (e.g. highlights: [{{"wordIndex": 2
 
 CRITICAL RULE — 100% VERBATIM SPOKEN WORDS ONLY (ABSOLUTELY NO HALLUCINATIONS):
 - You MUST ONLY use the EXACT words spoken by the speaker in the transcript.
-- NEVER invent, summarize, or generate text that the speaker did not speak (e.g. NEVER generate fake textbook titles like "Collaborative AI development...", "[01] Chapter 1", "Why World Models Matter").
+- NEVER invent, summarize, or generate text that the speaker did not speak.
 - The "text" field MUST be the EXACT verbatim words from the phrase within "wordRange".
-- In Ali Abdaal's editing style, captions are 100% authentic spoken speech, never artificial summary cards.
 
-### 2. STRICT PLACEMENT & ANTI-COLLISION RULES (MANDATORY)
-- Continuous Speech Subtitles: always in the lower third safe zone ("lower", y: 0.79).
+### 2. STRICT RULE: DO NOT RETURN CONTINUOUS SUBTITLES! (MANDATORY)
+- Base dialogue subtitles are ALREADY automatically rendered by the backend engine in the lower third for 100% of spoken words.
+- DO NOT return an event for every phrase!
+- DO NOT return continuous subtitles or events named "continuous_subtitles".
+- ONLY select 3 to 6 peak highlight moments (roughly 20% to 25% of phrases) to elevate with special graphics, animations, and typography.
+- Every phrase not in your return list will cleanly display standard dialogue captions.
+
+### 3. STRICT PLACEMENT & ANTI-COLLISION RULES (MANDATORY)
 - Main Points & Editorial Callouts:
   * "callout_stack" (y: 0.68): elevated cleanly just above the dialogue subtitle, safely between the speaker's chest and the bottom captions.
   * "left" (x: 0.26, y: 0.70): professional callout in the left margin.
@@ -100,11 +106,10 @@ CRITICAL RULE — 100% VERBATIM SPOKEN WORDS ONLY (ABSOLUTELY NO HALLUCINATIONS)
   * NEVER use "center" (y: 0.40 - 0.55): text will appear directly in front of the speaker's face!
   * All main points must appear cleanly in "callout_stack", "left", "right", or "lower".
 
-### 3. STYLE VARIETY & REPETITION RULES
-- **Headings/Main Points**: Use 2-3 recurring "heading styles" like highlighter_marker, beast_impact, or blob_card. These REPEAT throughout to feel cohesive.
-- **Key Moments**: Use one-time special styles for hooks (beast_impact), conclusions (cinematic_minimal), technical terms (typewriter_terminal).
-- **NEVER repeat the same style more than 3 times in a row.**
-- **Use at least 4-5 different styles across the video.**
+### 4. STYLE VARIETY & REPETITION RULES
+- Use 2-3 recurring "heading styles" like highlighter_marker, beast_impact, or blob_card.
+- NEVER repeat the same style more than 2 times in a row.
+- Use 3-5 different styles across the video.
 
 ### 4. SKIP EXISTING CAPTIONS
 {existing_captions_instruction}
@@ -264,6 +269,12 @@ def _validate_and_parse_llm_json(
         if not isinstance(item, dict):
             continue
 
+        # Filter out redundant continuous subtitle events hallucinated by LLM
+        item_id = str(item.get("id", "")).lower()
+        if "continuous" in item_id or "subtitle" in item_id or item_id.startswith("base"):
+            logger.info(f"Filtering out redundant continuous subtitle event from LLM: {item.get('id')}")
+            continue
+
         # Check wordRange validity and enforce verbatim spoken dialogue
         wr = item.get("wordRange")
         sub_items: list[dict] = []
@@ -372,6 +383,21 @@ def _validate_and_parse_llm_json(
 
             ev = TimelineEvent(**sub_ev)
             parsed_events.append(ev)
+
+    # Professional guardrail: Cap feature density to roughly 20-30% of total phrases
+    max_features = max(3, min(8, int(len(phrases) * 0.35)))
+    if len(parsed_events) > max_features:
+        def _feature_score(e: TimelineEvent) -> int:
+            score = 0
+            if e.graphic:
+                score += 10
+            if e.highlights:
+                score += len(e.highlights) * 3
+            if e.style in {"beast_impact", "highlighter_marker", "blob_card", "neon_glow", "title3d"}:
+                score += 5
+            return score
+        parsed_events.sort(key=_feature_score, reverse=True)
+        parsed_events = sorted(parsed_events[:max_features], key=lambda x: x.start)
 
     return parsed_events
 

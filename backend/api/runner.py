@@ -64,6 +64,7 @@ class JobInfo(BaseModel):
     input_file: str = ""
     output_file: Optional[str] = None
     timeline_file: Optional[str] = None
+    parent_job_id: Optional[str] = None
 
 
 def format_srt_timestamp(sec: float) -> str:
@@ -439,10 +440,26 @@ class JobManager:
     ) -> JobInfo:
         """Create and queue a lightning-fast render for an edited viral clip from an existing job."""
         parent_job = self.get_job(parent_job_id)
-        if not parent_job or not parent_job.timeline_file or not Path(parent_job.timeline_file).exists():
-            raise ValueError(f"Parent job {parent_job_id} or timeline not found")
-        if not parent_job.input_file or not Path(parent_job.input_file).exists():
-            raise ValueError(f"Parent job {parent_job_id} input video not found")
+        if not parent_job:
+            raise ValueError(f"Parent job {parent_job_id} not found")
+
+        # Resolve to root job containing the full master video if parent_job is a child clip
+        root_job = parent_job
+        curr = parent_job
+        visited = set()
+        while getattr(curr, "parent_job_id", None) and curr.parent_job_id not in visited:
+            visited.add(curr.id)
+            ancestor = self.get_job(curr.parent_job_id)
+            if ancestor and ancestor.input_file and Path(ancestor.input_file).exists():
+                curr = ancestor
+                root_job = ancestor
+            else:
+                break
+
+        # Master video source file to trim from: prioritize root_job
+        master_input = root_job.input_file if (root_job.input_file and Path(root_job.input_file).exists()) else parent_job.input_file
+        if not master_input or not Path(master_input).exists():
+            raise ValueError(f"Input video not found in parent job {parent_job_id}")
 
         clip_job_id = f"job_clip_{uuid.uuid4().hex[:8]}"
         clip_dir = self.jobs_dir / clip_job_id
@@ -454,7 +471,7 @@ class JobManager:
             "ffmpeg", "-y",
             "-ss", str(round(start, 2)),
             "-t", str(duration),
-            "-i", str(parent_job.input_file),
+            "-i", str(master_input),
             "-c:v", "libx264", "-c:a", "aac",
             "-avoid_negative_ts", "make_zero",
             str(trimmed_mp4)
@@ -463,8 +480,9 @@ class JobManager:
 
         # Check for scene analysis (from parent job or freshly run if ai_enhance is enabled)
         clip_scene_analysis = None
-        parent_analysis_file = Path(parent_job.timeline_file).parent / "analysis.json"
-        if parent_analysis_file.exists():
+        analysis_source = root_job if (root_job.timeline_file and (Path(root_job.timeline_file).parent / "analysis.json").exists()) else parent_job
+        parent_analysis_file = Path(analysis_source.timeline_file).parent / "analysis.json" if analysis_source.timeline_file else None
+        if parent_analysis_file and parent_analysis_file.exists():
             try:
                 parent_analysis = json.loads(parent_analysis_file.read_text(encoding="utf-8"))
                 # Slice parent scenes to clip window [start, end]
@@ -481,14 +499,14 @@ class JobManager:
                 logger.warning(f"Failed slicing parent scene analysis: {e}")
 
         # If user explicitly requested AI Vision Analysis for this clip and parent didn't have analysis
-        if not clip_scene_analysis and ai_enhance and parent_job.llm_provider != "none":
+        if not clip_scene_analysis and ai_enhance and root_job.llm_provider != "none":
             try:
                 from backend.pipeline.analyze import analyze_video
                 analysis_result = analyze_video(
                     video_path=trimmed_mp4,
                     transcript_phrases=[],
-                    provider=parent_job.llm_provider,
-                    api_key=getattr(parent_job, 'api_key', None),
+                    provider=root_job.llm_provider,
+                    api_key=getattr(root_job, 'api_key', None),
                     keyframes_dir=clip_dir / "keyframes",
                 )
                 clip_scene_analysis = analysis_result.model_dump()
@@ -504,10 +522,15 @@ class JobManager:
         from backend.pipeline.clips import slice_timeline_for_clip
         rel_src = prepare_video_asset(trimmed_mp4, job_id=clip_job_id)
 
-        tl_data = json.loads(Path(parent_job.timeline_file).read_text(encoding="utf-8"))
-        base_timeline = Timeline.model_validate(tl_data)
+        tl_source = root_job if (root_job.timeline_file and Path(root_job.timeline_file).exists()) else parent_job
+        tl_path = Path(tl_source.timeline_file) if tl_source.timeline_file else None
+        if tl_path and tl_path.exists():
+            tl_data = json.loads(tl_path.read_text(encoding="utf-8"))
+            base_timeline = Timeline.model_validate(tl_data)
+        else:
+            base_timeline = Timeline(video={"src": rel_src, "durationSec": duration})
 
-        effective_hl = highlight_color or getattr(parent_job, 'highlight_color', None) or base_timeline.highlightColor
+        effective_hl = highlight_color or getattr(root_job, 'highlight_color', None) or getattr(base_timeline, 'highlightColor', '#38BDF8')
 
         sub_timeline = slice_timeline_for_clip(
             timeline=base_timeline,
@@ -534,6 +557,88 @@ class JobManager:
             multi_style_variety=multi_style_variety,
         )
 
+        # CRITICAL SAFETY CHECK: If the sliced timeline has 0 events or 0 words
+        # (e.g. parent job timeline was already trimmed or did not cover [start, end]),
+        # automatically transcribe the trimmed clip video directly so captions are NEVER empty!
+        if not sub_timeline.events or not sub_timeline.words:
+            logger.warning(
+                f"Clip {clip_job_id} sliced timeline has 0 events/words for [{start}, {end}]. "
+                f"Automatically transcribing trimmed clip to guarantee captions..."
+            )
+            try:
+                from backend.pipeline.transcribe import transcribe
+                from backend.pipeline.chunk import chunk_words
+                from backend.pipeline.plan_llm import get_planner
+                from backend.pipeline.reframe import build_active_speaker_cuts
+                from backend.schemas.timeline import TimelineVideo
+
+                clip_transcript = transcribe(path=trimmed_mp4)
+                clip_phrases = chunk_words(words=clip_transcript.words, duration=duration)
+                st_list = [s.strip() for s in (selected_styles or "ai_auto").split(",") if s.strip()]
+
+                planner = get_planner(
+                    provider=root_job.llm_provider,
+                    preset=getattr(root_job, 'preset', 'bold_creator') or 'bold_creator',
+                    api_key=getattr(root_job, 'api_key', None),
+                )
+                fresh_events = planner.plan(
+                    phrases=clip_phrases,
+                    video_duration=duration,
+                    preset=getattr(root_job, 'preset', 'bold_creator') or 'bold_creator',
+                    selected_styles=st_list,
+                    caption_size=caption_size or "medium",
+                    subtitle_y=subtitle_y or 0.79,
+                    highlight_color=effective_hl,
+                    auto_emojis=auto_emojis if auto_emojis is not None else True,
+                    scene_analysis=clip_scene_analysis,
+                    multi_style_variety=multi_style_variety if multi_style_variety is not None else True,
+                )
+                timeline_words = [
+                    TimelineWord(
+                        i=idx,
+                        text=w.text,
+                        start=round(w.start, 2),
+                        end=round(w.end, 2),
+                    )
+                    for idx, w in enumerate(clip_transcript.words)
+                ]
+                fresh_cuts = None
+                if video_layout == "active_speaker":
+                    fresh_cuts = build_active_speaker_cuts(
+                        phrases=clip_phrases,
+                        video_duration=duration,
+                        num_speakers=(clip_scene_analysis or {}).get("num_speakers", 2),
+                        scene_analysis=clip_scene_analysis,
+                        video_path=trimmed_mp4,
+                    )
+                sub_timeline = Timeline(
+                    video=TimelineVideo(
+                        src=rel_src,
+                        durationSec=duration,
+                        layout=video_layout,
+                        width=1080,
+                        height=1920,
+                    ),
+                    language=clip_transcript.language or "en",
+                    words=timeline_words,
+                    events=fresh_events,
+                    videoLayout=video_layout,
+                    cameraCuts=fresh_cuts,
+                    headlineHook=headline,
+                    headlineStyle=headline_style or "badge",
+                    headlineDuration=headline_duration,
+                    headlineY=headline_y or 0.08,
+                    watermarkText=watermark_text,
+                    kineticZoom=kinetic_zoom,
+                    soundEffects=sound_effects,
+                    bgMusic=bg_music,
+                    progressBar=progress_bar if progress_bar is not None else True,
+                    autoEmojis=auto_emojis if auto_emojis is not None else True,
+                    highlightColor=effective_hl,
+                )
+            except Exception as e:
+                logger.error(f"Fallback transcription for clip {clip_job_id} failed: {e}")
+
         timeline_json = clip_dir / "timeline.json"
         timeline_json.write_text(
             json.dumps(sub_timeline.model_dump(by_alias=True, exclude_none=True), indent=2),
@@ -550,6 +655,7 @@ class JobManager:
             concurrency=concurrency,
             input_file=str(trimmed_mp4),
             timeline_file=str(timeline_json),
+            parent_job_id=root_job.id,
             headline_hook=headline,
             headline_style=headline_style or "badge",
             headline_duration=headline_duration,

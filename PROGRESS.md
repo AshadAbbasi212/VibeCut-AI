@@ -37,8 +37,15 @@
 - [x] Phase 36 Dynamic Multi-Style Variety Across Video Option (Full Video & Viral Reels Studio), 3-5 Word Phrase Subdivision, & Universal Active-Window Pagination Shield
 - [x] Phase 37 Speaker Face Centering Calibration, Professional Editorial Restraint (Ali Abdaal Palette & 3-Sentence Anchoring), & 2x Remotion Render Speedup
 - [x] Phase 38 Storage Reclaim (3.4+ GB Freed), Fast-Fail LLM Auth, Audio Extraction Pre-Pass, & Studio Monitor Live Sync
+- [x] Phase 39 Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking, Guaranteed Clip Captions, & Non-Destructive Studio Dismissal
 
 ## Notes / known issues
+- Phase 39 (Active Speaker Solo Framing, Multi-Reel Root Job Tracking & Guaranteed Clip Captions):
+  1. **Active Speaker Solo Dynamic Auto-Cut Framing**: Fixed `reframe.py` and Remotion `CaptionedVideo` so selecting "Active Speaker" always generates solo framed shots tracking the speaking face, eliminating unintended split-screen rendering.
+  2. **Guaranteed Captions on Trimmed Clips**: Added automatic fallback in `submit_clip_job` to transcribe `input.mp4` directly whenever parent timeline slicing returns 0 events or words.
+  3. **Multi-Reel Root Job Tracking**: Kept `rootJobId` intact across subsequent clip renders and implemented ancestor resolution in the backend so users can render multiple reels sequentially without re-uploading.
+  4. **Non-Destructive Result Dismissal**: Updated player "✕" button to `dismissResultView()` to return to the reels studio preserving video and clips list, and added a dedicated "🎬 Render Another Reel" action button.
+  5. **Synchronized Video Layout Selection**: Ensured `setVideoLayout` syncs `selectedVideoLayout`, `selectedClipLayout`, and all UI cards/chips simultaneously.
 - Phase 38 (Storage Reclaim, Fast-Fail Auth, Audio Pre-Pass & Studio Live Sync):
   1. **Automated Storage Management & 3.4+ GB Disk Reclaim**:
      - Built `cleanup_storage(max_kept_jobs=15)` on `JobManager` with strict preservation of test fixtures (`job_mock_*`, `job_test_*`, `test_trim.mp4`).

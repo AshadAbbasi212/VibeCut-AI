@@ -133,7 +133,11 @@ const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSPrope
   let targetY = event.y ?? (zone === "lower" || zone === "free" ? timeline?.subtitleY : undefined);
   let targetX = event.x ?? 0.5;
 
-  if (isSplitLayout) {
+  if (zone === "lower") {
+    // Mobile vertical video safe zones: clamp lower subtitle between 0.72 and 0.81
+    // to prevent clipping against bottom screen bezel and progress bar
+    targetY = Math.min(0.81, Math.max(0.72, targetY ?? 0.79));
+  } else if (isSplitLayout) {
     // In split podcast / triple layouts, the lower speaker's face is in danger zone y: 0.56 .. 0.75.
     // The horizontal video divider at 0.50 and lower chest at 0.85 are the clear safe zones!
     if (zone === "center" || (targetY !== undefined && targetY >= 0.56 && targetY <= 0.75)) {
@@ -144,18 +148,16 @@ const getZoneStyle = (event: TimelineEvent, timeline?: Timeline): React.CSSPrope
       targetY = 0.50; // Center dividing seam between dual cameras
       targetX = 0.5;
       zone = "free";
-    } else if (zone === "lower" && targetY !== undefined && targetY >= 0.65 && targetY < 0.82) {
-      targetY = 0.85; // Drop lower subtitles below the lower speaker's chin/microphone
     }
   } else {
     // Single-camera vertical video (face is at 0.35 - 0.55, chest is at 0.62 - 0.72, dialogue at 0.79)
     if (hasHeadmarker && (zone === "upper" || (targetY !== undefined && targetY < 0.28))) {
-      const dialogueY = timeline?.subtitleY ?? 0.79;
+      const dialogueY = Math.min(0.81, timeline?.subtitleY ?? 0.79);
       targetY = Math.max(0.62, dialogueY - 0.11);
       targetX = 0.5;
       zone = "free";
     } else if (zone === "center" || (targetY !== undefined && targetY >= 0.35 && targetY <= 0.58)) {
-      const dialogueY = timeline?.subtitleY ?? 0.79;
+      const dialogueY = Math.min(0.81, timeline?.subtitleY ?? 0.79);
       targetY = Math.max(0.62, dialogueY - 0.11);
       targetX = 0.5;
       zone = "free";
@@ -418,22 +420,23 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
       };
     }
 
-    let hookYRatio = timeline.headlineY !== undefined && timeline.headlineY !== null ? timeline.headlineY : 0.08;
-    if (isSplitLayout && hookYRatio === 0.08) {
-      // In split layout, top speaker's face occupies y: 0.06 - 0.25.
-      // Place compact headline badge above hairline at y: 0.02 (2%)
-      hookYRatio = 0.02;
+    let hookYRatio = timeline.headlineY !== undefined && timeline.headlineY !== null ? timeline.headlineY : 0.018;
+    // In vertical video (active_speaker, solo, or split), the speaker's face occupies y: 0.06 - 0.35.
+    // Clamp hookYRatio to the ceiling safe zone (0.015 - 0.025) so it sits cleanly above the hair.
+    if (hookYRatio > 0.03 || timeline?.video?.layout === "active_speaker" || isSplitLayout) {
+      hookYRatio = 0.018; // 1.8% from ceiling
     }
     const hookYTop = `${Math.round(hookYRatio * 1000) / 10}%`;
 
-    // In split layout, scale card slightly for ceiling safe zone
-    if (isSplitLayout) {
-      cardStyle = {
-        ...cardStyle,
-        padding: "8px 24px",
-        fontSize: "24px",
-      };
-    }
+    // Make headline hook card compact and sleek so it doesn't expand down onto the face
+    const isLongHeadline = (timeline.headlineHook || "").length > 25;
+    cardStyle = {
+      ...cardStyle,
+      padding: isLongHeadline ? "8px 22px" : "10px 28px",
+      fontSize: isLongHeadline ? "22px" : "26px",
+      lineHeight: 1.25,
+      maxWidth: "84%",
+    };
 
     return (
       <div
@@ -477,41 +480,6 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
 
       const currentFocusX = activeCut ? activeCut.focusX : 0.5;
       const currentCutLayout = activeCut ? activeCut.layout : "solo";
-
-      // If cross-talk or interruption, cut to Split Stack
-      if (currentCutLayout === "split_duo") {
-        const topPos = getCoverObjectPositionX(0.20);
-        const botPos = getCoverObjectPositionX(0.85);
-        return (
-          <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${topPos} center` }} />
-            </div>
-            <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "50%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${botPos} center` }} />
-            </div>
-            <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: "4px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 16px rgba(56, 189, 248, 0.65), 0 2px 10px rgba(0, 0, 0, 0.8)", zIndex: 3 }} />
-          </AbsoluteFill>
-        );
-      }
-
-      if (currentCutLayout === "split_trio") {
-        return (
-          <AbsoluteFill style={{ backgroundColor: "#0b0c10" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "6% center" }} />
-            </div>
-            <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "33.34%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "50% center" }} />
-            </div>
-            <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "33.33%", overflow: "hidden", backgroundColor: "#0d0e15" }}>
-              <OffthreadVideo src={videoSrc} muted style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "94% center" }} />
-            </div>
-            <div style={{ position: "absolute", top: "33.33%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
-            <div style={{ position: "absolute", top: "66.67%", left: 0, width: "100%", height: "3px", transform: "translateY(-50%)", background: "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(56, 189, 248, 0.75), rgba(255, 255, 255, 0.95), rgba(56, 189, 248, 0.75), rgba(255,255,255,0.05))", boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)", zIndex: 3 }} />
-          </AbsoluteFill>
-        );
-      }
 
       // Solo Active Speaker Broadcast Shot with direct centered face framing
       const objPosX = getCoverObjectPositionX(currentFocusX);
@@ -954,6 +922,25 @@ export const CaptionedVideo: React.FC<CaptionedVideoProps> = (props) => {
               Math.max(event.start, other.start) < Math.min(event.end, other.end)
           );
           if (hasConcurrentFeature) {
+            return null;
+          }
+        }
+
+        // Mutual exclusion between concurrent feature events:
+        // If two feature events are active simultaneously and share overlapping speech words or collide visually,
+        // render ONLY the higher priority one (higher layer, has graphic, or earlier id)
+        if (!event.id.startsWith("base_")) {
+          const hasHigherConcurrent = timeline.events.some((other) => {
+            if (other.id === event.id || other.id.startsWith("base_")) return false;
+            const overlaps = Math.max(event.start, other.start) < Math.min(event.end, other.end);
+            if (!overlaps) return false;
+            const otherScore = (other.layer || 2) * 10 + (other.graphic ? 5 : 0) + (other.highlights?.length ? 2 : 0);
+            const myScore = (event.layer || 2) * 10 + (event.graphic ? 5 : 0) + (event.highlights?.length ? 2 : 0);
+            if (otherScore > myScore) return true;
+            if (otherScore === myScore && other.id < event.id) return true;
+            return false;
+          });
+          if (hasHigherConcurrent) {
             return null;
           }
         }

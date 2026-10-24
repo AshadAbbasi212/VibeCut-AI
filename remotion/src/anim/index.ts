@@ -9,10 +9,11 @@ export const popIn = (
   delayFrames: number = 0,
   damping: number = 12,
   mass: number = 0.5,
-  stiffness: number = 150
+  stiffness: number = 150,
+  minScale: number = 0.82
 ): number => {
-  if (frame < delayFrames) return 0;
-  return spring({
+  if (frame < delayFrames) return minScale;
+  const s = spring({
     frame: frame - delayFrames,
     fps,
     config: {
@@ -21,6 +22,7 @@ export const popIn = (
       stiffness,
     },
   });
+  return minScale + s * (1 - minScale);
 };
 
 /**
