@@ -1960,11 +1960,34 @@
               <div class="file-meta">
                 <span>🎥</span>
                 <div>
-                  <div class="file-name" id="fileName">video.mp4</div>
+                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <div class="file-name" id="fileName">video.mp4</div>
+                    <span id="audioTrackBadge" class="hidden" style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;"></span>
+                  </div>
                   <div class="file-size" id="fileSize">12.4 MB</div>
                 </div>
               </div>
               <button type="button" class="btn-remove" id="removeFileBtn" title="Remove">×</button>
+            </div>
+            <!-- Warning & Audio Attacher for silent / DASH videos -->
+            <input type="file" id="audioFileInput" accept="audio/*,video/*" style="display: none;">
+            <div id="noAudioWarningCard" class="hidden" style="margin-top: 10px; padding: 12px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px;">
+              <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <span style="font-size: 20px;">🔇</span>
+                <div style="flex: 1;">
+                  <div style="font-size: 12px; font-weight: 700; color: #f87171;">Silent Video Detected (No Audio Track)</div>
+                  <div style="font-size: 11px; color: var(--text-dim); margin: 3px 0 8px 0; line-height: 1.4;">
+                    This video lacks an audio stream (typical of YouTube 1080p/4K DASH downloads). Captions and AI highlights require sound.
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="btnAttachAudioTrack" class="btn-select" style="font-size: 11px; padding: 5px 12px; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                      <span>🎵</span>
+                      <span>Attach Audio Track (.mp3, .m4a, .wav)</span>
+                    </button>
+                    <span id="attachedAudioName" style="font-size: 11px; color: #38bdf8; font-weight: 600;"></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

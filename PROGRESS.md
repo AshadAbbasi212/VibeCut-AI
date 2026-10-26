@@ -40,8 +40,15 @@
 - [x] Phase 39 Active Speaker Solo Dynamic Framing, Multi-Reel Root Job Tracking, Guaranteed Clip Captions, & Non-Destructive Studio Dismissal
 - [x] Phase 40 Comprehensive Test Suite, Layout Alias Normalization, & Source Aspect Ratio Probing
 - [x] Phase 41 Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
+- [x] Phase 42 Silent & DASH Video Auto-Detection, FFmpeg Audio Multiplexing, Cache Poisoning Prevention & Persistent Reel Extraction
 
 ## Notes / known issues
+- Phase 42 (Silent & DASH Video Auto-Detection, FFmpeg Audio Multiplexing, Cache Poisoning Prevention & Persistent Reel Extraction):
+  1. **Root Cause Resolved**: Identified that `videoplayback (3).mp4` was a YouTube DASH video-only stream with 0 audio streams, which previously caused an 87-byte empty transcription cache and triggered the generic fallback clip.
+  2. **Purged Poisoned Cache & Removed Dummy Clips**: Cleared all empty transcription cache files, added validation to `transcribe.py` to prevent caching empty transcripts, and removed dummy fallback clips from `find_viral_clips()`.
+  3. **Backend API Hardening**: Added explicit `NO_AUDIO_TRACK` and `NO_SPEECH_DETECTED` 400 error responses in `POST /api/clips/discover` and `POST /api/jobs/{id}/find-clips`. Added fast `POST /api/probe` and stream multiplexing `POST /api/merge-audio`.
+  4. **Frontend Probing & 1-Click Audio Attacher**: Implemented asynchronous probe on file upload in `app.js`. If silent, displays `🔇 No Audio Track` badge with an actionable `🎵 Attach Audio Track (.mp3, .m4a, .wav)` button that merges audio into video via FFmpeg and automatically launches reel discovery.
+  5. **Master Job & Fast Duration Switching**: Persisted `root_job_id` and cached `phrases_master.json`, enabling instant duration changes (15s, 30s, 60s) without re-uploading or re-transcribing. All 104 tests pass.
 - Phase 41 (Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication):
   1. **Smart Headline & Topic Synthesis**: Implemented conversational filler stripping, thematic category mapping, direct question detection, and dangling preposition cleanup in `generate_smart_headline`, generating real, punchy all-caps viral headlines (e.g. `🔥 THE TECH ISN'T THE BOTTLENECK ANYMORE`, `🔥 FIRST PIPE CAP AI VOICE AGENT`, `🔥 ITS CLOSEST COMPETITOR IS LIVEKIT`) and 2-sentence contextual summaries directly from speech.
   2. **Eliminated Generic Fallback**: Replaced hardcoded dummy fallback (`"🔥 WATCH THIS HIGHLIGHT"`, 00:00 - 01:00) with adaptive duration scaling (`effective_min_sec = max(3.0, available_span * 0.35)`) and mutual overlap thresholding (`ov_dur > min(cand.dur, s.dur) * 0.45`), discovering 10 to 49 distinct, high-impact viral clips across 15s, 30s, and 60s targets on the real 5-minute video sample.

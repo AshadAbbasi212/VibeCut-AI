@@ -230,6 +230,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // State Management
   let selectedFile = null;
+  let selectedAudioFile = null;
+  let hasAudioTrack = true;
   let currentJobId = null;
   let rootJobId = null;
   let pollInterval = null;
@@ -780,7 +782,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   dropZone.addEventListener("click", (e) => {
-    if (e.target !== removeFileBtn && !fileBadge.contains(e.target)) {
+    const warningCard = document.getElementById("noAudioWarningCard");
+    if (
+      e.target !== removeFileBtn &&
+      !fileBadge.contains(e.target) &&
+      (!warningCard || !warningCard.contains(e.target))
+    ) {
       videoFileInput.click();
     }
   });
@@ -843,8 +850,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clipTweakerCard) clipTweakerCard.classList.add("hidden");
 
     selectedFile = file;
+    selectedAudioFile = null;
+    hasAudioTrack = true;
     fileName.textContent = file.name;
     fileSize.textContent = `${(file.size / (1024 * 1024)).toFixed(1)} MB`;
+
+    const audioTrackBadge = document.getElementById("audioTrackBadge");
+    const noAudioWarningCard = document.getElementById("noAudioWarningCard");
+    const attachedAudioName = document.getElementById("attachedAudioName");
+    if (audioTrackBadge) audioTrackBadge.classList.add("hidden");
+    if (noAudioWarningCard) noAudioWarningCard.classList.add("hidden");
+    if (attachedAudioName) attachedAudioName.textContent = "";
 
     dropPrompt.classList.add("hidden");
     fileBadge.classList.remove("hidden");
@@ -867,6 +883,89 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSourcePreviewFraming();
 
     showToast(`Loaded ${file.name} • Ready to render`);
+
+    // Asynchronously probe video to verify audio stream and notify user
+    const probeForm = new FormData();
+    probeForm.append("file", file);
+    fetch("/api/probe", { method: "POST", body: probeForm })
+      .then((r) => r.json())
+      .then((probe) => {
+        if (selectedFile !== file) return;
+        if (probe.has_audio === false) {
+          hasAudioTrack = false;
+          if (audioTrackBadge) {
+            audioTrackBadge.textContent = "🔇 No Audio Track";
+            audioTrackBadge.style.background = "rgba(239, 68, 68, 0.2)";
+            audioTrackBadge.style.color = "#f87171";
+            audioTrackBadge.classList.remove("hidden");
+          }
+          if (noAudioWarningCard) noAudioWarningCard.classList.remove("hidden");
+          showToast("⚠️ Video has no audio track. Attach audio below to enable speech captions & reels.");
+        } else {
+          hasAudioTrack = true;
+          if (audioTrackBadge) {
+            audioTrackBadge.textContent = `🔊 Audio: ${(probe.audio_codec || "AAC").toUpperCase()}`;
+            audioTrackBadge.style.background = "rgba(34, 197, 94, 0.15)";
+            audioTrackBadge.style.color = "#4ade80";
+            audioTrackBadge.classList.remove("hidden");
+          }
+          if (noAudioWarningCard) noAudioWarningCard.classList.add("hidden");
+        }
+      })
+      .catch((e) => {
+        console.warn("Probe check skipped:", e);
+      });
+  }
+
+  // Audio track attacher & multiplexer for silent / DASH videos
+  const audioFileInput = document.getElementById("audioFileInput");
+  const btnAttachAudioTrack = document.getElementById("btnAttachAudioTrack");
+  const attachedAudioName = document.getElementById("attachedAudioName");
+
+  if (btnAttachAudioTrack && audioFileInput) {
+    btnAttachAudioTrack.addEventListener("click", (e) => {
+      e.stopPropagation();
+      audioFileInput.click();
+    });
+  }
+
+  if (audioFileInput) {
+    audioFileInput.addEventListener("change", async (e) => {
+      const aFile = e.target.files && e.target.files[0];
+      if (!aFile) return;
+      if (!selectedFile) {
+        showToast("Please upload a video file first!");
+        return;
+      }
+      selectedAudioFile = aFile;
+      if (attachedAudioName) attachedAudioName.textContent = `Attached: ${aFile.name}`;
+      showToast(`🎵 Merging audio track "${aFile.name}" into video...`);
+
+      try {
+        const mergeForm = new FormData();
+        mergeForm.append("video_file", selectedFile);
+        mergeForm.append("audio_file", aFile);
+        const res = await fetch("/api/merge-audio", {
+          method: "POST",
+          body: mergeForm,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Audio merge failed");
+        }
+        const blob = await res.blob();
+        const mergedVideo = new File([blob], `with_audio_${selectedFile.name}`, { type: "video/mp4" });
+        selectedAudioFile = null;
+        handleFile(mergedVideo);
+        showToast("✅ Audio merged with video! You can now scan for viral reels.");
+        setTimeout(() => {
+          fetchViralClips(selectedClipLength);
+        }, 500);
+      } catch (err) {
+        console.error("Audio Merge Error:", err);
+        showToast(`Failed to merge audio: ${err.message}`);
+      }
+    });
   }
 
   // Sample Video Loader
@@ -1697,6 +1796,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const formData = new FormData();
         formData.append("file", selectedFile);
         formData.append("target_length", len);
+        if (selectedAudioFile) {
+          formData.append("audio_file", selectedAudioFile);
+        }
         if (llmProvider && llmProvider.value) {
           formData.append("llm_provider", llmProvider.value);
         }
@@ -1711,6 +1813,14 @@ document.addEventListener("DOMContentLoaded", () => {
         data = await res.json();
       }
 
+      if (data.root_job_id) {
+        rootJobId = data.root_job_id;
+        currentJobId = data.job_id || data.root_job_id;
+      } else if (data.job_id) {
+        rootJobId = data.job_id;
+        currentJobId = data.job_id;
+      }
+
       const clips = data.clips || [];
       activeViralClips = clips;
       renderViralClips(clips);
@@ -1723,7 +1833,51 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       console.error("AI Clip Extraction Error:", err);
-      showToast(`AI Clip Finder: ${err.message}`);
+      const errMsg = err.message || "";
+      if (errMsg.includes("NO_AUDIO_TRACK")) {
+        if (viralClipsList) {
+          viralClipsList.classList.remove("hidden");
+          viralClipsList.innerHTML = `
+            <div style="padding: 24px 16px; text-align: center; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 12px; background: rgba(239, 68, 68, 0.06);">
+              <div style="font-size: 32px; margin-bottom: 8px;">🔇</div>
+              <div style="font-size: 14px; font-weight: 700; color: #f87171; margin-bottom: 6px;">Silent Video (No Audio Track)</div>
+              <div style="font-size: 11.5px; color: var(--text-dim); max-width: 440px; margin: 0 auto 16px; line-height: 1.45;">
+                This video was downloaded without an audio stream (typical of YouTube 1080p/4K DASH downloads). AI Reel Generation requires spoken audio to transcribe and extract viral moments.
+              </div>
+              <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" id="btnAttachAudioClip" style="background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; font-size: 11.5px; font-weight: 700; padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                  <span>🎵</span>
+                  <span>Attach Audio Track (.mp3, .m4a, .wav)</span>
+                </button>
+              </div>
+            </div>
+          `;
+          const btnClip = document.getElementById("btnAttachAudioClip");
+          if (btnClip && audioFileInput) {
+            btnClip.addEventListener("click", () => audioFileInput.click());
+          }
+        }
+        showToast("⚠️ Video has no audio track. Please attach an audio file to generate reels.");
+      } else if (errMsg.includes("NO_SPEECH_DETECTED")) {
+        if (viralClipsList) {
+          viralClipsList.classList.remove("hidden");
+          viralClipsList.innerHTML = `
+            <div style="padding: 24px 16px; text-align: center; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 12px; background: rgba(245, 158, 11, 0.06);">
+              <div style="font-size: 32px; margin-bottom: 8px;">🗣️</div>
+              <div style="font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 6px;">No Spoken Speech Detected</div>
+              <div style="font-size: 11.5px; color: var(--text-dim); max-width: 440px; margin: 0 auto 16px; line-height: 1.45;">
+                Audio was found, but Whisper didn't detect any spoken words. Ensure your video has clear audible dialogue.
+              </div>
+            </div>
+          `;
+        }
+        showToast("⚠️ No spoken speech detected in audio.");
+      } else {
+        if (viralClipsList) {
+          viralClipsList.innerHTML = `<div style="padding: 16px; font-size: 12px; color: #f87171; text-align: center;">${errMsg}</div>`;
+        }
+        showToast(`AI Clip Finder: ${errMsg}`);
+      }
     } finally {
       if (scanInterval) clearInterval(scanInterval);
       if (btnFindViralClips) btnFindViralClips.disabled = false;
@@ -3295,14 +3449,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 4. Reset file state & file inputs
     selectedFile = null;
+    selectedAudioFile = null;
+    hasAudioTrack = true;
     currentJobId = null;
     rootJobId = null;
     currentTimeline = null;
     if (videoFileInput) videoFileInput.value = "";
+    if (audioFileInput) audioFileInput.value = "";
     if (dropPrompt) dropPrompt.classList.remove("hidden");
     if (fileBadge) fileBadge.classList.add("hidden");
     if (fileName) fileName.textContent = "";
     if (fileSize) fileSize.textContent = "";
+    const audioTrackBadge = document.getElementById("audioTrackBadge");
+    const noAudioWarningCard = document.getElementById("noAudioWarningCard");
+    const attachedAudioName = document.getElementById("attachedAudioName");
+    if (audioTrackBadge) audioTrackBadge.classList.add("hidden");
+    if (noAudioWarningCard) noAudioWarningCard.classList.add("hidden");
+    if (attachedAudioName) attachedAudioName.textContent = "";
 
     // 5. Reset trimmer state
     trimStartSec = 0.0;

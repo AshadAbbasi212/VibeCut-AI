@@ -204,22 +204,9 @@ def _rule_based_clip_finder(
             "text": (p["text"] if isinstance(p, dict) else p.text).strip(),
         })
 
-    # If no phrases provided, return one clip spanning available duration
+    # If no phrases provided, return empty list (never return a fake dummy clip!)
     if not clean_phrases:
-        dur = round(min(video_duration, target_sec), 2)
-        return [
-            ViralClip(
-                id="clip_1",
-                start=0.0,
-                end=dur,
-                duration=dur,
-                headline="🔥 WATCH THIS HIGHLIGHT",
-                summary="Key moment from the video",
-                virality_score=8.5,
-                target_length=target_length,
-                keywords=["viral", "highlight"],
-            )
-        ]
+        return []
 
     # Adaptive duration scaling: if the available speech span is shorter than min_sec,
     # scale thresholds dynamically so clips are ALWAYS discovered on trimmed clips or short videos!
@@ -327,21 +314,24 @@ def _rule_based_clip_finder(
             selected.append(cand)
             seen_headlines.add(cand["headline"])
 
-    # If no candidates met criteria, synthesize a clip directly from available phrases
+    # If no candidates met criteria, synthesize a clip directly from available phrases only if text exists
     if not selected:
-        dur = round(min(video_duration, target_sec), 2)
-        full_text = " ".join(p["text"] for p in clean_phrases)
-        headline, summary, hashtags = generate_smart_headline(clean_phrases, full_text)
-        selected.append({
-            "start": clean_phrases[0]["start"],
-            "end": clean_phrases[-1]["end"] if (clean_phrases[-1]["end"] - clean_phrases[0]["start"]) <= effective_max_sec else round(clean_phrases[0]["start"] + dur, 2),
-            "duration": dur,
-            "headline": headline,
-            "summary": summary,
-            "score": 8.0,
-            "keywords": ["highlight"],
-            "hashtags": hashtags,
-        })
+        if clean_phrases and any(p["text"] for p in clean_phrases):
+            dur = round(min(video_duration, target_sec), 2)
+            full_text = " ".join(p["text"] for p in clean_phrases)
+            headline, summary, hashtags = generate_smart_headline(clean_phrases, full_text)
+            selected.append({
+                "start": clean_phrases[0]["start"],
+                "end": clean_phrases[-1]["end"] if (clean_phrases[-1]["end"] - clean_phrases[0]["start"]) <= effective_max_sec else round(clean_phrases[0]["start"] + dur, 2),
+                "duration": dur,
+                "headline": headline,
+                "summary": summary,
+                "score": 8.0,
+                "keywords": ["highlight"],
+                "hashtags": hashtags,
+            })
+        else:
+            return []
 
     result = []
     for idx, c in enumerate(selected, 1):
@@ -427,16 +417,42 @@ def find_viral_clips(
         return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
 
     try:
+        llm_clips = []
         if resolved_provider == "mistral":
-            return _find_clips_with_mistral(
+            llm_clips = _find_clips_with_mistral(
                 clean_phrases, video_duration, target_length, target_sec, min_sec, max_sec, resolved_key, topic_segments
             )
         elif resolved_provider == "gemini":
-            return _find_clips_with_gemini(
+            llm_clips = _find_clips_with_gemini(
                 clean_phrases, video_duration, target_length, target_sec, min_sec, max_sec, resolved_key, topic_segments
             )
         else:
             return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
+
+        # Baseline content-aware clips covering all speech peaks across the video
+        rule_clips = _rule_based_clip_finder(clean_phrases, video_duration, target_length)
+        if not llm_clips:
+            return rule_clips
+
+        # Merge LLM clips with rule-based clips so all distinct moments are available
+        merged = list(llm_clips)
+        for rc in rule_clips:
+            overlap = False
+            for mc in merged:
+                ov_start = max(rc.start, mc.start)
+                ov_end = min(rc.end, mc.end)
+                if ov_end > ov_start:
+                    ov_dur = ov_end - ov_start
+                    if ov_dur > (min(rc.duration, mc.duration) * 0.45):
+                        overlap = True
+                        break
+            if not overlap:
+                merged.append(rc)
+
+        for idx, c in enumerate(merged, 1):
+            c.id = f"clip_{idx}"
+
+        return merged
     except Exception as e:
         logger.warning(f"LLM clip extraction failed ({e}); falling back to rule-based finder.")
         return _rule_based_clip_finder(clean_phrases, video_duration, target_length)

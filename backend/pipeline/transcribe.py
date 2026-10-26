@@ -197,21 +197,21 @@ def transcribe(
     if use_cache and cache_file.exists():
         try:
             cached_data = json.loads(cache_file.read_text(encoding="utf-8"))
-            return Transcript.model_validate(cached_data)
+            cached_transcript = Transcript.model_validate(cached_data)
+            # Only use cached transcript if it actually contains detected words
+            if cached_transcript.words:
+                return cached_transcript
         except Exception:
             # If cache is corrupted, proceed to recompute
             pass
 
-    # Probe media: if file has no audio stream, avoid ffmpeg errors and return empty transcript
+    # Probe media: if file has no audio stream, avoid ffmpeg errors and return empty transcript without caching
     try:
         from backend.pipeline.probe import probe_video
         probe = probe_video(media_path)
         if not probe.has_audio:
             print(f"Notice: Media file '{media_path.name}' has no audio stream. Skipping transcription.")
-            empty_transcript = Transcript(words=[], text="", language=language or "en", duration=probe.duration)
-            if use_cache:
-                cache_file.write_text(empty_transcript.model_dump_json(indent=2), encoding="utf-8")
-            return empty_transcript
+            return Transcript(words=[], text="", language=language or "en", duration=probe.duration)
     except Exception:
         pass
 
@@ -286,7 +286,7 @@ def transcribe(
         file_hash=file_hash,
     )
 
-    if use_cache:
+    if use_cache and cleaned_words:
         try:
             cache_file.write_text(
                 transcript.model_dump_json(indent=2),

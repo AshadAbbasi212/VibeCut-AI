@@ -12,6 +12,7 @@ class VideoProbe(BaseModel):
     fps: float = Field(..., description="Frames per second")
     duration: float = Field(..., description="Duration in seconds")
     has_audio: bool = Field(..., description="Whether the file contains an audio stream")
+    audio_codec: str | None = Field(default=None, description="Audio codec name if audio is present")
 
 
 def parse_fps(fps_str: str) -> float:
@@ -45,7 +46,7 @@ def probe_video(path: str | Path) -> VideoProbe:
     cmd = [
         ffprobe_bin,
         "-v", "error",
-        "-show_entries", "format=duration:stream=index,codec_type,width,height,r_frame_rate,avg_frame_rate,duration,tags,side_data_list",
+        "-show_entries", "format=duration:stream=index,codec_name,codec_type,width,height,r_frame_rate,avg_frame_rate,duration,tags,side_data_list",
         "-of", "json",
         str(path),
     ]
@@ -105,4 +106,5 @@ def probe_video(path: str | Path) -> VideoProbe:
         fps=fps,
         duration=duration,
         has_audio=audio_stream is not None,
+        audio_codec=audio_stream.get("codec_name") if audio_stream else None,
     )

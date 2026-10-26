@@ -1,5 +1,26 @@
 # Architectural and Technical Decisions
 
+## 2026-10-26: Permanent Solution for Silent / DASH Video Uploads, Audio Multiplexing & Resilient Viral Clip Discovery
+- **Decision**:
+  1. **Root Cause Analysis of Silent Video Fallback (`videoplayback (3).mp4`)**:
+     - Identified why the user saw the fallback clip `🔥 WATCH THIS HIGHLIGHT (00:00 - 01:00)`: The uploaded video was a YouTube 1080p DASH video-only stream containing 0 audio streams (`has_audio: False`).
+     - Previously, `transcribe.py` returned an empty `Transcript(words=[])` and cached an 87-byte empty JSON file in `.cache/transcriptions/`. `find_viral_clips()` previously had a dummy fallback returning a generic highlight card when `len(phrases) == 0`.
+  2. **Cache Poisoning Prevention & Dummy Clip Removal**:
+     - Purged all corrupt empty transcription cache files.
+     - Updated `transcribe.py` to strictly forbid caching empty transcripts (`len(words) == 0`) and reject corrupt cached files.
+     - Removed dummy synthetic fallback from `find_viral_clips()`: If `clean_phrases` has no spoken text, it returns an empty list (`[]`) rather than spoofing a fake clip.
+  3. **Backend Validation & Informative Error Contracts (`/api/clips/discover` & `/api/jobs/{id}/find-clips`)**:
+     - Fast video probing via `probe_video()` to check `has_audio` and `audio_codec`.
+     - If video lacks an audio track, raises HTTP 400 with `NO_AUDIO_TRACK: This video file has no audio stream (common with YouTube DASH downloads)...`.
+     - If audio exists but no words are spoken, raises HTTP 400 with `NO_SPEECH_DETECTED: No spoken words or dialog were detected...`.
+  4. **Audio Multiplexing Endpoint (`/api/merge-audio`) & Multi-Track Video Ingestion**:
+     - Implemented `POST /api/merge-audio` and added `audio_file` support to `POST /api/clips/discover`: Uses FFmpeg stream mapping (`-c:v copy -c:a aac -shortest`) to combine separate video and audio tracks in under 2 seconds without re-encoding video.
+  5. **Client-Side Probing & Actionable Audio Attachment UI (`app.js` & `index.html`)**:
+     - On file selection/drop, `handleFile(file)` probes the video immediately. If silent, displays a prominent `🔇 No Audio Track` badge and shows a clean alert card with a `🎵 Attach Audio Track (.mp3, .m4a, .wav)` button.
+     - When an audio file is selected, the frontend automatically multiplexes audio into the video, updates the Studio Monitor preview with full sound, and triggers reel scanning.
+     - `fetchViralClips` saves `rootJobId = data.root_job_id`, ensuring instant (<0.1s) duration switches and reel renders.
+- **Why**: Permanently eliminates misleading fake clips, catches silent DASH videos before transcription, and provides a 1-click audio multiplexing workflow directly in the studio.
+
 ## 2026-10-24: Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
 - **Decision**:
   1. **Content-Aware Topic & Headline Synthesis in Rule-Based Finder (`backend/pipeline/clips.py`)**:

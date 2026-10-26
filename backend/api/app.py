@@ -2,7 +2,9 @@
 import json
 import os
 import shutil
+import subprocess
 import tempfile
+import uuid
 from pathlib import Path
 from typing import Optional, Literal
 from dotenv import load_dotenv
@@ -326,6 +328,20 @@ def find_job_clips(
         except Exception:
             pass
 
+    if not phrases:
+        if input_file_path:
+            from backend.pipeline.probe import probe_video
+            probe = probe_video(input_file_path)
+            if not probe.has_audio:
+                raise HTTPException(
+                    status_code=400,
+                    detail="NO_AUDIO_TRACK: This video has no audio track. Captions and viral highlights require speech audio. Please upload a video with sound or attach an audio file."
+                )
+        raise HTTPException(
+            status_code=400,
+            detail="NO_SPEECH_DETECTED: No spoken words were detected in this video. Please ensure the video contains audible speech."
+        )
+
     provider = root_job.llm_provider if root_job.llm_provider != "none" else os.getenv("LLM_PROVIDER", "none")
     clips = find_viral_clips(
         phrases=phrases,
@@ -508,17 +524,20 @@ def render_single_clip_endpoint(
 @app.post("/api/clips/discover")
 def discover_clips_from_video(
     file: Optional[UploadFile] = File(None),
+    audio_file: Optional[UploadFile] = File(None),
     sample: bool = Form(False),
     target_length: Literal["15s", "30s", "60s"] = Form("30s"),
     llm_provider: Optional[str] = Form(None),
 ):
-    """Transcribe video and find viral clips on demand."""
+    """Transcribe video and find viral clips on demand, with audio validation and persistent master caching."""
     from backend.pipeline.probe import probe_video
     from backend.pipeline.transcribe import transcribe
     from backend.pipeline.chunk import chunk_words
     from backend.pipeline.clips import find_viral_clips
 
     tmp_path = None
+    tmp_audio_path = None
+    tmp_merged_path = None
     try:
         if sample:
             source_path = Path("samples/synthetic.mp4").resolve()
@@ -533,19 +552,81 @@ def discover_clips_from_video(
         else:
             raise HTTPException(status_code=400, detail="Either file or sample=true must be provided")
 
+        # If separate audio_file was provided, merge audio track with video track
+        if audio_file and audio_file.filename:
+            a_suffix = Path(audio_file.filename).suffix or ".m4a"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=a_suffix) as a_tmp:
+                shutil.copyfileobj(audio_file.file, a_tmp)
+                tmp_audio_path = Path(a_tmp.name)
+
+            tmp_merged_path = Path(tempfile.gettempdir()) / f"merged_{uuid.uuid4().hex[:8]}.mp4"
+            cmd = [
+                "ffmpeg", "-y", "-v", "error",
+                "-i", str(source_path),
+                "-i", str(tmp_audio_path),
+                "-c:v", "copy",
+                "-c:a", "aac",
+                "-map", "0:v:0",
+                "-map", "1:a:0",
+                "-shortest",
+                str(tmp_merged_path)
+            ]
+            subprocess.run(cmd, check=True)
+            source_path = tmp_merged_path
+
         probe = probe_video(source_path)
+        if not probe.has_audio:
+            raise HTTPException(
+                status_code=400,
+                detail="NO_AUDIO_TRACK: This video file has no audio stream (common with YouTube DASH video-only downloads). Dynamic captions and viral highlights require spoken audio. Please upload a video with sound or attach an audio file."
+            )
+
         transcript = transcribe(path=source_path)
+        if not transcript.words:
+            raise HTTPException(
+                status_code=400,
+                detail="NO_SPEECH_DETECTED: No spoken words were detected in this video. Please ensure the video contains clear audible speech in an enabled language."
+            )
+
         phrases = chunk_words(words=transcript.words, duration=probe.duration)
+        phrases_list = [p.model_dump() for p in phrases]
+
+        # Create master job on backend so subsequent duration changes (15s, 30s, 60s)
+        # and reel rendering don't re-upload or re-transcribe!
+        from backend.api.runner import JobInfo
+        master_id = str(uuid.uuid4())
+        master_job_dir = Path("jobs").resolve() / master_id
+        master_job_dir.mkdir(parents=True, exist_ok=True)
+        dest_input = master_job_dir / "input.mp4"
+        shutil.copyfile(source_path, dest_input)
+
+        master_job = JobInfo(
+            id=master_id,
+            preset="bold_creator",
+            llm_provider=llm_provider or "none",
+            language="en",
+            status="completed",
+            step="completed",
+            progress=1.0,
+            input_file=str(dest_input),
+        )
+        manager = get_job_manager()
+        manager.save_job(master_job)
+
+        (master_job_dir / "phrases.json").write_text(json.dumps({"phrases": phrases_list, "duration": probe.duration}, indent=2), encoding="utf-8")
+        (master_job_dir / "phrases_master.json").write_text(json.dumps({"phrases": phrases_list, "duration": probe.duration}, indent=2), encoding="utf-8")
 
         provider = llm_provider or os.getenv("LLM_PROVIDER", "none")
         clips = find_viral_clips(
-            phrases=[p.model_dump() for p in phrases],
+            phrases=phrases_list,
             video_duration=probe.duration,
             target_length=target_length,
             provider=provider,
         )
 
         return {
+            "job_id": master_job.id,
+            "root_job_id": master_job.id,
             "target_length": target_length,
             "video_duration": probe.duration,
             "clips": [c.model_dump() for c in clips],
@@ -553,10 +634,85 @@ def discover_clips_from_video(
         }
     finally:
         if tmp_path and tmp_path.exists():
-            try:
-                tmp_path.unlink()
-            except Exception:
-                pass
+            try: tmp_path.unlink()
+            except Exception: pass
+        if tmp_audio_path and tmp_audio_path.exists():
+            try: tmp_audio_path.unlink()
+            except Exception: pass
+        if tmp_merged_path and tmp_merged_path.exists():
+            try: tmp_merged_path.unlink()
+            except Exception: pass
+
+
+@app.post("/api/probe")
+def probe_media_endpoint(file: UploadFile = File(...)):
+    """Fast probe of uploaded video to verify duration, dimensions, FPS, and audio stream."""
+    from backend.pipeline.probe import probe_video
+    suffix = Path(file.filename or "video.mp4").suffix or ".mp4"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        tmp_path = Path(tmp.name)
+    try:
+        probe = probe_video(tmp_path)
+        return {
+            "filename": file.filename,
+            "duration": probe.duration,
+            "width": probe.width,
+            "height": probe.height,
+            "fps": probe.fps,
+            "has_audio": probe.has_audio,
+            "audio_codec": getattr(probe, "audio_codec", None),
+        }
+    finally:
+        if tmp_path.exists():
+            try: tmp_path.unlink()
+            except Exception: pass
+
+
+@app.post("/api/merge-audio")
+def merge_video_audio_endpoint(
+    video_file: UploadFile = File(...),
+    audio_file: UploadFile = File(...),
+):
+    """Multiplex video stream and audio stream into a single MP4 container via ffmpeg."""
+    v_suffix = Path(video_file.filename or "video.mp4").suffix or ".mp4"
+    a_suffix = Path(audio_file.filename or "audio.m4a").suffix or ".m4a"
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=v_suffix) as v_tmp:
+        shutil.copyfileobj(video_file.file, v_tmp)
+        v_path = Path(v_tmp.name)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=a_suffix) as a_tmp:
+        shutil.copyfileobj(audio_file.file, a_tmp)
+        a_path = Path(a_tmp.name)
+
+    out_merged = Path(tempfile.gettempdir()) / f"merged_{uuid.uuid4().hex[:8]}.mp4"
+    try:
+        cmd = [
+            "ffmpeg", "-y", "-v", "error",
+            "-i", str(v_path),
+            "-i", str(a_path),
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-shortest",
+            str(out_merged)
+        ]
+        subprocess.run(cmd, check=True)
+        return FileResponse(
+            path=out_merged,
+            media_type="video/mp4",
+            filename=f"with_audio_{Path(video_file.filename or 'video').stem}.mp4",
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to merge audio with video: {e}")
+    finally:
+        if v_path.exists():
+            try: v_path.unlink()
+            except Exception: pass
+        if a_path.exists():
+            try: a_path.unlink()
+            except Exception: pass
 
 
 @app.get("/api/styles")
