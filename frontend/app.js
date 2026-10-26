@@ -1826,7 +1826,11 @@ document.addEventListener("DOMContentLoaded", () => {
       renderViralClips(clips);
 
       if (clips.length > 0) {
-        applyViralClip(clips[0]);
+        try {
+          applyViralClip(clips[0]);
+        } catch (applyErr) {
+          console.warn("Could not auto-apply first clip:", applyErr);
+        }
         showToast(`✨ Found ${clips.length} viral clips! Top: "${clips[0].headline}"`);
       } else {
         showToast("No distinct clips found matching length.");
@@ -2144,7 +2148,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clipAiEnhanceBadge) {
       clipAiEnhanceBadge.textContent = (clipAiEnhanceToggle && clipAiEnhanceToggle.checked) ? "Active" : "Disabled";
     }
-    updateSourceSplitPreview();
+    updateSourcePreviewFraming();
 
     // Update status badge on studio monitor cleanly
     const shortHeadline = clip.headline.length > 20 ? clip.headline.slice(0, 18) + "..." : clip.headline;
@@ -2430,7 +2434,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (layoutSelectedLabel) {
       layoutSelectedLabel.textContent = clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout;
     }
-    updateSourceSplitPreview();
     updateSourcePreviewFraming();
     showToast(`Layout: ${clipLayoutNamesGlobal[selectedClipLayout] || selectedClipLayout}`);
   }

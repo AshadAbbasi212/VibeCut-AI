@@ -19,7 +19,12 @@
      - On file selection/drop, `handleFile(file)` probes the video immediately. If silent, displays a prominent `🔇 No Audio Track` badge and shows a clean alert card with a `🎵 Attach Audio Track (.mp3, .m4a, .wav)` button.
      - When an audio file is selected, the frontend automatically multiplexes audio into the video, updates the Studio Monitor preview with full sound, and triggers reel scanning.
      - `fetchViralClips` saves `rootJobId = data.root_job_id`, ensuring instant (<0.1s) duration switches and reel renders.
-- **Why**: Permanently eliminates misleading fake clips, catches silent DASH videos before transcription, and provides a 1-click audio multiplexing workflow directly in the studio.
+  6. **Fix UI Callback Reference Error in `applyViralClip` & Defensive Gallery Protection**:
+     - Diagnosed why the user's scan displayed `119 Found` on the badge but showed the red text `updateSourceSplitPreview is not defined` instead of the clip list:
+     - `applyViralClip()` and `setClipLayout()` called `updateSourceSplitPreview()`, which was an obsolete function name instead of `updateSourcePreviewFraming()`.
+     - When the first clip was auto-applied after discovery, the uncaught `ReferenceError` bubbled to `fetchViralClips`'s catch block, which overwrote `viralClipsList.innerHTML` with the error text, hiding the 119 discovered clips.
+     - Replaced with `updateSourcePreviewFraming()`, removed duplicate calls, and protected the auto-apply call with a dedicated try/catch so the discovered clips gallery is never wiped.
+- **Why**: Permanently eliminates misleading fake clips, catches silent DASH videos before transcription, and guarantees that all 119 discovered clips render cleanly in the UI.
 
 ## 2026-10-24: Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
 - **Decision**:
