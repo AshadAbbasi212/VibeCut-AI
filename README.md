@@ -12,6 +12,10 @@
 
 [Features](#-key-features) • [Architecture](#-architecture) • [Quickstart](#-quickstart-guide) • [Web Studio](#-creator-web-studio) • [Styles Library](#-24-signature-caption-styles) • [CLI Usage](#-command-line-interface-cli) • [API](#-rest-api-reference)
 
+<br/>
+
+<img src="docs/dashboard.png" alt="ViralForge AI Studio Dashboard" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+
 </div>
 
 ---
@@ -153,6 +157,10 @@ Visit **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
 3. **Clip Customizer & Tweaker**: Fine-tune individual headlines, styles, font sizes, background audio, and boost options per reel before rendering.
 4. **1-Click Batch Export**: Download all selected viral reels together in a structured `.zip` archive.
 5. **Social Post Generator**: Click **"Copy Post"** to copy pre-formatted captions and hashtags ready for publishing.
+
+<br/>
+
+<img src="docs/viral_reels_studio.png" alt="AI Viral Reels Studio Interface" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 
 ---
 
