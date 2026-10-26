@@ -41,8 +41,18 @@
 - [x] Phase 40 Comprehensive Test Suite, Layout Alias Normalization, & Source Aspect Ratio Probing
 - [x] Phase 41 Content-Aware Viral Clip Discovery, Smart Headline Synthesis, Master Transcript Caching & Deduplication
 - [x] Phase 42 Silent & DASH Video Auto-Detection, FFmpeg Audio Multiplexing, Cache Poisoning Prevention & Persistent Reel Extraction
+- [x] Phase 43 High-Virality LLM Prompt Script & Curated Clip Selection (Guaranteed >= 10 Viral Moments)
 
 ## Notes / known issues
+- Phase 43 (High-Virality LLM Prompt Script & Curated Clip Selection):
+  1. **Root Cause Analysis of 118-Clip Flood**: Diagnosed why a 63-minute video produced 118 clips. The previous prompt explicitly told the LLM: `"Extract ALL relevant, standalone viral clips... Do NOT artificially cap or limit to 3, 5, or 10 clips. Extract EVERY distinct highlight, punchy insight, debate, or story."` This forced the LLM to extract 5–8 clips per 4-minute segment across 19 windows, extracting mundane chit-chat and small talk. On top of that, `find_viral_clips()` was merging all rule-based sliding windows.
+  2. **Refined LLM Prompt Script for High-Virality Viral Moments**: Updated both `_extract_window_mistral` and `_extract_window_gemini` prompts with strict editorial criteria: exclusively focus on high-impact insights, counter-intuitive lessons, breakthrough ideas, and high-stakes storytelling. Strictly reject small talk, administrative banter, and ordinary dialogue. If a segment does not contain standout viral moments, return `{"clips": []}`. In segments with great content, extract at most 1–2 top-tier moments.
+  3. **Guaranteed At Least 10 Clips & Important Points Curation**:
+     - For long videos (>= 7.5 mins / 450s), established `min_target = 10` and `max_target = 25`.
+     - When the LLM finds >= 10 clips, only high-scoring viral moments (virality >= 8.5) are curated and returned without polluting the gallery with mechanical rule slices.
+     - When the LLM finds fewer than 10 clips (e.g. 5–7 clips), the engine automatically supplements with top-scoring non-overlapping rule speech peaks to guarantee at least 10 clips.
+  4. **Markdown Stripping & Headline Sanitization**: Sanitized all raw headlines by stripping markdown asterisks (`**`), quotes, and backticks (`re.sub(r"[*_`\"]", "", headline)`), so headlines like `**WHEN ALEXNET CHANGED EVERYTHING**` render cleanly as `🔥 WHEN ALEXNET CHANGED EVERYTHING`.
+  5. **Full Regression Validation**: All 110 tests pass across the entire suite.
 - Phase 42 (Silent & DASH Video Auto-Detection, FFmpeg Audio Multiplexing, Cache Poisoning Prevention & Persistent Reel Extraction):
   1. **Root Cause Resolved**: Identified that `videoplayback (3).mp4` was a YouTube DASH video-only stream with 0 audio streams, which previously caused an 87-byte empty transcription cache and triggered the generic fallback clip.
   2. **Purged Poisoned Cache & Removed Dummy Clips**: Cleared all empty transcription cache files, added validation to `transcribe.py` to prevent caching empty transcripts, and removed dummy fallback clips from `find_viral_clips()`.

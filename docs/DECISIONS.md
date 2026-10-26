@@ -1,5 +1,28 @@
 # Architectural and Technical Decisions
 
+## 2026-10-26: High-Virality LLM Prompt Script & Curated Clip Selection (Guaranteed >= 10 Viral Moments)
+- **Decision**:
+  1. **Root Cause Analysis of 118-Clip Flood**:
+     - Identified why a 63-minute video produced 118 clips: The LLM window prompt previously instructed the model: `"Extract ALL relevant, standalone viral clips... Do NOT artificially cap or limit to 3, 5, or 10 clips. Extract EVERY distinct highlight, punchy insight, debate, or story."`
+     - This prompted Mistral/Gemini to extract 5–8 clips in every single 4-minute window across 19 windows, capturing trivial chit-chat and ordinary dialogue.
+     - Additionally, `find_viral_clips()` was merging all non-overlapping `_rule_based_clip_finder()` mechanical slices on top of the LLM clips.
+  2. **Refined LLM Prompt Script for High-Value Viral Moments**:
+     - Updated both `_extract_window_mistral` and `_extract_window_gemini` with strict editorial selection criteria:
+       - **Focus on Important Points**: Only extract moments containing significant insights, counterintuitive lessons, breakthrough ideas, passionate debates, or high-stakes storytelling.
+       - **Strictly Exclude Filler**: Ignore routine pleasantries, greetings, administrative talk, podcast housekeeping, rambling transitions, and mundane explanations.
+       - **Empty Return for Routine Windows**: If a segment does not contain any genuinely important or viral points, the LLM returns `{"clips": []}` instead of forcing mediocre slices.
+       - **At Most 1-2 Top Moments per Segment**: In segments with standout content, extracts only the top 1 or 2 best moments.
+       - **Plain Text Headlines**: Enforces pure plain text headlines without markdown asterisks (`**`), backticks, or quotes.
+  3. **Guaranteed At Least 10 Clips with Curation Logic**:
+     - In `find_viral_clips()`, established intelligent curation:
+       - For long videos (>= 450s / 7.5 mins), sets `min_target = 10` and `max_target = 25`.
+       - If the LLM generates >= 10 clips, those AI-curated clips are returned directly without appending mechanical rule slices (filtering for top viral moments with virality >= 8.5).
+       - If the LLM generates fewer than 10 clips (e.g. 5–7 clips), the engine automatically supplements with the top-scoring non-overlapping speech peaks from the rule finder to guarantee at least 10 clips.
+       - If LLM fails or is disabled (`LLM_PROVIDER=none`), the rule finder yields 10–20 high-scoring clips for long videos.
+  4. **Markdown Stripping & Headline Sanitization**:
+     - Sanitized all raw headlines in `_assemble_and_deduplicate_clips` by stripping markdown asterisks (`**`), quotes, and backticks (`re.sub(r"[*_`\"]", "", headline)`), ensuring cards and on-screen headmarkers render cleanly.
+- **Why**: Fulfills the user request to eliminate the overwhelming 118-clip flood, focus exclusively on important discussions and viral moments, guarantee at least 10 clips (and more if they contain important points), and render clean headlines without markdown artifacts.
+
 ## 2026-10-26: Permanent Solution for Silent / DASH Video Uploads, Audio Multiplexing & Resilient Viral Clip Discovery
 - **Decision**:
   1. **Root Cause Analysis of Silent Video Fallback (`videoplayback (3).mp4`)**:

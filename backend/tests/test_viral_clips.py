@@ -358,3 +358,58 @@ def test_assemble_and_deduplicate_clips_no_cap():
     assert assembled[0].id == "clip_1"
     assert assembled[-1].id == "clip_40"
 
+
+def test_headline_markdown_cleaning():
+    """Verify that raw headlines containing markdown stars or quotes are cleanly sanitized."""
+    from backend.pipeline.clips import _assemble_and_deduplicate_clips
+    raw = [{
+        "id": "c1",
+        "start": 10.0,
+        "end": 40.0,
+        "headline": "**WHEN ALEXNET CHANGED EVERYTHING**",
+        "summary": "Breakthrough in deep learning.",
+        "virality_score": 9.8,
+    }]
+    phrases = [
+        {"start": 10.0, "end": 25.0, "text": "When AlexNet changed computer vision forever."},
+        {"start": 25.0, "end": 40.0, "text": "It was the turning point for artificial intelligence."},
+    ]
+    res = _assemble_and_deduplicate_clips(
+        raw_clips=raw,
+        phrases=phrases,
+        video_duration=60.0,
+        target_length="30s",
+        target_sec=30.0,
+        min_sec=20.0,
+        max_sec=45.0,
+    )
+    assert len(res) == 1
+    assert "*" not in res[0].headline
+    assert "WHEN ALEXNET CHANGED EVERYTHING" in res[0].headline
+    assert res[0].headline.startswith("🔥")
+
+
+def test_find_viral_clips_guarantees_at_least_10_clips():
+    """Verify that a long video produces at least 10 clips and does not explode to 100+ clips."""
+    # 50 phrases over 1200 seconds (20 minutes)
+    phrases = []
+    t = 0.0
+    for i in range(50):
+        t_end = t + 20.0
+        phrases.append({
+            "start": round(t, 2),
+            "end": round(t_end, 2),
+            "text": f"Why this critical breakthrough {i} completely changed the industry.",
+        })
+        t = t_end + 4.0
+
+    clips = find_viral_clips(
+        phrases=phrases,
+        video_duration=1200.0,
+        target_length="30s",
+        provider="none",
+    )
+    assert len(clips) >= 10, f"Expected >= 10 clips for 20m video, got {len(clips)}"
+    assert len(clips) <= 25, f"Expected <= 25 curated clips, got {len(clips)}"
+
+

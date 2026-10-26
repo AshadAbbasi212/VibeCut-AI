@@ -296,7 +296,11 @@ def _rule_based_clip_finder(
     # Filter out heavily overlapping candidates (>45% mutual overlap or duplicate headlines)
     selected = []
     seen_headlines = set()
+    # Curate high-impact moments: At least 10 clips, up to 18-20 for long videos
+    max_rule_clips = 20 if video_duration >= 1800 else (12 if video_duration >= 600 else 8)
     for cand in candidates:
+        if len(selected) >= max_rule_clips:
+            break
         # Avoid redundant duplicate titles
         if cand["headline"] in seen_headlines:
             continue
@@ -429,30 +433,44 @@ def find_viral_clips(
         else:
             return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
 
-        # Baseline content-aware clips covering all speech peaks across the video
-        rule_clips = _rule_based_clip_finder(clean_phrases, video_duration, target_length)
+        min_target = 10 if video_duration >= 450 else max(1, int(video_duration // 35))
+        max_target = 25 if video_duration >= 1800 else (18 if video_duration >= 600 else 12)
+
         if not llm_clips:
-            return rule_clips
+            return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
 
-        # Merge LLM clips with rule-based clips so all distinct moments are available
-        merged = list(llm_clips)
-        for rc in rule_clips:
-            overlap = False
-            for mc in merged:
-                ov_start = max(rc.start, mc.start)
-                ov_end = min(rc.end, mc.end)
-                if ov_end > ov_start:
-                    ov_dur = ov_end - ov_start
-                    if ov_dur > (min(rc.duration, mc.duration) * 0.45):
-                        overlap = True
-                        break
-            if not overlap:
-                merged.append(rc)
+        # Prioritize curated LLM viral moments
+        # If the LLM discovered at least min_target clips, use them directly (do NOT blindly append 100 rule slices!)
+        if len(llm_clips) >= min_target:
+            # If there are many LLM clips, keep those with virality >= 8.5 (important points), up to max_target
+            high_value_clips = [c for c in llm_clips if c.virality_score >= 8.5]
+            if len(high_value_clips) >= min_target:
+                final_clips = high_value_clips[:max_target]
+            else:
+                final_clips = llm_clips[:max_target]
+        else:
+            # If LLM generated fewer than min_target (e.g. 5-7), supplement with top non-overlapping rule clips until min_target
+            final_clips = list(llm_clips)
+            rule_clips = _rule_based_clip_finder(clean_phrases, video_duration, target_length)
+            for rc in rule_clips:
+                if len(final_clips) >= min_target:
+                    break
+                overlap = False
+                for fc in final_clips:
+                    ov_start = max(rc.start, fc.start)
+                    ov_end = min(rc.end, fc.end)
+                    if ov_end > ov_start:
+                        ov_dur = ov_end - ov_start
+                        if ov_dur > (min(rc.duration, fc.duration) * 0.45):
+                            overlap = True
+                            break
+                if not overlap:
+                    final_clips.append(rc)
 
-        for idx, c in enumerate(merged, 1):
+        for idx, c in enumerate(final_clips, 1):
             c.id = f"clip_{idx}"
 
-        return merged
+        return final_clips
     except Exception as e:
         logger.warning(f"LLM clip extraction failed ({e}); falling back to rule-based finder.")
         return _rule_based_clip_finder(clean_phrases, video_duration, target_length)
@@ -505,6 +523,11 @@ def _assemble_and_deduplicate_clips(
         headline = rc.get("headline", "").strip()
         summary = rc.get("summary", "").strip()
 
+        # Clean any markdown formatting (asterisks, quotes, backticks, header hashes)
+        headline = re.sub(r"[*_`\"]", "", headline).strip()
+        headline = re.sub(r"^\s*#+\s*", "", headline).strip()
+        summary = re.sub(r"[*_`\"]", "", summary).strip()
+
         # If headline or summary is generic or missing, synthesize from speech in window
         if not headline or headline in {"🔥 VIRAL HIGHLIGHT", "🔥 WATCH THIS HIGHLIGHT"} or not summary:
             win_phrases = [
@@ -526,6 +549,10 @@ def _assemble_and_deduplicate_clips(
         if not summary:
             summary = "Key discussion highlight"
 
+        # Ensure single emoji prefix if missing
+        if headline and not any(ord(char) > 0x1F000 for char in headline[:4]):
+            headline = f"🔥 {headline}"
+
         try:
             score = float(rc.get("virality_score", 8.5))
         except (ValueError, TypeError):
@@ -534,15 +561,15 @@ def _assemble_and_deduplicate_clips(
         if not isinstance(keywords, list):
             keywords = []
 
+        clean_h = re.sub(r"^[^\w\s]+\s*", "", headline).title()
         sp = rc.get("social_post")
         if isinstance(sp, dict):
             social_post = SocialPost(
-                hook=sp.get("hook", f"Wait till you hear this... {headline}"),
+                hook=sp.get("hook", f"Wait till you hear this... {clean_h}"),
                 caption=sp.get("caption", summary),
                 hashtags=sp.get("hashtags", ["#podcast", "#viral", "#shorts", "#reels"]),
             )
         else:
-            clean_h = headline.replace("🔥 ", "").title()
             social_post = SocialPost(
                 hook=f"Wait till you hear this... {clean_h} 🤯",
                 caption=f"{summary} Watch till the end and share your thoughts! 👇",
@@ -566,21 +593,25 @@ def _assemble_and_deduplicate_clips(
     # Sort candidates by virality score descending
     candidates.sort(key=lambda c: c["score"], reverse=True)
 
-    # Filter out heavily overlapping clips (must be at least 50% non-overlapping)
-    # Note: NO CAP on total clips - returns all valid moments across the entire video!
+    # Filter out heavily overlapping clips (must be at least 50% non-overlapping) and duplicate headlines
     selected = []
+    seen_headlines = set()
     for cand in candidates:
+        norm_h = re.sub(r"^[^\w\s]+\s*", "", cand["headline"]).lower().strip()
+        if norm_h in seen_headlines:
+            continue
         overlap = False
         for s in selected:
             ov_start = max(cand["start"], s["start"])
             ov_end = min(cand["end"], s["end"])
             if ov_end > ov_start:
                 ov_dur = ov_end - ov_start
-                if ov_dur > (cand["duration"] * 0.5):
+                if ov_dur > (min(cand["duration"], s["duration"]) * 0.45):
                     overlap = True
                     break
         if not overlap:
             selected.append(cand)
+            seen_headlines.add(norm_h)
 
     # Build final ViralClip list with ordered ids
     result = []
@@ -626,18 +657,25 @@ def _extract_window_mistral(
         )
 
     system_prompt = (
-        "You are an elite short-form video producer and viral podcast editor. "
+        "You are an elite short-form video editor and viral content strategist (producing for TikTok, Instagram Reels, and YouTube Shorts).\n"
         f"Your task is to analyze this segment of video transcript ({win_start:.1f}s to {win_end:.1f}s) "
-        f"and find ALL standalone viral clips / highlights that fit a target length of {target_length} "
-        f"(between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
-        "CRITICAL INSTRUCTIONS:\n"
-        "1. Extract ALL relevant, standalone viral clips in this segment. Do NOT artificially cap or limit to 3, 5, or 10 clips. "
-        "Extract EVERY distinct highlight, punchy insight, debate, or story.\n"
-        "2. Each clip must be a complete, coherent thought. Do NOT cut off mid-sentence.\n"
-        "3. Snap start and end times to the provided phrase timestamps within this segment.\n"
-        "4. Assign an attention-grabbing, viral HEADLINE for each clip (include 1 relevant emoji, ALL-CAPS punch words, "
-        "e.g. '🔥 THE BIGGEST MISTAKE YOU MAKE', '🤯 WHY 99% OF PEOPLE FAIL', '⚡ SECRET TO 10X OUTPUT').\n"
-        "5. Assign a virality_score between 1.0 and 10.0.\n\n"
+        f"and identify standout viral moments and important discussions that fit a target length of {target_length} "
+        f"(strictly between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
+        "EDITORIAL SELECTION CRITERIA:\n"
+        "1. FOCUS EXCLUSIVELY ON HIGH-VALUE, IMPORTANT POINTS: Only select moments that convey a significant insight, "
+        "a counterintuitive lesson, a breakthrough idea, an eye-opening revelation, a heated debate, or high-stakes storytelling.\n"
+        "2. STRICTLY EXCLUDE FILLER: Completely ignore routine pleasantries, greetings, administrative talk, podcast housekeeping, "
+        "rambling transitions, and mundane explanations.\n"
+        "3. BE HIGHLY SELECTIVE: Quality over quantity. If this segment contains NO genuinely important or viral points, "
+        "return an empty list: {\"clips\": []}. Do NOT force clips from ordinary conversation.\n"
+        "If there are strong moments, extract at most 1 or 2 top-tier highlights from this window.\n"
+        "4. COMPLETE, COHERENT THOUGHTS: Each clip must have a hook opening, the core insight/story, and a satisfying punchline or resolution. "
+        "Do NOT cut off mid-thought or mid-sentence. Snap start and end times to the provided phrase timestamps.\n"
+        "5. VIRALITY SCORE: Rate honestly from 7.0 to 10.0 based on retention potential and shareability. "
+        "Scores of 9.0+ must be reserved for mind-blowing insights, emotional peaks, or game-changing lessons.\n"
+        "6. HEADLINE: Create a punchy, click-worthy ALL-CAPS headline preceded by 1 relevant emoji (e.g. '🔥 THE SECRET INSIGHT THAT BUILT NVIDIA'). "
+        "CRITICAL: Output pure plain text ONLY. NEVER include markdown asterisks (**), quotes, or backticks in the headline.\n"
+        "7. SUMMARY: A concise 1-2 sentence breakdown of the important point made.\n\n"
         "Return ONLY a valid JSON object matching this schema:\n"
         "{\n"
         '  "clips": [\n'
@@ -646,7 +684,7 @@ def _extract_window_mistral(
         '      "start": 12.4,\n'
         '      "end": 42.1,\n'
         '      "headline": "🔥 THE #1 REASON PEOPLE QUIT",\n'
-        '      "summary": "Breakdown of the psychology behind giving up too early.",\n'
+        '      "summary": "Breakdown of the psychology behind giving up too early and how to push through.",\n'
         '      "virality_score": 9.4,\n'
         '      "keywords": ["discipline", "quitting", "success"]\n'
         "    }\n"
@@ -659,7 +697,8 @@ def _extract_window_mistral(
         f"Target Length: {target_length} (approx {target_sec}s, range {min_sec}s - {max_sec}s).\n"
         f"{topics_summary}\n\n"
         f"Full Transcript for this segment:\n{transcript_text}\n\n"
-        "Extract ALL viable viral clips in this segment now. Return valid JSON only."
+        "Find ONLY the standout viral clips containing an important point or discussion in this segment. "
+        "If none exist, return {\"clips\": []}. Return valid JSON only."
     )
 
     response_text = ""
@@ -791,15 +830,22 @@ def _extract_window_gemini(
         )
 
     prompt = (
-        "You are an elite short-form video producer and viral podcast editor. "
+        "You are an elite short-form video editor and viral content strategist (producing for TikTok, Instagram Reels, and YouTube Shorts).\n"
         f"Analyze this segment of video transcript ({win_start:.1f}s to {win_end:.1f}s, total video {video_duration:.1f}s) "
-        f"and find ALL viral {target_length} highlights (between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
-        "CRITICAL INSTRUCTIONS:\n"
-        "- Extract ALL relevant, standalone viral clips in this segment. Do NOT artificially cap or limit to 3, 5, or 10 clips.\n"
-        "- Each clip must be a complete self-contained thought. Snap start/end times to phrase timestamps.\n"
-        "- Return ONLY a JSON object: {'clips': [{'id': 'clip_1', 'start': float, 'end': float, 'headline': '🔥 ...', 'summary': '...', 'virality_score': 9.2, 'keywords': [...]}]}.\n\n"
+        f"and extract standout viral moments / important discussions that fit a target length of {target_length} "
+        f"(strictly between {min_sec:.0f}s and {max_sec:.0f}s).\n\n"
+        "EDITORIAL SELECTION CRITERIA:\n"
+        "1. FOCUS ON HIGH-VALUE, IMPORTANT POINTS: Only select moments that contain a significant insight, counterintuitive lesson, "
+        "breakthrough idea, passionate debate, eye-opening revelation, or high-stakes storytelling.\n"
+        "2. STRICTLY EXCLUDE FILLER: Ignore routine pleasantries, greetings, administrative talk, podcast housekeeping, rambling transitions, and mundane explanations.\n"
+        "3. BE HIGHLY SELECTIVE: If this segment contains NO genuinely important points or viral moments, return: {\"clips\": []}. "
+        "If there are strong moments, extract at most 1 or 2 top-tier highlights from this window.\n"
+        "4. COMPLETE THOUGHTS: Each clip must be a complete, self-contained thought with hook, point, and punchline. Snap start/end times to phrase timestamps.\n"
+        "5. VIRALITY SCORE: Rate honestly from 7.0 to 10.0 (9.0+ reserved for game-changing revelations).\n"
+        "6. HEADLINE: Punchy ALL-CAPS headline with 1 leading emoji. Pure plain text ONLY (NO markdown asterisks **, NO quotes, NO backticks).\n\n"
         f"{topics_summary}\n\n"
-        f"Transcript:\n{transcript_text}"
+        f"Transcript:\n{transcript_text}\n\n"
+        "Return ONLY a JSON object: {\"clips\": [{\"id\": \"clip_1\", \"start\": float, \"end\": float, \"headline\": \"🔥 ...\", \"summary\": \"...\", \"virality_score\": 9.2, \"keywords\": [...]}]}"
     )
 
     try:
