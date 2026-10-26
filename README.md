@@ -1,4 +1,4 @@
-# 🎬 ViralForge AI — Dynamic Captions & Viral Reels Studio
+# 🎬 VibeCut AI — Dynamic Captions & Viral Reels Studio
 
 <div align="center">
 
@@ -14,7 +14,7 @@
 
 <br/>
 
-<img src="docs/dashboard.png" alt="ViralForge AI Studio Dashboard" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+<img src="docs/dashboard.png" alt="VibeCut AI Studio Dashboard" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 
 </div>
 
@@ -22,7 +22,7 @@
 
 ## 🌟 Overview
 
-**ViralForge AI** is an all-in-one studio designed for creators, editors, and podcast networks. It takes raw, unedited footage (horizontal 16:9 or vertical 9:16) and autonomously extracts the most engaging highlights, frames the active speakers using deep-learning face detection, and renders dynamic, animated captions inspired by top creators like **Ali Abdaal**, **Alex Hormozi**, and **MrBeast**.
+**VibeCut AI** is an all-in-one studio designed for creators, editors, and podcast networks. It takes raw, unedited footage (horizontal 16:9 or vertical 9:16) and autonomously extracts the most engaging highlights, frames the active speakers using deep-learning face detection, and renders dynamic, animated captions inspired by top creators like **Ali Abdaal**, **Alex Hormozi**, and **MrBeast**.
 
 Everything runs locally with **zero external dependencies required** (100% offline rule-based heuristic planner), with optional plug-and-play AI acceleration using **Mistral AI** (`open-mistral-7b`) or **Google Gemini** (`gemini-2.5-flash`).
 
@@ -105,8 +105,8 @@ flowchart TD
 
 ```bash
 # Clone the repository
-git clone https://github.com/AshadAbbasi212/ViralForge-AI.git
-cd ViralForge-AI
+git clone https://github.com/AshadAbbasi212/VibeCut-AI.git
+cd VibeCut-AI
 
 # Create and activate Python virtual environment
 # Windows (PowerShell):
@@ -255,7 +255,7 @@ pytest -v
 ## 📁 Project Structure
 
 ```
-ViralForge-AI/
+VibeCut-AI/
 ├── backend/
 │   ├── api/             # FastAPI application, route handlers, and runner queue
 │   ├── pipeline/        # Probe, Transcribe, Chunk, Viral Clips, YuNet Reframe, Layout, Render
