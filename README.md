@@ -14,7 +14,7 @@
 
 <br/>
 
-<img src="docs/dashboard.png" alt="VibeCut AI Studio Dashboard" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+<img src="docs/dashboard_main.png" alt="VibeCut AI Studio Dashboard" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 
 </div>
 
@@ -36,6 +36,9 @@ Everything runs locally with **zero external dependencies required** (100% offli
 - **Guaranteed Curated Output**: Ensures at least 10 high-value candidate clips for long podcasts, scaling up to 25 top moments without flooding the gallery.
 - **Auto-Generated Social Media Posts**: Instantly produces viral hooks, descriptions, and hashtags tailored for TikTok, Instagram Reels, and YouTube Shorts.
 
+<br/>
+<img src="docs/viral_moments_scanner.png" alt="AI Discovered Viral Moments" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+
 ### 🎯 2. Computer Vision Speaker Tracking & 9:16 Reframe Engine
 - **YuNet Deep Learning Face Detector**: Integrated OpenCV neural network detects speaker coordinates across video frames.
 - **Mathematical Viewport Centering**: Eliminates awkward edge crops with exact visible-overflow projection, keeping active speakers centered.
@@ -43,6 +46,9 @@ Everything runs locally with **zero external dependencies required** (100% offli
   - **Active Speaker Solo Focus**: Dynamically cuts between speakers in a full 9:16 broadcast portrait.
   - **Podcast Split-Screen Stack**: Vertical split screen (dual-speaker or triple-speaker view).
   - **Ambient Frosted Blur (`blur_fit`)**: Sharp centered 16:9 frame layered over a dynamic, blurred 9:16 backdrop.
+
+<br/>
+<img src="docs/video_trimmer_studio.png" alt="Computer Vision Speaker Tracking & Dual-Handle Trimmer" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 
 ### 🎨 3. 24+ Signature Caption Styles
 - **Creator Pool**: Hormozi Bold, Beast Impact, Highlighter Marker, Karaoke Bounce, Pill Word-by-Word, Neon Glow, Cyber HUD, Typewriter Terminal, Paper Cutout, Cinematic Minimal, Comic Bubble, Fire Burn, Glitch Kinetic, Gradient Outline, Retro Vaporwave, Quote Editorial, 3D Extruded Titles, Arched Letters, and more.
@@ -160,7 +166,7 @@ Visit **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
 
 <br/>
 
-<img src="docs/viral_reels_studio.png" alt="AI Viral Reels Studio Interface" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
+<img src="docs/reel_customizer_tweaker.png" alt="Selected Reel Customizer & Headmarker Tweaker" width="100%" style="border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 16px 40px rgba(0,0,0,0.6);" />
 
 ---
 
