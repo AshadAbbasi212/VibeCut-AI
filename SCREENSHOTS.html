@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VibeCut AI — Visual Frontend & Prediction Showcase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0C;
+      --card-bg: rgba(255, 255, 255, 0.035);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --accent: #F59E0B;
+      --accent-purple: #A855F7;
+      --accent-cyan: #38BDF8;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      padding: 40px 24px 100px;
+    }
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .badge-hero {
+      display: inline-block;
+      padding: 6px 16px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: var(--accent);
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, #FFF 40%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    header p {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .screen-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 60px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .screen-card:hover {
+      border-color: rgba(245, 158, 11, 0.3);
+      transform: translateY(-2px);
+    }
+    .screen-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      background: rgba(255,255,255,0.015);
+    }
+    .screen-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #FFF;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .screen-num {
+      background: var(--accent);
+      color: #000;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .screen-desc {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 6px;
+      max-width: 850px;
+    }
+    .screen-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: #CBD5E1;
+      white-space: nowrap;
+    }
+    .screen-img-wrap {
+      background: #050507;
+      padding: 16px;
+      text-align: center;
+    }
+    .screen-img-wrap img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: block;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+    .screen-body {
+      padding: 24px 28px;
+      background: rgba(0,0,0,0.2);
+    }
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      list-style: none;
+    }
+    .feature-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .feature-item strong {
+      display: block;
+      color: #FFF;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+    .feature-item span {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+      display: block;
+    }
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--card-border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-hero">Production Verification & UI Showcase</div>
+      <h1>VibeCut AI — Visual Frontend & Predictions Guide</h1>
+      <p>A comprehensive walkthrough of every screen in VibeCut AI, documenting how video ingestion, speech dynamics scanning, AI virality scoring, and 9:16 computer vision reframing operate.</p>
+    </header>
+
+    <!-- Screen 1 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">01</span> Video Ingestion & Stream Multiplexer</div>
+          <div class="screen-desc">Automatic probing of container streams, audio track validation, YouTube DASH video auto-detection, and aspect ratio configuration.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">FFprobe</span>
+          <span class="tag">Audio: AAC (Stereo)</span>
+          <span class="tag">109.3 MB</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/01_full_studio_ingestion.png" alt="Video Ingestion & Stream Multiplexer">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>DASH Video Auto-Detection</strong>
+            <span>Detects silent 1080p/4K YouTube stream downloads and provides a 2-second multiplexing audio merger.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Stream Codec Verification</strong>
+            <span>Inspects audio channels, sample rate, and codec (e.g. AAC) before starting transcription.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Aspect Ratio Targeting</strong>
+            <span>Selects Shorts/Reels (9:16), YouTube (16:9), or Square Feed (1:1) with platform-specific safe-zone presets.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 2 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">02</span> Dual-Handle Waveform Trimmer & Aspect Ratios</div>
+          <div class="screen-desc">CapCut-inspired audio waveform visualizer with millisecond precision dual-handles, quick-cut jumps, and platform safe-zones.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">Waveform Visualizer</span>
+          <span class="tag">Dual Handles</span>
+          <span class="tag">15s / 30s / 60s / Full</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/02_full_studio_trimmer_and_reframe.png" alt="Dual-Handle Waveform Trimmer">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Dynamic Volume Waveforms</strong>
+            <span>Displays acoustic energy peaks and silence breaks to pinpoint punchy speech sections.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Millisecond Dual Handles</strong>
+            <span>Draggable boundary handles for exact trimming without needing an external NLE.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Platform Safe Zones</strong>
+            <span>Automatic caption positioning according to TikTok, Instagram Reels, and YouTube Shorts UI overlays.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 3 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">03</span> Computer Vision 9:16 Reframe Layout Modal</div>
+          <div class="screen-desc">Side-by-side photo comparison of OpenCV YuNet face-detection layouts for re-framing landscape video into vertical reels.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">OpenCV YuNet</span>
+          <span class="tag">Solo Full-Screen</span>
+          <span class="tag">Podcast Split</span>
+          <span class="tag">Ambient Blur</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/03_reframe_layout_comparison_modal.png" alt="Reframe Layout Comparison Modal">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Solo Full-Screen (Active Speaker)</strong>
+            <span>Follows the active speaker with neural face tracking, filling 100% of the vertical frame in crisp HD.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Ambient Frosted Blur</strong>
+            <span>Maintains 100% of the 16:9 widescreen context centered over an animated, blurred 9:16 backdrop.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Podcast Split Stack</strong>
+            <span>Dual-speaker stack keeping both host and guest visible simultaneously with a glowing divider.</span>
+          </li>
+          <li class="feature-item">
+            <strong>3-Way Panel Stack</strong>
+            <span>Tri-panel vertical layout designed for multi-guest panel discussions and webinars.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 4 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">04</span> AI Moment Scanner & Prediction Pipeline</div>
+          <div class="screen-desc">Live pipeline executing faster-whisper speech dynamics transcription, pause filtering, and Mistral 7B viral hook discovery.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">faster-whisper</span>
+          <span class="tag">Mistral 7B</span>
+          <span class="tag">Virality Heuristics</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/04_ai_moment_scanner_prediction_pipeline.png" alt="AI Moment Scanner & Prediction Pipeline">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Speech Dynamics Analysis</strong>
+            <span>Quantized faster-whisper engine creates word-level timestamps and tracks speech velocity.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Natural Cadence Splits</strong>
+            <span>Splits audio along punctuation and grammatical thought boundaries, preventing chopped phrases.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Viral Hook Synthesis</strong>
+            <span>The LLM isolates counterintuitive statements, lessons, and high-stakes questions while skipping small-talk.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 5 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">05</span> Discovered Viral Moments & Virality Predictions</div>
+          <div class="screen-desc">Curated feed of predicted viral reels with virality scores (7.0 - 10.0), exact timestamps, summaries, and social post copy.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">22 Clips Found</span>
+          <span class="tag">Score: 9.8/10</span>
+          <span class="tag">Copy Post</span>
+          <span class="tag">Export All (.ZIP)</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/05_ai_discovered_viral_moments.png" alt="Discovered Viral Moments & Virality Predictions">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Virality Scoring (🔥 9.8 / 10)</strong>
+            <span>Multi-factor retention score analyzing opening 3-second hook strength, insight density, and cadence.</span>
+          </li>
+          <li class="feature-item">
+            <strong>1-Click Social Media Publisher</strong>
+            <span>Clicking "Copy Post" copies pre-crafted viral hooks, descriptions, and hashtags ready for TikTok and Reels.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Batch ZIP Export</strong>
+            <span>Exports all extracted viral clips simultaneously into an organized zip archive.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 6 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">06</span> Selected Reel Customizer & Headmarker Studio</div>
+          <div class="screen-desc">Fine-tune individual reel headlines, headmarker cards (Badge, Glass, Clean, Cyber), fade-out durations, and safe zones.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">Headmarker Hook</span>
+          <span class="tag">Badge / Glass / Clean / Cyber</span>
+          <span class="tag">Safe-Zone Slider</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/06_reel_customizer_headmarker.png" alt="Selected Reel Customizer & Headmarker Studio">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Top Headmarker Hook Cards</strong>
+            <span>Eye-catching sticky title cards with Amber Badge, Apple Glass, Bold Clean, or Cyberpunk HUD styling.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Configurable Fade-Out</strong>
+            <span>Fade out after 2s, 3s, 4s, 5s, 8s, or stay persistently sticky for the entire clip.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Safe-Zone Position Sliders</strong>
+            <span>Accurate coordinate positioning for both headmarker and captions with live Studio Monitor updates.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 7 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">07</span> 24 Signature Styles Pool & Viral Boosters Pack</div>
+          <div class="screen-desc">Ali Abdaal editorial variety mode, 24 signature kinetic caption styles, word highlight swatches, and pattern interrupts.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">Ali Abdaal Variety</span>
+          <span class="tag">24 Signature Styles</span>
+          <span class="tag">Viral Boosters Pack</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/07_caption_styles_pool_and_boosters.png" alt="24 Signature Styles Pool & Viral Boosters Pack">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Ali Abdaal Editorial Variety</strong>
+            <span>Rotates aesthetics between marker sweeps, minimal serif, and quote cards every 3-4 sentences to boost retention.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Kinetic Micro-Zooms</strong>
+            <span>Punchy 1.08x camera zooms timed to speech emphasis to break monotony.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Viral Pop SFX & 3D Stickers</strong>
+            <span>Snappy audio accents synchronized with Microsoft Fluent 3D animated stickers.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 8 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">08</span> Live Studio Monitor & Speaker Tracking</div>
+          <div class="screen-desc">Interactive 9:16 phone viewport with real-time face tracking, draggable caption bounding box, and active-window pagination shield.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">9:16 Studio Monitor</span>
+          <span class="tag">Draggable Bounding Box</span>
+          <span class="tag">Active-Window Shield</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/08_studio_monitor_live_reel_preview.png" alt="Live Studio Monitor & Speaker Tracking">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Active-Window Pagination Shield</strong>
+            <span>Strictly limits text on screen to 3–5 words at a time, completely eliminating massive vertical text walls.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Draggable Safe-Zone Bounding Box</strong>
+            <span>Click and drag caption boxes directly inside the phone monitor with live coordinate readouts.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Retention Progress Bar</strong>
+            <span>Sleek animated gradient bar at the bottom of the reel providing visual pacing for viewers.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Screen 9 -->
+    <div class="screen-card">
+      <div class="screen-header">
+        <div>
+          <div class="screen-title"><span class="screen-num">09</span> Remotion React Rendering & Batch Export</div>
+          <div class="screen-desc">Hardware-accelerated Remotion React 4.0 rendering engine outputting 1080x1920 @ 30 FPS vertical MP4 reels.</div>
+        </div>
+        <div class="screen-tags">
+          <span class="tag">Remotion 4.0</span>
+          <span class="tag">React 18</span>
+          <span class="tag">1080x1920 @ 30 FPS</span>
+        </div>
+      </div>
+      <div class="screen-img-wrap">
+        <img src="docs/screenshots/09_rendering_pipeline_progress.png" alt="Remotion React Rendering & Batch Export">
+      </div>
+      <div class="screen-body">
+        <ul class="feature-list">
+          <li class="feature-item">
+            <strong>Spring Physics Animations</strong>
+            <span>Smooth, stutter-free kinetic word pops driven by Remotion spring physics curves.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Real-Time Pipeline Tracking</strong>
+            <span>Live progress percentage, frame rendering stage descriptions, and precise time remaining estimates.</span>
+          </li>
+          <li class="feature-item">
+            <strong>Clean MP4 Delivery</strong>
+            <span>Renders standardized H.264/AAC MP4 files ready for instant upload to TikTok, Instagram, and Shorts.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>
+      VibeCut AI (Dynamic Captions Studio) • Generated on October 27, 2026 • Verified on Windows 11
+    </footer>
+  </div>
+</body>
+</html>
